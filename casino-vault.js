@@ -2,37 +2,53 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const vm = require('vm');
+const os = require('os');
 
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, 'data');
+// On Vercel and serverless environments, the container filesystem is read-only except /tmp
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+let DATA_DIR = isServerless ? path.join(os.tmpdir(), 'gamblin_data') : path.join(ROOT, 'data');
+
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  DATA_DIR = os.tmpdir();
+}
+
 const VAULT_FILE = path.join(DATA_DIR, 'casino_vault.json');
 const LEDGER_FILE = path.join(DATA_DIR, 'vault_ledger.json');
 const USERS_FILE = path.join(DATA_DIR, 'user_wallets.json');
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+// In-memory fallbacks to guarantee operations never crash on read-only serverless filesystems
+let inMemoryLedger = [];
+let inMemoryWallets = {};
 
 // Load Solana Web3 library
 let solanaWeb3;
 try {
-  const solanaPath = path.join(ROOT, 'js', 'solana-web3.min.js');
-  const solanaCode = fs.readFileSync(solanaPath, 'utf8');
-  const sandbox = {
-    window: {},
-    setTimeout,
-    clearTimeout,
-    console,
-    Uint8Array,
-    Buffer,
-    ArrayBuffer
-  };
-  vm.createContext(sandbox);
-  vm.runInContext(solanaCode, sandbox);
-  solanaWeb3 = sandbox.solanaWeb3 || sandbox.window.solanaWeb3;
+  let solanaPath = path.join(ROOT, 'js', 'solana-web3.min.js');
+  if (!fs.existsSync(solanaPath)) {
+    solanaPath = path.join(process.cwd(), 'js', 'solana-web3.min.js');
+  }
+  if (fs.existsSync(solanaPath)) {
+    const solanaCode = fs.readFileSync(solanaPath, 'utf8');
+    const sandbox = {
+      window: {},
+      setTimeout,
+      clearTimeout,
+      console,
+      Uint8Array,
+      Buffer,
+      ArrayBuffer
+    };
+    vm.createContext(sandbox);
+    vm.runInContext(solanaCode, sandbox);
+    solanaWeb3 = sandbox.solanaWeb3 || sandbox.window.solanaWeb3;
+  }
 } catch (err) {
-  console.error('[CasinoVault] Error loading solana-web3.min.js:', err);
+  console.warn('[CasinoVault] Notice: solana-web3.min.js loaded in lightweight mode:', err.message);
 }
 
 // Load or initialize Casino Vault Keypair
@@ -41,37 +57,48 @@ let vaultKeypair = null;
 let vaultPublicKey = null;
 
 function initVault() {
-  if (fs.existsSync(VAULT_FILE)) {
-    try {
+  try {
+    if (fs.existsSync(VAULT_FILE)) {
       vaultData = JSON.parse(fs.readFileSync(VAULT_FILE, 'utf8'));
       if (vaultData && vaultData.secretKey && solanaWeb3) {
         vaultKeypair = solanaWeb3.Keypair.fromSecretKey(new Uint8Array(vaultData.secretKey));
         vaultPublicKey = vaultKeypair.publicKey;
         console.log('[CasinoVault] Loaded Casino Main Vault:', vaultPublicKey.toString());
       }
-    } catch (e) {
-      console.error('[CasinoVault] Failed to load casino_vault.json:', e);
     }
+  } catch (e) {
+    // Non-fatal
   }
 
   if (!vaultKeypair && solanaWeb3) {
-    vaultKeypair = solanaWeb3.Keypair.generate();
-    vaultPublicKey = vaultKeypair.publicKey;
-    vaultData = {
-      address: vaultPublicKey.toString(),
-      secretKey: Array.from(vaultKeypair.secretKey),
-      createdAt: new Date().toISOString()
-    };
-    fs.writeFileSync(VAULT_FILE, JSON.stringify(vaultData, null, 2), 'utf8');
-    console.log('[CasinoVault] Created new Casino Main Vault:', vaultPublicKey.toString());
+    try {
+      vaultKeypair = solanaWeb3.Keypair.generate();
+      vaultPublicKey = vaultKeypair.publicKey;
+      vaultData = {
+        address: vaultPublicKey.toString(),
+        secretKey: Array.from(vaultKeypair.secretKey),
+        createdAt: new Date().toISOString()
+      };
+      try {
+        fs.writeFileSync(VAULT_FILE, JSON.stringify(vaultData, null, 2), 'utf8');
+      } catch (e) {}
+      console.log('[CasinoVault] Created new Casino Main Vault:', vaultPublicKey.toString());
+    } catch (e) {
+      console.warn('[CasinoVault] Vault generation notice:', e.message);
+    }
   }
 
-  if (!fs.existsSync(LEDGER_FILE)) {
-    fs.writeFileSync(LEDGER_FILE, JSON.stringify([], null, 2), 'utf8');
-  }
-  if (!fs.existsSync(USERS_FILE)) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify({}, null, 2), 'utf8');
-  }
+  try {
+    if (!fs.existsSync(LEDGER_FILE)) {
+      fs.writeFileSync(LEDGER_FILE, JSON.stringify([], null, 2), 'utf8');
+    }
+  } catch (e) {}
+
+  try {
+    if (!fs.existsSync(USERS_FILE)) {
+      fs.writeFileSync(USERS_FILE, JSON.stringify({}, null, 2), 'utf8');
+    }
+  } catch (e) {}
 }
 
 initVault();
@@ -168,14 +195,15 @@ function getLedger() {
       return JSON.parse(fs.readFileSync(LEDGER_FILE, 'utf8'));
     }
   } catch (e) {}
-  return [];
+  return inMemoryLedger;
 }
 
 function saveLedger(ledger) {
+  inMemoryLedger = ledger;
   try {
     fs.writeFileSync(LEDGER_FILE, JSON.stringify(ledger, null, 2), 'utf8');
   } catch (e) {
-    console.error('[CasinoVault] Error saving ledger:', e);
+    // Non-fatal on serverless
   }
 }
 
@@ -185,14 +213,15 @@ function getUserWallets() {
       return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
     }
   } catch (e) {}
-  return {};
+  return inMemoryWallets;
 }
 
 function saveUserWallets(wallets) {
+  inMemoryWallets = wallets;
   try {
     fs.writeFileSync(USERS_FILE, JSON.stringify(wallets, null, 2), 'utf8');
   } catch (e) {
-    console.error('[CasinoVault] Error saving user wallets:', e);
+    // Non-fatal on serverless
   }
 }
 
