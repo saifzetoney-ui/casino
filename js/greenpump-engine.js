@@ -6644,6 +6644,7 @@ class GreenpumpApp {
 
     const backdrop = document.getElementById('chatBackdrop');
     const mobileChatToggle = document.getElementById('mobileChatToggleBtn');
+    const navChatToggle = document.getElementById('navChatBtn');
 
     if (minBtn) minBtn.addEventListener('click', () => this.setChatCollapsed(true));
     if (openBtn) openBtn.addEventListener('click', () => this.setChatCollapsed(false));
@@ -6651,7 +6652,14 @@ class GreenpumpApp {
     if (mobileChatToggle) {
       mobileChatToggle.addEventListener('click', (e) => {
         e.preventDefault();
-        const isOpen = document.body.classList.contains('mobile-chat-open');
+        const isOpen = document.body.classList.contains('mobile-chat-open') || !document.body.classList.contains('chat-collapsed');
+        this.setChatCollapsed(isOpen);
+      });
+    }
+    if (navChatToggle) {
+      navChatToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isOpen = document.body.classList.contains('mobile-chat-open') || !document.body.classList.contains('chat-collapsed');
         this.setChatCollapsed(isOpen);
       });
     }

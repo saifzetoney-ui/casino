@@ -1711,34 +1711,63 @@ button, a, select, input {
   /* Compact Safe Navigation */
   .site-nav {
     height: 56px !important;
-    padding: 0 10px !important;
-    padding-left: max(10px, env(safe-area-inset-left)) !important;
-    padding-right: max(10px, env(safe-area-inset-right)) !important;
+    padding: 0 8px !important;
+    padding-left: max(8px, env(safe-area-inset-left)) !important;
+    padding-right: max(8px, env(safe-area-inset-right)) !important;
+    box-sizing: border-box !important;
   }
 
   .site-nav__inner {
-    gap: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    width: 100% !important;
   }
 
   .nav-zone-left {
+    display: flex !important;
+    align-items: center !important;
     gap: 6px !important;
+    flex-shrink: 0 !important;
   }
 
   .nav-brand-logo {
-    height: 30px !important;
-    max-width: 48px !important;
+    height: 28px !important;
+    width: auto !important;
+    max-width: 44px !important;
   }
 
   .nav-brand-text {
-    font-size: 16px !important;
+    font-size: 15px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  /* CRITICAL: Explicitly hide live SOL price pill on mobile to prevent navbar overflow */
+  #liveSolPricePill,
+  .nav-sol-price-pill,
+  .nav-hide-mobile {
+    display: none !important;
   }
 
   /* Compact Wallet Pill */
+  .nav-zone-center {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding: 0 4px !important;
+  }
+
   .nav-zone-center #gpWalletBtn {
     height: 32px !important;
     padding: 0 10px !important;
     font-size: 12px !important;
     gap: 5px !important;
+    max-width: 130px !important;
+    box-sizing: border-box !important;
   }
 
   .nav-zone-center #gpWalletBtn img {
@@ -1746,15 +1775,25 @@ button, a, select, input {
     height: 15px !important;
   }
 
+  #walletBalanceDisplay {
+    font-size: 12px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
   /* Navigation Right Items */
   .nav-zone-right {
+    display: flex !important;
+    align-items: center !important;
     gap: 4px !important;
+    flex-shrink: 0 !important;
   }
 
   #dailyCaseNavBtn {
     height: 32px !important;
     padding: 0 8px !important;
-    gap: 5px !important;
+    gap: 4px !important;
   }
 
   #dailyCaseNavBtn span:not(#dailyCaseBadge) {
@@ -1762,9 +1801,11 @@ button, a, select, input {
   }
 
   #gpMuteBtn,
-  #notificationsBtn {
+  #notificationsBtn,
+  #navChatBtn {
     width: 32px !important;
     height: 32px !important;
+    flex-shrink: 0 !important;
   }
 
   .nav-profile-container #gpProfileBtn > div {
@@ -1779,6 +1820,7 @@ button, a, select, input {
     padding-right: 10px !important;
     padding-bottom: 84px !important;
     box-sizing: border-box !important;
+    min-width: 0 !important;
   }
 
   /* Full-Height Slide-Out Mobile Chat Drawer */
@@ -1786,7 +1828,7 @@ button, a, select, input {
     top: 0 !important;
     bottom: 0 !important;
     left: 0 !important;
-    width: min(340px, 88vw) !important;
+    width: min(340px, 86vw) !important;
     max-width: 90vw !important;
     height: 100vh !important;
     height: 100dvh !important;
@@ -1796,17 +1838,16 @@ button, a, select, input {
     border-bottom: none !important;
     z-index: 10001 !important;
     box-shadow: 16px 0 50px rgba(0, 0, 0, 0.9) !important;
-    padding-top: env(safe-area-inset-top, 0px) !important;
-    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box !important;
   }
 
+  /* CRITICAL: Hide floating chat button on mobile so it never covers game titles or stages */
   #chatOpenBtn {
-    top: 66px !important;
-    left: 10px !important;
-    z-index: 998 !important;
-    padding: 7px 12px !important;
-    font-size: 11.5px !important;
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 
   /* Mobile Bottom Navigation Bar */
@@ -1816,14 +1857,14 @@ button, a, select, input {
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    height: 60px !important;
-    background: rgba(11, 19, 37, 0.95) !important;
+    height: 58px !important;
+    background: rgba(10, 16, 32, 0.96) !important;
     backdrop-filter: blur(24px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-    border-top: 1px solid rgba(59, 130, 246, 0.24) !important;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8) !important;
+    border-top: 1px solid rgba(59, 130, 246, 0.28) !important;
+    box-shadow: 0 -10px 32px rgba(0, 0, 0, 0.85) !important;
     z-index: 9999 !important;
-    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: content-box !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1832,21 +1873,28 @@ button, a, select, input {
   .mobile-tabs-grid {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-around !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
     width: 100% !important;
-    max-width: 520px !important;
     height: 100% !important;
     padding: 0 6px !important;
-    gap: 2px !important;
+    gap: 4px !important;
+  }
+
+  .mobile-tabs-grid::-webkit-scrollbar {
+    display: none !important;
   }
 
   .mobile-tab {
-    flex: 1 !important;
+    flex: 0 0 auto !important;
+    min-width: 50px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 3px !important;
+    gap: 2.5px !important;
     text-decoration: none !important;
     color: #94a3b8 !important;
     font-size: 9.5px !important;
@@ -1858,7 +1906,7 @@ button, a, select, input {
     background: transparent !important;
     border: none !important;
     cursor: pointer !important;
-    padding: 4px 2px !important;
+    padding: 4px 6px !important;
   }
 
   .mobile-tab img,
@@ -1876,6 +1924,7 @@ button, a, select, input {
 
   .mobile-tab.active {
     color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.1) !important;
   }
 
   .mobile-tab.active img,
@@ -1884,10 +1933,15 @@ button, a, select, input {
     filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8)) !important;
   }
 
+  .mobile-tab-chat {
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-left: 8px !important;
+  }
+
   /* Pump & Dump Candlestick Stage Responsive */
   .pump-chart-stage {
-    height: calc(100dvh - 150px) !important;
-    min-height: 480px !important;
+    height: calc(100dvh - 145px) !important;
+    min-height: 440px !important;
     border-radius: 14px !important;
   }
 
@@ -1953,34 +2007,150 @@ button, a, select, input {
     display: none !important;
   }
 
-  /* Game Arena Stacking for Mobile */
-  .crash-arena-grid,
-  .chicken-arena-grid,
-  .bj-arena-grid {
+  /* =========================================================
+     GAME ARENAS: VISUAL STAGE FIRST, BET CONTROLS SECOND
+     ========================================================= */
+
+  /* 1. Crash / Rug */
+  .crash-arena-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .crash-stage-col {
+    order: 1 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .crash-canvas-stage {
+    height: 260px !important;
+    min-height: 240px !important;
+    width: 100% !important;
+    border-radius: 14px !important;
+    position: relative !important;
+  }
+
+  .crash-controls-col {
+    order: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
   }
 
-  .crash-controls-col,
-  .chicken-controls-col,
-  .bj-controls-col {
+  /* 2. Chicken Road */
+  .chicken-arena-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
     width: 100% !important;
-    max-width: 100% !important;
-    order: 2 !important;
   }
 
-  .crash-stage-col,
-  .chicken-stage-col,
-  .bj-stage-col {
-    width: 100% !important;
+  .chicken-stage-col {
     order: 1 !important;
+    width: 100% !important;
   }
 
-  .crash-canvas-stage {
+  .chicken-highway-viewport {
     height: 280px !important;
     min-height: 260px !important;
+    width: 100% !important;
     border-radius: 14px !important;
+  }
+
+  .chicken-controls-col {
+    order: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* 3. Mines */
+  .mines-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .mines-board-panel {
+    order: 1 !important;
+    width: 100% !important;
+    max-width: 420px !important;
+    box-sizing: border-box !important;
+  }
+
+  .mines-5x5-grid {
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 auto !important;
+  }
+
+  .mines-panel {
+    order: 2 !important;
+    width: 100% !important;
+    max-width: 420px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 4. Higher or Lower (HiLo) */
+  .hilo-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .hilo-display {
+    order: 1 !important;
+    width: 100% !important;
+  }
+
+  .hilo-controls {
+    order: 2 !important;
+    width: 100% !important;
+  }
+
+  /* 5. Coinflip */
+  .coinflip-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .coinflip-stage {
+    order: 1 !important;
+    width: 100% !important;
+    min-height: 220px !important;
+  }
+
+  .coinflip-controls {
+    order: 2 !important;
+    width: 100% !important;
+  }
+
+  /* 6. Blackjack */
+  .bj-arena-stage {
+    width: 100% !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .bj-table-outer {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .bj-table-felt {
+    height: 380px !important;
+    border-radius: 14px 14px 220px 220px !important;
   }
 
   /* Modals Full Responsive on Mobile */
@@ -2013,7 +2183,7 @@ button, a, select, input {
     display: none !important;
   }
   .site-nav {
-    padding: 0 8px !important;
+    padding: 0 6px !important;
   }
   .mobile-tab span {
     font-size: 8.5px !important;
