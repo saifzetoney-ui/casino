@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "server.js": {
+      "includeFiles": "**/*"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/chat",
@@ -7,6 +12,10 @@
     {
       "source": "/api/avatar/:path*",
       "destination": "https://greenpump.xyz/api/avatar/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/server.js"
     },
     {
       "source": "/((?!api/|.*\\..*).*)",

@@ -316,7 +316,7 @@ function parseJsonBody(req, callback) {
   });
 }
 
-const server = http.createServer((req, res) => {
+function requestHandler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
   if (url.pathname === '/api/casino-vault') {
@@ -439,7 +439,9 @@ const server = http.createServer((req, res) => {
   }
 
   serveStatic(req, res, url);
-});
+}
+
+const server = http.createServer(requestHandler);
 
 if (require.main === module) {
   server.listen(PORT, () => {
@@ -448,4 +450,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = server;
+module.exports = requestHandler;
+
