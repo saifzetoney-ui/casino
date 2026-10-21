@@ -24,13 +24,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
 
   <!-- Greenpump Stylesheets -->
-  <link rel="stylesheet" href="css/greenpump1.css?v=20261022-wallet-v4"/>
-  <link rel="stylesheet" href="css/greenpump2.css?v=20261022-wallet-v4"/>
-  <link rel="stylesheet" href="css/greenpump-custom.css?v=20261022-wallet-v4"/>
-  <link rel="stylesheet" href="css/greenpump-extra.css?v=20261022-wallet-v4"/>
-  <link rel="stylesheet" href="css/greenpump-redesign.css?v=20261022-wallet-v4"/>
-  <link rel="stylesheet" href="tokens.css?v=20261022-wallet-v4"/>
-  <link rel="stylesheet" href="css/hallmark-blue.css?v=20261022-wallet-v4"/>
+  <link rel="stylesheet" href="css/greenpump1.css?v=20261022-hilo-edge-v6"/>
+  <link rel="stylesheet" href="css/greenpump2.css?v=20261022-hilo-edge-v6"/>
+  <link rel="stylesheet" href="css/greenpump-custom.css?v=20261022-hilo-edge-v6"/>
+  <link rel="stylesheet" href="css/greenpump-extra.css?v=20261022-hilo-edge-v6"/>
+  <link rel="stylesheet" href="css/greenpump-redesign.css?v=20261022-hilo-edge-v6"/>
+  <link rel="stylesheet" href="tokens.css?v=20261022-hilo-edge-v6"/>
+  <link rel="stylesheet" href="css/hallmark-blue.css?v=20261022-hilo-edge-v6"/>
 </head>
 <body>
 
@@ -578,7 +578,7 @@
                   <div class="crash-input-box">
                     <div class="crash-input-left">
                       <img src="solana-coin.png" alt="SOL" class="crash-sol-icon" />
-                      <input type="number" id="rugBetInput" class="crash-num-input" value="0.05" min="0.001" step="0.01" />
+                      <input type="number" id="rugBetInput" class="crash-num-input" value="0.01" min="0.001" step="0.005" />
                     </div>
                     <div class="crash-quick-group">
                       <button type="button" class="crash-quick-btn" id="rugHalfBtn">1/2</button>
@@ -1236,7 +1236,7 @@
                 </div>
                 <div class="hilo-bet-row">
                   <img src="solana-coin.png" alt="SOL" class="hilo-coin" />
-                  <input id="hiloBetInput" type="number" min="0.001" step="0.001" value="0.05" aria-label="HiLo bet amount" />
+                  <input id="hiloBetInput" type="number" min="0.001" step="0.001" value="0.01" aria-label="HiLo bet amount" />
                   <span class="hilo-sol-suffix">SOL</span>
                 </div>
                 <div class="hilo-quick-row">
@@ -1273,14 +1273,14 @@
                 </div>
 
                 <button type="button" id="hiloCashoutBtn" class="hilo-cashout" style="display:none;">CASHOUT</button>
-                <p class="hilo-note">Aces are high · Max gain capped at +50% (1.50x) on your bet.</p>
+                <p class="hilo-note">Numbers range 1 to 13 · Max gain capped at +50% (1.50x) on your bet.</p>
               </div>
             </div>
 
             <div class="hilo-stage">
               <div class="hilo-stage-head">
                 <div>
-                  <span class="hilo-eyebrow">CURRENT CARD</span>
+                  <span class="hilo-eyebrow">CURRENT NUMBER</span>
                   <h2>HIGHER OR LOWER</h2>
                 </div>
                 <div class="hilo-live-badge"><span></span> LIVE</div>
@@ -1288,10 +1288,10 @@
 
               <div class="hilo-card-wrap">
                 <div class="hilo-card-glow"></div>
-                <div class="hilo-card-face card-black" id="hiloCardFace">
-                  <span class="hilo-corner hilo-corner-top" id="hiloCardTop">7♠</span>
-                  <span class="hilo-suit" id="hiloCardSuitDisplay">♠</span>
-                  <span class="hilo-corner hilo-corner-bottom" id="hiloCardBottom">7♠</span>
+                <div class="hilo-card-face card-number" id="hiloCardFace">
+                  <span class="hilo-corner hilo-corner-top" id="hiloCardTop">7</span>
+                  <span class="hilo-suit" id="hiloCardSuitDisplay">7</span>
+                  <span class="hilo-corner hilo-corner-bottom" id="hiloCardBottom">7</span>
                 </div>
               </div>
 
@@ -1303,7 +1303,7 @@
               </div>
 
               <div class="hilo-history-wrap">
-                <span class="hilo-history-label">CARD HISTORY</span>
+                <span class="hilo-history-label">NUMBER HISTORY</span>
                 <div id="hiloHistory" class="hilo-history"></div>
               </div>
             </div>
@@ -2244,6 +2244,6 @@
 
   <!-- Interactive Script Engine -->
   <script src="js/solana-web3.min.js"></script>
-  <script src="js/greenpump-engine.js?v=20261022-wallet-v4"></script>
+  <script src="js/greenpump-engine.js?v=20261022-hilo-edge-v6"></script>
 </body>
 </html>

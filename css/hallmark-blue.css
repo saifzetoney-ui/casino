@@ -2935,3 +2935,34 @@ button, a, select, input {
 .security-toggle-link.is-open .chevron-icon {
   transform: rotate(180deg) !important;
 }
+
+/* HiLo Numbers Only Styling */
+.hilo-card-face.card-number {
+  background: linear-gradient(160deg, #ffffff 0%, #f1f5f9 100%) !important;
+  color: #0f172a !important;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.75), inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 0 35px rgba(56, 189, 248, 0.2) !important;
+}
+
+.hilo-card-face #hiloCardSuitDisplay {
+  font-size: 88px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1 !important;
+  color: #0f172a !important;
+  font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif !important;
+  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+}
+
+.hilo-card-face .hilo-corner {
+  font-size: 26px !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.hilo-history-chip.number-chip {
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  background: #0b1325 !important;
+  font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif !important;
+}

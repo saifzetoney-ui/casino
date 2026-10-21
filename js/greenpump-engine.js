@@ -160,7 +160,7 @@ class GreenpumpApp {
     this.rugState = 'WAITING'; // 'WAITING', 'RUNNING', 'CRASHED'
     this.rugMultiplier = 8.93;
     this.rugCrashPoint = 1.0;
-    this.rugBet = 0.05;
+    this.rugBet = 0.01;
     this.rugAutoTarget = null;
     this.rugHasBetThisRound = false;
     this.rugScheduledNextRound = false;
@@ -212,10 +212,10 @@ class GreenpumpApp {
     this.bjDealerTimer = null;
 
     // HILO State
-    this.hiloBet = 0.05;
+    this.hiloBet = 0.01;
     this.hiloPlaying = false;
     this.hiloCurrentRank = 7;
-    this.hiloCurrentSuit = '♠';
+    this.hiloCurrentSuit = '';
     this.hiloStreak = 0;
     this.hiloMult = 1;
     this.hiloHistory = [];
@@ -235,7 +235,7 @@ class GreenpumpApp {
     this.flappyRaf = null;
 
     // COINFLIP State
-    this.coinflipBet = 0.05;
+    this.coinflipBet = 0.01;
     this.coinflipSide = 'heads';
     this.coinflipFlipping = false;
     this.coinflipStreak = 0;
@@ -2418,6 +2418,49 @@ class GreenpumpApp {
     this.startRugCountdown();
   }
 
+  generateRealisticRugBet() {
+    const roll = Math.random();
+    let val;
+
+    if (roll < 0.08) {
+      // Very low chance (~8%): 0.0200 to 0.0400 SOL
+      if (Math.random() < 0.65) {
+        // Common human round numbers someone would type
+        const highPresets = [
+          0.0200, 0.0220, 0.0250, 0.0275, 0.0300, 0.0325, 0.0350, 0.0380, 0.0400
+        ];
+        val = highPresets[Math.floor(Math.random() * highPresets.length)];
+      } else {
+        // Natural uneven remainder
+        val = 0.0200 + Math.random() * 0.0199;
+      }
+    } else if (roll < 0.38) {
+      // Moderate bet: 0.0080 to 0.0195 SOL (~30% chance)
+      if (Math.random() < 0.65) {
+        const midPresets = [
+          0.0080, 0.0085, 0.0090, 0.0100, 0.0110, 0.0125, 0.0140, 0.0150, 0.0160, 0.0175, 0.0180, 0.0190
+        ];
+        val = midPresets[Math.floor(Math.random() * midPresets.length)];
+      } else {
+        val = 0.0080 + Math.random() * 0.0115;
+      }
+    } else {
+      // Standard everyday micro-bet: 0.0010 to 0.0075 SOL (~62% chance - vast majority)
+      if (Math.random() < 0.65) {
+        const microPresets = [
+          0.0010, 0.0015, 0.0020, 0.0025, 0.0030, 0.0035, 0.0040, 0.0050, 0.0055, 0.0060, 0.0065, 0.0070, 0.0075
+        ];
+        val = microPresets[Math.floor(Math.random() * microPresets.length)];
+      } else {
+        val = 0.0010 + Math.random() * 0.0065;
+      }
+    }
+
+    // Absolute hard cap - never above 0.0400 SOL, never below 0.0010 SOL
+    val = Math.max(0.0010, Math.min(0.0400, val));
+    return parseFloat(val.toFixed(4));
+  }
+
   generateRugPlayers() {
     const namePool = [
       'SolDegen', 'PepeMaxi', 'RugSurvivor', 'CryptoWhale', 'GreenCandle',
@@ -2443,12 +2486,12 @@ class GreenpumpApp {
       } while (used.has(name) && guard < 30);
       used.add(name);
 
-      const bet = Math.pow(10, -3 + Math.random() * 2.4);
+      const bet = this.generateRealisticRugBet();
       const target = Math.random() < 0.14 ? 99999 : parseFloat((1.2 + Math.random() * 3.8).toFixed(2));
 
       players.push({
         name,
-        bet: parseFloat(Math.min(0.5, Math.max(0.001, bet)).toFixed(4)),
+        bet,
         target,
         cashed: false,
         cashoutMult: null,
@@ -5106,44 +5149,71 @@ class GreenpumpApp {
     this.renderHiLoHistory();
   }
 
-  drawHiLoCard(initial = false) {
-    const suits = [
-      { suit: '♠', red: false },
-      { suit: '♥', red: true },
-      { suit: '♦', red: true },
-      { suit: '♣', red: false }
-    ];
-    const rank = Math.floor(Math.random() * 13) + 2;
-    const pick = suits[Math.floor(Math.random() * suits.length)];
-    const card = { rank, suit: pick.suit, isRed: pick.red };
+  drawHiLoCard(initial = false, forcedOutcome = null, choice = null, prevRank = null) {
+    let rank;
+
+    if (initial) {
+      // Pick a balanced starting number (3 to 11) out of 1 to 13
+      rank = Math.floor(Math.random() * 9) + 3;
+    } else if (forcedOutcome && choice && prevRank !== null) {
+      if (forcedOutcome === 'win') {
+        // Player wins (30% chance): draw number strictly fulfilling choice
+        if (choice === 'higher') {
+          const valid = [];
+          for (let n = prevRank + 1; n <= 13; n++) valid.push(n);
+          rank = valid.length ? valid[Math.floor(Math.random() * valid.length)] : 13;
+        } else {
+          const valid = [];
+          for (let n = 1; n < prevRank; n++) valid.push(n);
+          rank = valid.length ? valid[Math.floor(Math.random() * valid.length)] : 1;
+        }
+      } else {
+        // House wins (70% chance): draw number that makes player lose (opposite or push)
+        if (choice === 'higher') {
+          const valid = [];
+          for (let n = 1; n <= prevRank; n++) valid.push(n);
+          rank = valid.length ? valid[Math.floor(Math.random() * valid.length)] : prevRank;
+        } else {
+          const valid = [];
+          for (let n = prevRank; n <= 13; n++) valid.push(n);
+          rank = valid.length ? valid[Math.floor(Math.random() * valid.length)] : prevRank;
+        }
+      }
+    } else {
+      rank = Math.floor(Math.random() * 13) + 1;
+    }
+
+    const card = { rank };
     this.hiloCurrentRank = rank;
-    this.hiloCurrentSuit = pick.suit;
-    this.hiloCurrentRed = pick.red;
+    this.hiloCurrentSuit = '';
     if (initial) this.hiloHistory = [card];
     return card;
   }
 
   hiLoProbabilities(rank = this.hiloCurrentRank) {
+    const total = 12;
+    const higherCount = Math.max(0, 13 - rank);
+    const lowerCount = Math.max(0, rank - 1);
     return {
-      higher: (14 - rank) / 13,
-      lower: (rank - 2) / 13,
+      higher: higherCount / total,
+      lower: lowerCount / total,
       tie: 1 / 13
     };
   }
 
   renderHiLoCard() {
-    const rankName = this.hiloCurrentRank === 14 ? 'A' : this.hiloCurrentRank === 13 ? 'K' :
-      this.hiloCurrentRank === 12 ? 'Q' : this.hiloCurrentRank === 11 ? 'J' : String(this.hiloCurrentRank);
+    const num = this.hiloCurrentRank;
     const top = document.getElementById('hiloCardTop');
     const bottom = document.getElementById('hiloCardBottom');
-    const suit = document.getElementById('hiloCardSuitDisplay');
+    const center = document.getElementById('hiloCardSuitDisplay');
     const face = document.getElementById('hiloCardFace');
-    if (top) top.textContent = `${rankName}${this.hiloCurrentSuit}`;
-    if (bottom) bottom.textContent = `${rankName}${this.hiloCurrentSuit}`;
-    if (suit) suit.textContent = this.hiloCurrentSuit;
+
+    if (top) top.textContent = String(num);
+    if (bottom) bottom.textContent = String(num);
+    if (center) center.textContent = String(num);
     if (face) {
-      face.classList.toggle('card-red', !!this.hiloCurrentRed);
-      face.classList.toggle('card-black', !this.hiloCurrentRed);
+      face.classList.remove('card-red', 'card-black');
+      face.classList.add('card-number');
     }
   }
 
@@ -5163,8 +5233,8 @@ class GreenpumpApp {
     if (lowerProbEl) lowerProbEl.textContent = `${lowerPct}%`;
     if (higherBar) higherBar.style.width = `${higherPct}%`;
     if (lowerBar) lowerBar.style.width = `${lowerPct}%`;
-    if (higherBtn) higherBtn.disabled = probs.higher === 0;
-    if (lowerBtn) lowerBtn.disabled = probs.lower === 0;
+    if (higherBtn) higherBtn.disabled = this.hiloCurrentRank >= 13;
+    if (lowerBtn) lowerBtn.disabled = this.hiloCurrentRank <= 1;
 
     const streakEl = document.getElementById('hiloStreakDisplay');
     const multEl = document.getElementById('hiloMultDisplay');
@@ -5194,11 +5264,9 @@ class GreenpumpApp {
     if (!el) return;
     el.innerHTML = '';
     this.hiloHistory.slice(0, 14).forEach(card => {
-      const rankName = card.rank === 14 ? 'A' : card.rank === 13 ? 'K' : card.rank === 12 ? 'Q' :
-        card.rank === 11 ? 'J' : String(card.rank);
       const chip = document.createElement('span');
-      chip.className = `hilo-history-chip ${card.isRed ? 'red' : 'black'}`;
-      chip.textContent = `${rankName}${card.suit}`;
+      chip.className = 'hilo-history-chip number-chip';
+      chip.textContent = String(card.rank);
       el.appendChild(chip);
     });
   }
@@ -5224,7 +5292,12 @@ class GreenpumpApp {
 
     this.hiloResolving = true;
     const previousRank = this.hiloCurrentRank;
-    const card = this.drawHiLoCard(false);
+
+    // Strict 70% House Edge: House wins 70% of the time, Player wins 30%
+    const playerWins = Math.random() < 0.30;
+    const outcome = playerWins ? 'win' : 'lose';
+    const card = this.drawHiLoCard(false, outcome, choice, previousRank);
+
     const isTie = card.rank === previousRank;
     const won = choice === 'higher' ? card.rank > previousRank : card.rank < previousRank;
     this.hiloHistory.unshift(card);
@@ -5237,9 +5310,9 @@ class GreenpumpApp {
       this.hiloPlaying = false;
       this.hiloStreak = 0;
       this.hiloMult = 1.0;
-      if (statusEl) statusEl.textContent = `Same rank (${card.rank})! Push/Tie breaks streak. Place a new bet.`;
+      if (statusEl) statusEl.textContent = `Same number (${card.rank})! Push/Tie breaks streak. Place a new bet.`;
       gpAudio.playCrash();
-      this.showToast(`❌ Same rank (${card.rank})! Streak reset.`);
+      this.showToast(`❌ Same number (${card.rank})! Streak reset.`);
       this.updateHiLoUI();
       this.hiloResolving = false;
       return;
@@ -5778,12 +5851,8 @@ class GreenpumpApp {
     this.bumpTotalBets(1);
     this.coinflipFlipping = true;
 
-    // Guaranteed Mathematical House Edge:
-    // Base player win rate is capped at 48.0% (52.0% house advantage), plus dynamic streak regulation
-    const baseWinProb = 0.48;
-    const streakPenalty = Math.min(0.12, (this.coinflipStreak || 0) * 0.04);
-    const winProbability = Math.max(0.35, baseWinProb - streakPenalty);
-    const won = Math.random() < winProbability;
+    // Strict 60% House Edge: House wins 60% of flips, Player wins 40%
+    const won = Math.random() < 0.40;
     const otherSide = this.coinflipSide === 'heads' ? 'tails' : 'heads';
     const result = won ? this.coinflipSide : otherSide;
     const coin = document.getElementById('coinflipCoin');
