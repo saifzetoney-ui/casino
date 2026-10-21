@@ -2235,5 +2235,703 @@ button, a, select, input {
   }
 }
 
+/* =====================================================================
+   HUMAN-CRAFTED, MODERN SOLANA WALLET & CASHIER MODAL
+   ===================================================================== */
+#walletSecurityDialog.modern-wallet-dialog {
+  margin: auto !important;
+  width: min(480px, calc(100vw - 24px)) !important;
+  max-height: 88vh !important;
+  max-height: 88dvh !important;
+  overflow-y: auto !important;
+  padding: 18px !important;
+  border: 1px solid rgba(59, 130, 246, 0.28) !important;
+  border-radius: 20px !important;
+  background: #090e1c !important;
+  color: #f8fafc !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.95), 0 0 50px rgba(37, 99, 235, 0.2) !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
 
+#walletSecurityDialog::backdrop {
+  background: rgba(3, 7, 18, 0.75) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
 
+.wallet-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 14px !important;
+}
+
+.wallet-header-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.wallet-coin-icon {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  background: #111a33 !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.wallet-coin-icon img {
+  width: 20px !important;
+  height: 20px !important;
+  object-fit: contain !important;
+}
+
+.wallet-header-left h2 {
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  margin: 0 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.01em !important;
+}
+
+.wallet-network-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+  margin-top: 1px !important;
+}
+
+.network-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #10b981 !important;
+  box-shadow: 0 0 8px #10b981 !important;
+}
+
+.wallet-close-btn {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 8px !important;
+  background: #111c38 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #94a3b8 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+
+.wallet-close-btn:hover {
+  background: #1d2c54 !important;
+  color: #ffffff !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+/* Balance Card */
+.wallet-balance-card {
+  background: linear-gradient(135deg, #0d152b 0%, #0a1122 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.24) !important;
+  border-radius: 14px !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+.balance-title {
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+.balance-numbers {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  margin-top: 2px !important;
+}
+
+.balance-amount {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.02em !important;
+}
+
+.balance-usd {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+}
+
+.phantom-btn {
+  background: #151d38 !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  color: #c4b5fd !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.phantom-btn:hover {
+  background: #1f2a4f !important;
+  border-color: #a78bfa !important;
+  color: #ffffff !important;
+}
+
+/* 2-Tab Segmented Switcher */
+.wallet-segmented-tabs {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 4px !important;
+  background: #060a14 !important;
+  padding: 4px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(59, 130, 246, 0.18) !important;
+  margin-bottom: 14px !important;
+}
+
+.wallet-segmented-tabs .wallet-tab-btn {
+  padding: 8px 0 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-align: center !important;
+}
+
+.wallet-segmented-tabs .wallet-tab-btn.is-active {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
+}
+
+.wallet-segmented-tabs .wallet-tab-btn:not(.is-active):hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+/* Deposit Section */
+.wallet-deposit-card {
+  background: #0c1324 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 14px !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+.deposit-qr-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.deposit-qr-code {
+  width: 130px !important;
+  height: 130px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.35) !important;
+  background: #0c1324 !important;
+  padding: 4px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.deposit-address-wrap {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+.deposit-label {
+  display: block !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  margin-bottom: 5px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+}
+
+.deposit-address-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: #060b16 !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 9px !important;
+  padding: 5px 8px !important;
+  gap: 8px !important;
+}
+
+.deposit-addr-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 11.5px !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  user-select: all !important;
+}
+
+.copy-addr-btn {
+  background: #17274f !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  padding: 5px 10px !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.copy-addr-btn:hover {
+  background: #2563eb !important;
+  border-color: #60a5fa !important;
+}
+
+.deposit-instruction {
+  margin: 6px 0 0 0 !important;
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  line-height: 1.4 !important;
+}
+
+/* Fast 1-Click Phantom Box */
+.wallet-phantom-deposit {
+  background: #0c1324 !important;
+  border: 1px solid rgba(139, 92, 246, 0.25) !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 12px !important;
+}
+
+.phantom-dep-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  margin-bottom: 8px !important;
+}
+
+.instant-chip {
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  color: #a78bfa !important;
+  background: rgba(139, 92, 246, 0.15) !important;
+  padding: 2px 6px !important;
+  border-radius: 5px !important;
+}
+
+.quick-chips {
+  display: flex !important;
+  gap: 5px !important;
+  margin-bottom: 8px !important;
+}
+
+.chip-btn {
+  flex: 1 !important;
+  padding: 5px 0 !important;
+  background: #111a33 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #cbd5e1 !important;
+  border-radius: 7px !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: all 0.14s ease !important;
+}
+
+.chip-btn:hover {
+  background: #1a284f !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+}
+
+.phantom-input-row {
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.input-with-icon {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: #060b16 !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 0 8px !important;
+}
+
+.input-with-icon img {
+  width: 15px !important;
+  height: 15px !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+}
+
+.input-with-icon input {
+  width: 100% !important;
+  height: 36px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  outline: none !important;
+}
+
+.btn-deposit-action {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0 14px !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.4) !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-deposit-action:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* Withdraw Section */
+.wallet-withdraw-card {
+  background: #0c1324 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 14px !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+.field-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  text-align: left !important;
+}
+
+.field-group label {
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+}
+
+.label-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.usd-hint {
+  font-size: 10.5px !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+.address-input-wrap {
+  display: flex !important;
+  align-items: center !important;
+  background: #060b16 !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 0 6px !important;
+}
+
+.address-input-wrap input {
+  flex: 1 !important;
+  height: 38px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 11.5px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  outline: none !important;
+}
+
+.paste-btn {
+  background: #17274f !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  color: #93c5fd !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+.amount-input-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.amount-pills {
+  display: flex !important;
+  gap: 4px !important;
+}
+
+.amount-pills button {
+  background: #111a33 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #93c5fd !important;
+  border-radius: 7px !important;
+  padding: 7px 8px !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+.amount-pills button:hover {
+  background: #1a284f !important;
+  color: #ffffff !important;
+}
+
+.fee-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 11px !important;
+  color: #64748b !important;
+  font-weight: 700 !important;
+  padding: 2px 2px !important;
+}
+
+.btn-withdraw-action {
+  width: 100% !important;
+  height: 42px !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4) !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-withdraw-action:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.1) !important;
+}
+
+.withdraw-status {
+  font-size: 11.5px !important;
+  text-align: center !important;
+  min-height: 16px !important;
+}
+
+/* Security & Key Drawer (Clean & Subtle) */
+.wallet-footer-tools {
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  text-align: center !important;
+}
+
+.security-toggle-link {
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 5px 8px !important;
+  border-radius: 7px !important;
+  transition: color 0.15s ease !important;
+}
+
+.security-toggle-link:hover {
+  color: #94a3b8 !important;
+}
+
+.security-drawer {
+  margin-top: 8px !important;
+  background: #060b17 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 10px !important;
+  padding: 10px !important;
+  text-align: left !important;
+}
+
+.sub-label {
+  display: block !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+}
+
+.full-key-row {
+  display: flex !important;
+  gap: 5px !important;
+  margin-bottom: 8px !important;
+}
+
+.full-key-row input {
+  flex: 1 !important;
+  background: #090f1e !important;
+  border: 1px solid rgba(59, 130, 246, 0.18) !important;
+  border-radius: 6px !important;
+  padding: 5px 7px !important;
+  font-size: 10.5px !important;
+  color: #38bdf8 !important;
+  font-family: monospace !important;
+}
+
+.mini-btn {
+  background: #111a33 !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  color: #93c5fd !important;
+  border-radius: 6px !important;
+  padding: 0 8px !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+.key-actions {
+  display: flex !important;
+  gap: 6px !important;
+}
+
+.danger-btn {
+  flex: 1 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+  border-radius: 7px !important;
+  padding: 6px 0 !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+.outline-btn {
+  flex: 1 !important;
+  background: #111a33 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #94a3b8 !important;
+  border-radius: 7px !important;
+  padding: 6px 0 !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+.exported-box,
+.import-box {
+  margin-top: 8px !important;
+  padding: 8px !important;
+  background: #030712 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  border-radius: 7px !important;
+}
+
+.warning-text {
+  font-size: 9.5px !important;
+  color: #f87171 !important;
+  font-weight: 800 !important;
+  margin-bottom: 4px !important;
+}
+
+.exported-box textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: #000000 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 6px !important;
+  color: #4ade80 !important;
+  font-family: monospace !important;
+  font-size: 10.5px !important;
+  padding: 5px !important;
+  resize: none !important;
+}
+
+.import-box input {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: #090f1e !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 6px !important;
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+  color: #f1f5f9 !important;
+  margin-bottom: 6px !important;
+}
+
+.import-box .primary-btn {
+  width: 100% !important;
+  background: #2563eb !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: #fff !important;
+  padding: 6px 0 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: filter 0.15s ease !important;
+}
+
+.import-box .primary-btn:hover {
+  filter: brightness(1.1) !important;
+}
+
+.security-toggle-link .chevron-icon {
+  transition: transform 0.2s ease !important;
+}
+
+.security-toggle-link.is-open .chevron-icon {
+  transform: rotate(180deg) !important;
+}

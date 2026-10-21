@@ -390,14 +390,40 @@ class GreenpumpApp {
 
     // Copy User Public Key
     const copyUserKeyBtn = document.getElementById('copyUserPublicKeyBtn');
-    if (copyUserKeyBtn) {
-      copyUserKeyBtn.addEventListener('click', async () => {
-        const addr = this.activeWalletAddress || this.nonCustodialAddress;
-        const ok = await this.copyText(addr);
-        this.showToast(ok ? 'Your non-custodial address copied!' : 'Failed to copy');
-        gpAudio.playClick();
+    const copyUserKeyBtn2 = document.getElementById('copyUserPublicKeyBtn2');
+    [copyUserKeyBtn, copyUserKeyBtn2].forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', async () => {
+          const addr = this.activeWalletAddress || this.nonCustodialAddress;
+          if (!addr || addr === 'Not initialized') {
+            this.showToast('Address is still initializing...');
+            return;
+          }
+          const ok = await this.copyText(addr);
+          this.showToast(ok ? 'Solana deposit address copied!' : 'Failed to copy');
+          if (ok) {
+            const span = btn.querySelector('span') || btn;
+            const orig = span.textContent;
+            span.textContent = 'Copied!';
+            setTimeout(() => { span.textContent = orig; }, 1800);
+          }
+          if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+        });
+      }
+    });
+
+    // Quick deposit amount chips
+    document.querySelectorAll('.chip-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const amt = btn.getAttribute('data-amt');
+        const inp = document.getElementById('phantomDepositAmountInput');
+        if (inp && amt) {
+          inp.value = amt;
+          if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+        }
       });
-    }
+    });
 
     // Connect Phantom / Solflare Button
     const connectPhantomBtn = document.getElementById('connectPhantomWalletBtn');
@@ -453,6 +479,22 @@ class GreenpumpApp {
 
     if (withdrawInput) {
       withdrawInput.addEventListener('input', () => this.updateWithdrawUsd());
+    }
+
+    const pasteWithdrawBtn = document.getElementById('pasteWithdrawAddrBtn');
+    if (pasteWithdrawBtn && withdrawAddrInput) {
+      pasteWithdrawBtn.addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            withdrawAddrInput.value = text.trim();
+            this.showToast('Address pasted!');
+            if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+          }
+        } catch (e) {
+          this.showToast('Please paste manually.');
+        }
+      });
     }
 
     const minWBtn = document.getElementById('withdrawMinBtn');
@@ -541,6 +583,18 @@ class GreenpumpApp {
       });
     }
 
+    // Toggle Security & Private Key Drawer
+    const toggleSecBtn = document.getElementById('toggleSecurityDrawerBtn');
+    const keysSec = document.getElementById('walletKeysSection');
+    if (toggleSecBtn && keysSec) {
+      toggleSecBtn.addEventListener('click', () => {
+        const isHidden = keysSec.hidden;
+        keysSec.hidden = !isHidden;
+        toggleSecBtn.classList.toggle('is-open', !keysSec.hidden);
+        if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+      });
+    }
+
     // Refresh Ledger Button
     const refreshLedgerBtn = document.getElementById('refreshLedgerBtn');
     if (refreshLedgerBtn) {
@@ -613,13 +667,18 @@ class GreenpumpApp {
     const fullEl = document.getElementById('userNonCustodialFullAddress');
     const badgeEl = document.getElementById('walletConnectionBadge');
     const phantomStatus = document.getElementById('phantomStatusText');
+    const qrEl = document.getElementById('walletDepositQrImg');
     const addr = this.activeWalletAddress || this.nonCustodialAddress || 'Not initialized';
 
     if (shortEl) {
-      shortEl.textContent = addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+      shortEl.textContent = addr.length > 16 ? `${addr.slice(0, 8)}...${addr.slice(-6)}` : addr;
+      shortEl.title = addr;
     }
     if (fullEl) {
       fullEl.value = this.nonCustodialAddress || addr;
+    }
+    if (qrEl && addr && addr !== 'Not initialized') {
+      qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(addr)}&bgcolor=0c1324&color=38bdf8&margin=1`;
     }
     if (badgeEl) {
       if (this.phantomAddress) {
@@ -635,7 +694,7 @@ class GreenpumpApp {
       }
     }
     if (phantomStatus) {
-      phantomStatus.textContent = this.phantomAddress ? `Connected: ${this.phantomAddress.slice(0, 4)}...${this.phantomAddress.slice(-4)}` : 'Or use In-Browser Keypair';
+      phantomStatus.textContent = this.phantomAddress ? `Connected (${this.phantomAddress.slice(0, 4)}...${this.phantomAddress.slice(-4)})` : 'Connect Phantom';
     }
   }
 

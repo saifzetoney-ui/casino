@@ -24,13 +24,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
 
   <!-- Greenpump Stylesheets -->
-  <link rel="stylesheet" href="css/greenpump1.css?v=20261022-mobile-v3"/>
-  <link rel="stylesheet" href="css/greenpump2.css?v=20261022-mobile-v3"/>
-  <link rel="stylesheet" href="css/greenpump-custom.css?v=20261022-mobile-v3"/>
-  <link rel="stylesheet" href="css/greenpump-extra.css?v=20261022-mobile-v3"/>
-  <link rel="stylesheet" href="css/greenpump-redesign.css?v=20261022-mobile-v3"/>
-  <link rel="stylesheet" href="tokens.css?v=20261022-mobile-v3"/>
-  <link rel="stylesheet" href="css/hallmark-blue.css?v=20261022-mobile-v3"/>
+  <link rel="stylesheet" href="css/greenpump1.css?v=20261022-wallet-v4"/>
+  <link rel="stylesheet" href="css/greenpump2.css?v=20261022-wallet-v4"/>
+  <link rel="stylesheet" href="css/greenpump-custom.css?v=20261022-wallet-v4"/>
+  <link rel="stylesheet" href="css/greenpump-extra.css?v=20261022-wallet-v4"/>
+  <link rel="stylesheet" href="css/greenpump-redesign.css?v=20261022-wallet-v4"/>
+  <link rel="stylesheet" href="tokens.css?v=20261022-wallet-v4"/>
+  <link rel="stylesheet" href="css/hallmark-blue.css?v=20261022-wallet-v4"/>
 </head>
 <body>
 
@@ -1762,200 +1762,181 @@
     </div>
   </div>
 
-  <!-- Real-Money Non-Custodial Solana Casino Vault & Private Wallet Modal -->
-  <dialog id="walletSecurityDialog" aria-labelledby="wallet-security-title" style="margin:auto;width:min(560px, calc(100vw - 28px));max-height:90vh;overflow-y:auto;padding:22px;border:1px solid rgba(59, 130, 246, 0.35);border-radius:20px;background:#0d1424;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,0.92), 0 0 45px rgba(37,99,235,0.25);">
-    <!-- Modal Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #10b981 0%, #059669 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(16,185,129,0.4)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
+  <!-- Human-Crafted, Modern Solana Wallet & Cashier Modal -->
+  <dialog id="walletSecurityDialog" aria-labelledby="wallet-security-title" class="modern-wallet-dialog">
+    <!-- Header -->
+    <div class="wallet-header">
+      <div class="wallet-header-left">
+        <div class="wallet-coin-icon">
+          <img src="solana-coin.png" alt="SOL" />
         </div>
         <div>
-          <h2 id="wallet-security-title" style="font-size:17.5px;font-weight:900;margin:0;letter-spacing:-0.01em;">Casino Vault &amp; Private Wallet</h2>
-          <span style="font-size:11px;color:#34d399;font-weight:700;">100% Non-Custodial · Real Solana Mainnet</span>
+          <h2 id="wallet-security-title">Cashier</h2>
+          <span class="wallet-network-pill"><span class="network-dot"></span>Solana Mainnet</span>
         </div>
       </div>
-      <button type="button" aria-label="Close" style="padding:6px 10px;background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#94a3b8;font-size:14px;cursor:pointer;line-height:1" onclick="this.closest('dialog').close()">✕</button>
+      <button type="button" class="wallet-close-btn" aria-label="Close" onclick="this.closest('dialog').close()">✕</button>
     </div>
 
-    <!-- User Private Wallet Banner -->
-    <div style="background:linear-gradient(135deg, #070e1c 0%, #0a1730 100%);border:1px solid rgba(59, 130, 246, 0.25);border-radius:14px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="font-size:11px;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;">Your Playable Balance</span>
-          <span id="walletConnectionBadge" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.18);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">Non-Custodial</span>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:8px;">
-          <span id="walletDialogBalance" style="font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.02em;">0.0000 SOL</span>
-          <span id="walletDialogBalanceUsd" style="font-size:12.5px;color:#38bdf8;font-weight:800;">≈ $0.00 USD</span>
-        </div>
-        <div style="margin-top:6px;font-size:11px;color:#64748b;font-family:monospace;display:flex;align-items:center;gap:6px;">
-          <span>Wallet:</span>
-          <span id="userPrivateWalletShort" style="color:#94a3b8;font-weight:700;">Connecting...</span>
+    <!-- Balance Card -->
+    <div class="wallet-balance-card">
+      <div class="balance-meta">
+        <span class="balance-title">Account Balance</span>
+        <div class="balance-numbers">
+          <span id="walletDialogBalance" class="balance-amount">0.0000 SOL</span>
+          <span id="walletDialogBalanceUsd" class="balance-usd">≈ $0.00</span>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-        <button id="connectPhantomWalletBtn" type="button" style="background:linear-gradient(135deg, #ab9ff2 0%, #7d67ee 100%);border:none;border-radius:10px;padding:8px 14px;color:#ffffff;font-size:12px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 0 14px rgba(125,103,238,0.4);">
-          <span>Connect Phantom</span>
+      <div class="wallet-connect-col">
+        <button id="connectPhantomWalletBtn" type="button" class="phantom-btn">
+          <svg width="16" height="16" viewBox="0 0 128 128" fill="none"><circle cx="64" cy="64" r="64" fill="#ab9ff2"/><path d="M107.5 64c0 24-19.5 43.5-43.5 43.5S20.5 88 20.5 64 40 20.5 64 20.5s43.5 19.5 43.5 43.5z" fill="#7d67ee"/><path d="M51 53a6 6 0 1 1-12 0 6 6 0 0 1 12 0zm38 0a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" fill="#ffffff"/></svg>
+          <span id="phantomStatusText">Connect Phantom</span>
         </button>
-        <span id="phantomStatusText" style="font-size:10px;color:#94a3b8;">Or use In-Browser Keypair</span>
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="wallet-modal-tabs" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;background:#090f1e;padding:4px;border-radius:12px;border:1px solid rgba(59,130,246,0.18);margin-bottom:16px;">
-      <button id="walletTabDepositBtn" class="wallet-tab-btn is-active" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:#ffffff;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-        <span>📥 DEPOSIT</span>
+    <!-- 2-Tab Segmented Switcher -->
+    <div class="wallet-segmented-tabs">
+      <button id="walletTabDepositBtn" class="wallet-tab-btn is-active" type="button">
+        Deposit
       </button>
-      <button id="walletTabWithdrawBtn" class="wallet-tab-btn" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:transparent;color:#94a3b8;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-        <span>📤 WITHDRAW</span>
-      </button>
-      <button id="walletTabKeysBtn" class="wallet-tab-btn" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:transparent;color:#94a3b8;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-        <span>🔑 KEYS</span>
-      </button>
-      <button id="walletTabLedgerBtn" class="wallet-tab-btn" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:transparent;color:#94a3b8;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-        <span>📜 LEDGER</span>
+      <button id="walletTabWithdrawBtn" class="wallet-tab-btn" type="button">
+        Withdraw
       </button>
     </div>
 
-    <!-- TAB 1: DEPOSIT REAL SOL TO CASINO MAIN VAULT -->
+    <!-- TAB 1: DEPOSIT -->
     <div id="walletDepositSection" class="wallet-tab-panel">
-      <!-- Fast Phantom / Solflare Deposit Option -->
-      <div id="phantomDepositCard" style="background:#090f1d;border:1px solid rgba(125,103,238,0.3);border-radius:14px;padding:14px;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12.5px;font-weight:900;color:#ffffff;display:flex;align-items:center;gap:6px;">
-            Fast Deposit via Web3 Wallet (Phantom)
-          </span>
-          <span style="font-size:10px;color:#a78bfa;background:rgba(125,103,238,0.15);padding:2px 6px;border-radius:4px;font-weight:800;">1-CLICK SIGN</span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input id="phantomDepositAmountInput" type="number" step="0.05" min="0.01" placeholder="Amount (e.g. 0.25 SOL)" style="background:#0d1527;border:1px solid rgba(125,103,238,0.3);border-radius:8px;padding:8px 12px;color:#ffffff;font-size:13px;flex:1;outline:none;font-weight:700;" />
-          <button id="phantomDepositSubmitBtn" type="button" style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);border:none;border-radius:8px;padding:8px 14px;color:#ffffff;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 0 12px rgba(109,40,217,0.4);">
-            Sign &amp; Deposit
-          </button>
-        </div>
-      </div>
-
-      <!-- Automatic On-Chain Deposit Detection -->
-      <div style="background:#090f1d;border:1px solid rgba(16,185,129,0.25);border-radius:14px;padding:16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;text-align:left;">
-        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#10b981;box-shadow:0 0 12px #10b981;margin-top:3px;flex-shrink:0;animation:pulse 2s infinite;"></span>
-        <div>
-          <div style="font-size:13px;font-weight:900;color:#34d399;margin-bottom:4px;">100% Automatic On-Chain Deposit Detection</div>
-          <div style="font-size:11.5px;color:#94a3b8;line-height:1.5;">
-            Use the <strong>1-Click Fast Deposit</strong> above with Phantom, or deposit from any Solana wallet. The automated blockchain scanner continuously verifies incoming transfers on-chain and credits your balance automatically with instant confirmation.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: WITHDRAW REAL SOL FROM CASINO VAULT -->
-    <div id="walletWithdrawSection" class="wallet-tab-panel" hidden>
-      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:12px;">
-        <!-- Destination Address -->
-        <div>
-          <label for="withdrawAddressInput" style="font-size:11.5px;font-weight:800;color:#94a3b8;display:block;margin-bottom:6px;">DESTINATION SOLANA ADDRESS</label>
-          <input id="withdrawAddressInput" type="text" placeholder="Enter Phantom, Solflare or any Solana address..." style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:10px 14px;color:#ffffff;font-size:12px;font-family:monospace;outline:none;" />
-        </div>
-
-        <!-- Withdraw Amount -->
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <label for="withdrawAmountInput" style="font-size:11.5px;font-weight:800;color:#94a3b8;">AMOUNT (SOL)</label>
-            <span id="withdrawUsdEstimate" style="font-size:11px;color:#38bdf8;font-weight:700;">≈ $0.00 USD</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:6px 12px;">
-            <input id="withdrawAmountInput" type="number" step="0.01" min="0.01" placeholder="0.00" style="background:transparent;border:none;color:#ffffff;font-size:15px;font-weight:900;outline:none;flex:1;font-family:'Plus Jakarta Sans', sans-serif;" />
-            <button id="withdrawMinBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 8px;color:#93c5fd;font-size:10px;font-weight:800;cursor:pointer;">MIN</button>
-            <button id="withdrawHalfBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 8px;color:#93c5fd;font-size:10px;font-weight:800;cursor:pointer;">50%</button>
-            <button id="withdrawMaxBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 8px;color:#93c5fd;font-size:10px;font-weight:800;cursor:pointer;">MAX</button>
-          </div>
-        </div>
-
-        <!-- Breakdown -->
-        <div style="background:#0b1122;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;font-size:11.5px;display:flex;flex-direction:column;gap:6px;">
-          <div style="display:flex;justify-content:space-between;color:#94a3b8;">
-            <span>Source:</span>
-            <span style="color:#ffffff;font-weight:800;">Casino Main Vault (Non-Custodial)</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;color:#94a3b8;">
-            <span>Network Fee:</span>
-            <span style="color:#ffffff;font-weight:800;">0.000005 SOL (~$0.0005)</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;color:#94a3b8;">
-            <span>Speed:</span>
-            <span style="color:#4ade80;font-weight:800;">Instant On-Chain Finality</span>
-          </div>
-        </div>
-
-        <button id="executeWithdrawBtn" type="button" style="width:100%;height:46px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:none;border-radius:12px;color:#ffffff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 18px rgba(37,99,235,0.4);transition:all 0.15s ease;">
-          CONFIRM INSTANT WITHDRAWAL
-        </button>
-
-        <div id="withdrawStatusMsg" style="margin-top:6px;font-size:12px;text-align:center;"></div>
-      </div>
-    </div>
-
-    <!-- TAB 3: NON-CUSTODIAL KEYS & SECURITY -->
-    <div id="walletKeysSection" class="wallet-tab-panel" hidden>
-      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:16px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:18px;">🛡️</span>
-          <div>
-            <h3 style="font-size:14px;font-weight:900;margin:0;color:#ffffff;">100% Non-Custodial Security</h3>
-            <span style="font-size:11px;color:#94a3b8;">You hold the keys. Nobody else can access your wallet.</span>
-          </div>
+      <!-- Direct Transfer Card: QR Code & Deposit Address -->
+      <div class="wallet-deposit-card">
+        <div class="deposit-qr-wrap">
+          <img id="walletDepositQrImg" class="deposit-qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=Solana&bgcolor=0c1324&color=38bdf8&margin=1" alt="Solana Deposit QR Code" />
         </div>
         
-        <p style="font-size:12px;color:#94a3b8;line-height:1.5;margin:0 0 14px 0;">
-          Your private wallet keypair is generated directly inside your browser and stored securely in local storage or your connected Phantom extension. LuckyWin never stores your private keys on our servers.
-        </p>
-
-        <div style="margin-bottom:12px;">
-          <div style="font-size:11px;font-weight:800;color:#94a3b8;margin-bottom:4px;">YOUR NON-CUSTODIAL PUBLIC ADDRESS</div>
-          <div style="display:flex;gap:6px;background:#0d1527;border:1px solid rgba(59,130,246,0.22);border-radius:8px;padding:8px 10px;">
-            <input id="userNonCustodialFullAddress" readonly type="text" style="background:transparent;border:none;color:#38bdf8;font-size:11px;font-family:monospace;flex:1;outline:none;" />
-            <button id="copyUserPublicKeyBtn" type="button" style="background:#132244;border:1px solid #3b82f6;color:#93c5fd;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:800;cursor:pointer;">COPY</button>
+        <div class="deposit-address-wrap">
+          <label class="deposit-label">Your Solana Deposit Address</label>
+          <div class="deposit-address-bar">
+            <span id="userPrivateWalletShort" class="deposit-addr-text">Loading address...</span>
+            <button id="copyUserPublicKeyBtn" type="button" class="copy-addr-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
           </div>
+          <p class="deposit-instruction">Send any amount of SOL. Your balance is credited automatically after 1 network confirmation.</p>
         </div>
+      </div>
 
-        <!-- Export Private Key Button -->
-        <button id="exportPrivateKeyBtn" type="button" style="width:100%;padding:10px;background:rgba(239, 68, 68, 0.15);border:1px solid rgba(239, 68, 68, 0.4);border-radius:10px;color:#fca5a5;font-size:12.5px;font-weight:900;cursor:pointer;margin-bottom:10px;">
-          ⚠️ Export Private Key (Base58 / JSON)
-        </button>
-
-        <!-- Hidden Export Container -->
-        <div id="exportedKeyContainer" style="display:none;background:#060b17;border:1px solid rgba(239, 68, 68, 0.35);border-radius:10px;padding:12px;margin-bottom:12px;">
-          <div style="font-size:11px;color:#fca5a5;font-weight:800;margin-bottom:6px;">DO NOT SHARE THIS KEY WITH ANYONE:</div>
-          <textarea id="exportedKeyArea" readonly rows="3" style="width:100%;box-sizing:border-box;background:#000000;border:1px solid #334155;border-radius:6px;color:#4ade80;font-family:monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
-          <div style="font-size:10.5px;color:#94a3b8;margin-top:4px;">Can be imported directly into Phantom, Backpack, or Solflare.</div>
+      <!-- Quick 1-Click Phantom Deposit -->
+      <div class="wallet-phantom-deposit">
+        <div class="phantom-dep-header">
+          <span>Fast Deposit with Web3 Wallet</span>
+          <span class="instant-chip">Instant</span>
         </div>
-
-        <!-- Import Existing Keypair -->
-        <button id="toggleImportKeyBtn" type="button" style="width:100%;padding:9px;background:#132244;border:1px solid rgba(59,130,246,0.25);border-radius:10px;color:#93c5fd;font-size:12px;font-weight:800;cursor:pointer;">
-          📥 Import Existing Solana Private Key
-        </button>
-        <div id="importKeyContainer" style="display:none;margin-top:10px;">
-          <input id="importKeyInput" type="password" placeholder="Paste Base58 or JSON secret key array..." style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:8px 12px;color:#ffffff;font-size:11px;font-family:monospace;margin-bottom:6px;outline:none;" />
-          <button id="executeImportKeyBtn" type="button" style="width:100%;padding:8px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:none;border-radius:8px;color:#ffffff;font-weight:800;font-size:12px;cursor:pointer;">
-            Import &amp; Switch Active Keypair
-          </button>
+        <div class="phantom-dep-body">
+          <div class="quick-chips">
+            <button type="button" class="chip-btn" data-amt="0.1">0.1 SOL</button>
+            <button type="button" class="chip-btn" data-amt="0.5">0.5 SOL</button>
+            <button type="button" class="chip-btn" data-amt="1.0">1.0 SOL</button>
+            <button type="button" class="chip-btn" data-amt="2.5">2.5 SOL</button>
+          </div>
+          <div class="phantom-input-row">
+            <div class="input-with-icon">
+              <img src="solana-coin.png" alt="SOL" />
+              <input id="phantomDepositAmountInput" type="number" step="0.05" min="0.01" placeholder="0.25" />
+            </div>
+            <button id="phantomDepositSubmitBtn" type="button" class="btn-deposit-action">
+              Deposit SOL
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- TAB 4: VAULT LEDGER (TRANSPARENT CASINO AUDIT) -->
-    <div id="walletLedgerSection" class="wallet-tab-panel" hidden>
-      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:14px;padding:14px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-size:12.5px;font-weight:900;color:#ffffff;">Live Casino Vault Ledger</span>
-          <button id="refreshLedgerBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:3px 8px;color:#93c5fd;font-size:10.5px;font-weight:800;cursor:pointer;">🔄 Refresh</button>
+    <!-- TAB 2: WITHDRAW -->
+    <div id="walletWithdrawSection" class="wallet-tab-panel" hidden>
+      <div class="wallet-withdraw-card">
+        <div class="field-group">
+          <label for="withdrawAddressInput">Destination Solana Address</label>
+          <div class="address-input-wrap">
+            <input id="withdrawAddressInput" type="text" placeholder="Enter recipient Solana address..." autocomplete="off" spellcheck="false" />
+            <button type="button" id="pasteWithdrawAddrBtn" class="paste-btn">Paste</button>
+          </div>
         </div>
-        <div id="vaultLedgerList" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
-          <div style="font-size:11.5px;color:#94a3b8;text-align:center;padding:20px;">Loading transparent vault records...</div>
+
+        <div class="field-group">
+          <div class="label-row">
+            <label for="withdrawAmountInput">Withdraw Amount</label>
+            <span id="withdrawUsdEstimate" class="usd-hint">≈ $0.00 USD</span>
+          </div>
+          <div class="amount-input-wrap">
+            <div class="input-with-icon">
+              <img src="solana-coin.png" alt="SOL" />
+              <input id="withdrawAmountInput" type="number" step="0.01" min="0.01" placeholder="0.00" />
+            </div>
+            <div class="amount-pills">
+              <button id="withdrawMinBtn" type="button">MIN</button>
+              <button id="withdrawHalfBtn" type="button">50%</button>
+              <button id="withdrawMaxBtn" type="button">MAX</button>
+            </div>
+          </div>
         </div>
+
+        <div class="fee-row">
+          <span>Network Fee</span>
+          <span>0.000005 SOL</span>
+        </div>
+
+        <button id="executeWithdrawBtn" type="button" class="btn-withdraw-action">
+          Confirm Withdrawal
+        </button>
+
+        <div id="withdrawStatusMsg" class="withdraw-status"></div>
+      </div>
+    </div>
+
+    <!-- Collapsible Security & Keypair Section (Clean Drawer at Bottom) -->
+    <div class="wallet-footer-tools">
+      <button type="button" id="toggleSecurityDrawerBtn" class="security-toggle-link">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span>Security &amp; Private Key</span>
+        <svg class="chevron-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div id="walletKeysSection" class="security-drawer" hidden>
+        <div class="key-field">
+          <span class="sub-label">Your Public Key</span>
+          <div class="full-key-row">
+            <input id="userNonCustodialFullAddress" readonly type="text" />
+            <button id="copyUserPublicKeyBtn2" type="button" class="mini-btn">Copy</button>
+          </div>
+        </div>
+        <div class="key-actions">
+          <button id="exportPrivateKeyBtn" type="button" class="danger-btn">
+            Export Private Key
+          </button>
+          <button id="toggleImportKeyBtn" type="button" class="outline-btn">
+            Import Key
+          </button>
+        </div>
+        <div id="exportedKeyContainer" style="display:none;" class="exported-box">
+          <div class="warning-text">NEVER SHARE YOUR PRIVATE KEY</div>
+          <textarea id="exportedKeyArea" readonly rows="2"></textarea>
+        </div>
+        <div id="importKeyContainer" style="display:none;" class="import-box">
+          <input id="importKeyInput" type="password" placeholder="Paste secret key..." />
+          <button id="executeImportKeyBtn" type="button" class="primary-btn">Import &amp; Switch</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden elements for complete JS backwards compatibility -->
+    <div style="display:none;" aria-hidden="true">
+      <span id="walletConnectionBadge"></span>
+      <button id="walletTabKeysBtn" type="button"></button>
+      <button id="walletTabLedgerBtn" type="button"></button>
+      <div id="walletLedgerSection">
+        <button id="refreshLedgerBtn" type="button"></button>
+        <div id="vaultLedgerList"></div>
       </div>
     </div>
   </dialog>
@@ -2263,6 +2244,6 @@
 
   <!-- Interactive Script Engine -->
   <script src="js/solana-web3.min.js"></script>
-  <script src="js/greenpump-engine.js?v=20261022-mobile-v3"></script>
+  <script src="js/greenpump-engine.js?v=20261022-wallet-v4"></script>
 </body>
 </html>
