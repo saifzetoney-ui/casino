@@ -69,8 +69,11 @@
       </svg>
     </button>
 
+    <!-- Chat Backdrop overlay for mobile & tablet -->
+    <div id="chatBackdrop" class="gp-chat-backdrop" aria-hidden="true"></div>
+
     <!-- Fixed Left Public Chat Sidebar -->
-    <aside id="gpChatSidebar" aria-label="Public chat" style="width:285px;position:fixed;left:16px;top:80px;bottom:16px;background:#0b1325;border:1px solid rgba(59, 130, 246, 0.18);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 40px rgba(4, 8, 18, 0.7);font-family:'Plus Jakarta Sans', sans-serif;z-index:45;transform:translateX(0);opacity:1;pointer-events:auto;transition:transform 0.48s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.42s ease;will-change:transform, opacity" class="global-public-chat-sidebar">
+    <aside id="gpChatSidebar" aria-label="Public chat" class="global-public-chat-sidebar">
       
       <!-- Airdrop Header Box -->
       <div style="padding:10px 8px 8px 8px;background:#0e172a;border-bottom:1px solid rgba(59, 130, 246, 0.14);box-shadow:0 4px 18px rgba(0, 0, 0, 0.4);position:relative;flex-shrink:0">
@@ -1433,6 +1436,12 @@
             <img src="coinflip-coin-v2.png" alt="" />
             <span>COIN</span>
           </a>
+          <button type="button" class="mobile-tab mobile-tab-chat" id="mobileChatToggleBtn" aria-label="Toggle Public Chat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#38bdf8">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>CHAT</span>
+          </button>
         </div>
       </nav>
 

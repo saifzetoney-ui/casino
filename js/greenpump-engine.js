@@ -6642,8 +6642,19 @@ class GreenpumpApp {
     const emojiPicker = document.getElementById('gpEmojiPicker');
     const statusEl = document.getElementById('gpChatLiveStatus');
 
+    const backdrop = document.getElementById('chatBackdrop');
+    const mobileChatToggle = document.getElementById('mobileChatToggleBtn');
+
     if (minBtn) minBtn.addEventListener('click', () => this.setChatCollapsed(true));
     if (openBtn) openBtn.addEventListener('click', () => this.setChatCollapsed(false));
+    if (backdrop) backdrop.addEventListener('click', () => this.setChatCollapsed(true));
+    if (mobileChatToggle) {
+      mobileChatToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isOpen = document.body.classList.contains('mobile-chat-open');
+        this.setChatCollapsed(isOpen);
+      });
+    }
 
     if (input) {
       input.readOnly = false;
@@ -6861,11 +6872,27 @@ class GreenpumpApp {
   setChatCollapsed(collapsed, persist = true) {
     const sidebar = document.getElementById('gpChatSidebar');
     const openBtn = document.getElementById('chatOpenBtn');
+    const backdrop = document.getElementById('chatBackdrop');
+    const mobileChatBtn = document.getElementById('mobileChatToggleBtn');
     if (!sidebar) return;
-    sidebar.style.transform = collapsed ? 'translateX(-315px)' : 'translateX(0)';
+
+    const isMobile = window.innerWidth <= 1024;
+    const hideOffset = isMobile ? '-115%' : '-315px';
+
+    sidebar.style.transform = collapsed ? `translateX(${hideOffset})` : 'translateX(0)';
     sidebar.style.opacity = collapsed ? '0' : '1';
     sidebar.style.pointerEvents = collapsed ? 'none' : 'auto';
+
     document.body.classList.toggle('chat-collapsed', collapsed);
+    document.body.classList.toggle('mobile-chat-open', !collapsed && isMobile);
+
+    if (backdrop) {
+      backdrop.classList.toggle('is-open', !collapsed && isMobile);
+    }
+    if (mobileChatBtn) {
+      mobileChatBtn.classList.toggle('active', !collapsed);
+    }
+
     if (openBtn) {
       openBtn.style.transform = collapsed ? 'translateX(0) scale(1)' : 'translateX(-28px) scale(0.92)';
       openBtn.style.opacity = collapsed ? '1' : '0';
@@ -6874,7 +6901,7 @@ class GreenpumpApp {
     const picker = document.getElementById('gpEmojiPicker');
     if (picker) picker.hidden = true;
     if (persist) localStorage.setItem('gp_chat_collapsed', collapsed ? 'true' : 'false');
-    gpAudio.playClick();
+    if (window.gpAudio && gpAudio.playClick) gpAudio.playClick();
   }
 
   addChatMessage(feed, username, vip, text, isSelf = false) {

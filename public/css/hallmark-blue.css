@@ -1556,4 +1556,469 @@ a.gp-footer-link:hover {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
 }
 
+/* =====================================================================
+   GLOBAL PUBLIC CHAT SIDEBAR BASE
+   ===================================================================== */
+.global-public-chat-sidebar {
+  width: 285px !important;
+  position: fixed !important;
+  left: 16px !important;
+  top: 76px !important;
+  bottom: 16px !important;
+  background: #0b1325 !important;
+  border: 1px solid rgba(59, 130, 246, 0.18) !important;
+  border-radius: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-shadow: 0 16px 40px rgba(4, 8, 18, 0.7) !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  z-index: 45 !important;
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s ease !important;
+  will-change: transform, opacity;
+}
+
+/* =====================================================================
+   MOBILE & TABLET / IPAD COMPREHENSIVE RESPONSIVE SUITE
+   ===================================================================== */
+
+/* Touch & Smooth Scrolling Defaults */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  min-width: 320px !important;
+}
+
+button, a, select, input {
+  touch-action: manipulation;
+}
+
+/* Chat Backdrop for Mobile & Tablet Drawers */
+.gp-chat-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(4, 8, 18, 0.72) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 9998 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.gp-chat-backdrop.is-open {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* =====================================================================
+   TABLET & IPAD (769px - 1024px)
+   ===================================================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .site-nav {
+    height: 64px !important;
+    padding: 0 16px !important;
+  }
+
+  .pump-main-shell {
+    padding-top: 76px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    padding-bottom: 30px !important;
+    transition: padding 0.3s ease !important;
+  }
+
+  /* Off-canvas chat drawer on iPad portrait */
+  #gpChatSidebar {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 320px !important;
+    max-width: 80vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    border-radius: 0 20px 20px 0 !important;
+    border-left: none !important;
+    z-index: 10001 !important;
+    box-shadow: 12px 0 45px rgba(0, 0, 0, 0.85) !important;
+    padding-top: max(16px, env(safe-area-inset-top)) !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+  }
+
+  #chatOpenBtn {
+    top: 78px !important;
+    left: 16px !important;
+    z-index: 999 !important;
+  }
+
+  /* Tablet Game Arena layouts: side-by-side or balanced grid */
+  .crash-arena-grid,
+  .chicken-arena-grid {
+    display: grid !important;
+    grid-template-columns: 320px 1fr !important;
+    gap: 16px !important;
+  }
+
+  .pump-chart-stage {
+    min-height: 520px !important;
+    height: calc(100vh - 120px) !important;
+  }
+
+  .pump-floating-hud {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    padding: 12px 18px !important;
+  }
+
+  .pump-bet-box {
+    flex: 1 1 auto !important;
+    min-width: 260px !important;
+    justify-content: center !important;
+  }
+
+  .gp-modal-dialog {
+    max-width: 580px !important;
+    width: 90vw !important;
+  }
+}
+
+/* =====================================================================
+   MOBILE (<= 768px: iPhone, Galaxy, Pixel)
+   ===================================================================== */
+@media (max-width: 768px) {
+  /* Prevent iOS input auto-zoom by ensuring 16px base font size */
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Compact Safe Navigation */
+  .site-nav {
+    height: 56px !important;
+    padding: 0 10px !important;
+    padding-left: max(10px, env(safe-area-inset-left)) !important;
+    padding-right: max(10px, env(safe-area-inset-right)) !important;
+  }
+
+  .site-nav__inner {
+    gap: 6px !important;
+  }
+
+  .nav-zone-left {
+    gap: 6px !important;
+  }
+
+  .nav-brand-logo {
+    height: 30px !important;
+    max-width: 48px !important;
+  }
+
+  .nav-brand-text {
+    font-size: 16px !important;
+  }
+
+  /* Compact Wallet Pill */
+  .nav-zone-center #gpWalletBtn {
+    height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    gap: 5px !important;
+  }
+
+  .nav-zone-center #gpWalletBtn img {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  /* Navigation Right Items */
+  .nav-zone-right {
+    gap: 4px !important;
+  }
+
+  #dailyCaseNavBtn {
+    height: 32px !important;
+    padding: 0 8px !important;
+    gap: 5px !important;
+  }
+
+  #dailyCaseNavBtn span:not(#dailyCaseBadge) {
+    display: none !important;
+  }
+
+  #gpMuteBtn,
+  #notificationsBtn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .nav-profile-container #gpProfileBtn > div {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Main Shell with Bottom Nav clearance */
+  .pump-main-shell {
+    padding-top: 64px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: 84px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Full-Height Slide-Out Mobile Chat Drawer */
+  #gpChatSidebar {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: min(340px, 88vw) !important;
+    max-width: 90vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    border-radius: 0 20px 20px 0 !important;
+    border-left: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    z-index: 10001 !important;
+    box-shadow: 16px 0 50px rgba(0, 0, 0, 0.9) !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    box-sizing: border-box !important;
+  }
+
+  #chatOpenBtn {
+    top: 66px !important;
+    left: 10px !important;
+    z-index: 998 !important;
+    padding: 7px 12px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* Mobile Bottom Navigation Bar */
+  .mobile-bottom-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 60px !important;
+    background: rgba(11, 19, 37, 0.95) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    border-top: 1px solid rgba(59, 130, 246, 0.24) !important;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8) !important;
+    z-index: 9999 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    box-sizing: content-box !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .mobile-tabs-grid {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    height: 100% !important;
+    padding: 0 6px !important;
+    gap: 2px !important;
+  }
+
+  .mobile-tab {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    text-decoration: none !important;
+    color: #94a3b8 !important;
+    font-size: 9.5px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em !important;
+    height: 100% !important;
+    border-radius: 10px !important;
+    transition: all 0.16s ease !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 4px 2px !important;
+  }
+
+  .mobile-tab img,
+  .mobile-tab svg {
+    width: 20px !important;
+    height: 20px !important;
+    object-fit: contain !important;
+    display: block !important;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .mobile-tab:active {
+    transform: scale(0.92) !important;
+  }
+
+  .mobile-tab.active {
+    color: #38bdf8 !important;
+  }
+
+  .mobile-tab.active img,
+  .mobile-tab.active svg {
+    transform: translateY(-2px) scale(1.1) !important;
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8)) !important;
+  }
+
+  /* Pump & Dump Candlestick Stage Responsive */
+  .pump-chart-stage {
+    height: calc(100dvh - 150px) !important;
+    min-height: 480px !important;
+    border-radius: 14px !important;
+  }
+
+  .pump-floating-hud {
+    position: absolute !important;
+    bottom: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+    padding: 8px 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .pump-direction-btns {
+    display: flex !important;
+    width: 100% !important;
+    gap: 6px !important;
+  }
+
+  .pump-direction-btns button {
+    flex: 1 !important;
+    padding: 8px 4px !important;
+    font-size: 12px !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+  }
+
+  .pump-direction-btns button svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .pump-bet-box {
+    width: 100% !important;
+    justify-content: space-between !important;
+    padding: 5px 8px !important;
+    box-sizing: border-box !important;
+    border-radius: 10px !important;
+  }
+
+  .pump-action-box {
+    width: 100% !important;
+  }
+
+  .pump-action-box button {
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 13.5px !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+  }
+
+  /* Crash Multipliers Bar scrollable on mobile */
+  .crash-multipliers-bar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 6px 10px !important;
+  }
+
+  .crash-multipliers-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Game Arena Stacking for Mobile */
+  .crash-arena-grid,
+  .chicken-arena-grid,
+  .bj-arena-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .crash-controls-col,
+  .chicken-controls-col,
+  .bj-controls-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    order: 2 !important;
+  }
+
+  .crash-stage-col,
+  .chicken-stage-col,
+  .bj-stage-col {
+    width: 100% !important;
+    order: 1 !important;
+  }
+
+  .crash-canvas-stage {
+    height: 280px !important;
+    min-height: 260px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Modals Full Responsive on Mobile */
+  .gp-modal-dialog {
+    width: calc(100% - 24px) !important;
+    max-width: 440px !important;
+    margin: 16px auto !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    border-radius: 18px !important;
+    padding: 18px !important;
+  }
+
+  .gp-profile-dropdown {
+    width: calc(100vw - 24px) !important;
+    right: -6px !important;
+    max-width: 330px !important;
+  }
+
+  .gp-notif-panel {
+    width: calc(100vw - 24px) !important;
+    right: -40px !important;
+    max-width: 320px !important;
+  }
+}
+
+/* Small screen phones (iPhone SE, Galaxy A, <= 380px) */
+@media (max-width: 380px) {
+  .nav-brand-text {
+    display: none !important;
+  }
+  .site-nav {
+    padding: 0 8px !important;
+  }
+  .mobile-tab span {
+    font-size: 8.5px !important;
+  }
+}
+
+
 
