@@ -1,0 +1,100 @@
+/* Hallmark · pre-emit critique: P5 H4 E4 S5 R4 V5
+ * genre: atmospheric · macrostructure: Workbench · theme: custom
+ * vibe: "midnight arcade, cobalt signal, clean competitive play" · anchor hue: blue
+ * display: Sora · body: Plus Jakarta Sans · axes: dark / geometric-sans / cool
+ * design-system: design.md · designed-as-app · nav: N5 · footer: Ft5
+ * contrast: pass (40–41) · honest: pass (46) · chrome: pass (47) · tokens: pass (48)
+ * responsive: pass (49) · mobile: pass (34, 49, 50–57)
+ */
+
+html, body { overflow-x: clip; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); }
+:root { --gp-green: var(--color-accent-strong); --gp-green-strong: var(--color-accent); --gp-green-deep: var(--color-accent-soft); --gp-line-green: var(--color-accent-glow); --accent: var(--color-accent); --accent-strong: var(--color-accent-strong); --greenpump-emerald: var(--color-accent); --greenpump-emerald-light: var(--color-accent-strong); --greenpump-emerald-glow: var(--color-accent-glow); --greenpump-dark-bg: var(--color-paper); --greenpump-panel-bg: var(--color-paper-2); --greenpump-card-bg: var(--color-paper-3); --greenpump-input-bg: var(--color-paper-4); }
+body { background-image: radial-gradient(circle at 76% 0%, var(--color-accent-wash), transparent 28rem), linear-gradient(180deg, var(--color-paper), var(--color-paper-4)); }
+button, input, select, textarea { font-family: inherit; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--color-focus) !important; outline-offset: 2px; }
+button:disabled, input:disabled, select:disabled { opacity: .55; cursor: not-allowed !important; }
+
+.horizon-grid { opacity: .52; background-image: linear-gradient(oklch(61% .12 252 / .09) 1px, transparent 1px), linear-gradient(90deg, oklch(61% .12 252 / .09) 1px, transparent 1px); }
+.content-layer > div[style*="min-height:100vh"] { background: transparent !important; color: var(--color-ink) !important; font-family: var(--font-body) !important; }
+
+/* N5: detached command-style navigation. */
+.site-nav { position: sticky !important; top: max(var(--space-sm), env(safe-area-inset-top)) !important; z-index: 80 !important; width: min(1180px, calc(100% - 2rem)) !important; margin: var(--space-sm) auto 0 !important; padding: .5rem .75rem !important; background: oklch(20% .035 258 / .88) !important; border: var(--rule-hair) solid var(--color-rule) !important; border-radius: var(--radius-pill) !important; box-shadow: var(--shadow-card) !important; backdrop-filter: blur(18px) saturate(130%); }
+.site-nav__inner { min-width: 0; gap: var(--space-xs) !important; }
+.site-nav button, .site-nav a { border-color: var(--color-rule) !important; background: oklch(25% .04 258 / .82) !important; color: var(--color-ink-2) !important; border-radius: var(--radius-pill) !important; white-space: nowrap; transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out) !important; }
+.site-nav button:hover, .site-nav a:hover { background: var(--color-accent-soft) !important; border-color: var(--color-accent) !important; color: var(--color-ink) !important; transform: translateY(-1px); }
+#gpWalletBtn, #dailyCaseNavBtn { background: var(--color-accent) !important; border-color: var(--color-accent-strong) !important; color: var(--color-accent-ink) !important; box-shadow: 0 .5rem 1.5rem var(--color-accent-shadow) !important; }
+
+/* Live chat becomes a quiet blue control rail instead of a competing green panel. */
+#gpChatSidebar { background: oklch(18% .03 258 / .94) !important; border-color: var(--color-rule) !important; box-shadow: var(--shadow-card) !important; font-family: var(--font-body) !important; }
+#gpChatSidebar [style*="background:#18181c"], #gpChatSidebar [style*="background:#121215"], #gpChatSidebar [style*="background:#101014"], #gpChatSidebar [style*="background:#161722"] { background: var(--color-paper-2) !important; }
+#gpChatSidebar [style*="color:#4ade80"], #gpChatSidebar [style*="color:#22c55e"], .chat-verified { color: var(--color-accent-strong) !important; }
+#gpChatSidebar [style*="border"] { border-color: var(--color-rule) !important; }
+#gpChatSendBtn { background: var(--color-accent) !important; color: var(--color-accent-ink) !important; }
+#chatOpenBtn { background: var(--color-paper-2) !important; border-color: var(--color-rule) !important; color: var(--color-accent-strong) !important; }
+
+/* Shared game workbench surfaces. */
+.pump-main-shell { padding-top: var(--space-md) !important; }
+.pump-chart-stage, .crash-arena-wrapper, .crash-canvas-stage, .game-card, .game-panel, .game-area, .chicken-road-card, .mines-game-card, .blackjack-table, .hilo-card, .flappy-card, dialog, .leaderboard-modal, .daily-case-modal { background: var(--color-paper-2) !important; border-color: var(--color-rule) !important; box-shadow: var(--shadow-card) !important; color: var(--color-ink) !important; }
+.pump-chart-stage, .crash-arena-wrapper, .chicken-road-card, .mines-game-card, .blackjack-table, .hilo-card, .flappy-card { border-radius: var(--radius-card) !important; }
+.crash-arena-grid, .crash-multipliers-bar, .crash-card, .crash-player-row, .crash-canvas-stage { background: var(--color-paper-2) !important; border-color: var(--color-rule) !important; }
+.crash-input-box, .pump-bet-box, .case-rewards-container, .case-reward-item, .leaderboard-row { background: var(--color-paper-3) !important; border-color: var(--color-rule) !important; }
+
+/* The existing application has extensive inline green styling. Map that legacy signal layer to blue. */
+[style*="background:#10b981"], [style*="background:#16c65b"], [style*="background:#16c55b"], [style*="background:#16a34a"], [style*="background:#22c55e"], [style*="background:#00ffa3"], [style*="background:linear-gradient(135deg, rgba(0, 255, 163"], [style*="background:linear-gradient(90deg, #16a34a"] { background: var(--color-accent) !important; color: var(--color-accent-ink) !important; }
+[style*="color:#4ade80"], [style*="color:#22c55e"], [style*="color:#00ffa3"], [style*="color:#16c65b"], [style*="color:#16c55b"], [style*="color:#86efac"] { color: var(--color-accent-strong) !important; }
+[style*="border:1px solid rgba(74, 222, 128"], [style*="border:1px solid rgba(34, 197, 94"], [style*="border:1px solid rgba(0, 255, 163"] { border-color: var(--color-accent) !important; }
+[style*="background:#101014"], [style*="background:#121215"], [style*="background:#141418"], [style*="background:#16161c"], [style*="background:#0f1311"], [style*="background:#0b1010"], [style*="background:#090a0d"], [style*="background:#090a0e"] { background: var(--color-paper-2) !important; }
+[style*="color:#94a3b8"], [style*="color:#64748b"], [style*="color:#5b6b82"], [style*="color:#cbd5e1"] { color: var(--color-muted) !important; }
+
+.nav-game-link, .NavbarGameMenu-module__tgv1Qa__menu { background: var(--color-paper-2) !important; border-color: var(--color-rule) !important; }
+.nav-game-link:hover, .nav-game-link.active { background: var(--color-accent-soft) !important; border-color: var(--color-accent) !important; }
+.gp-cashout-btn, .crash-action-btn, .pump-direction-btns button.is-active, #pumpTradeActionBtn.is-pump, #spinDailyCaseBtn, #claimSolFaucetBtn { background: var(--color-accent) !important; color: var(--color-accent-ink) !important; border-color: var(--color-accent-strong) !important; box-shadow: 0 .5rem 1.5rem oklch(50% .14 255 / .28) !important; }
+.crash-action-btn:hover, .gp-cashout-btn:hover, #spinDailyCaseBtn:hover, #claimSolFaucetBtn:hover { background: var(--color-accent-strong) !important; transform: translateY(-1px); }
+.crash-pill-btn:hover, .crash-pill-btn.active, .crash-input-box:focus-within { border-color: var(--color-accent) !important; background: var(--color-accent-soft) !important; }
+.crash-badge.green, .crash-status-text.cashed, .crash-mult-right, .lb-payout { color: var(--color-accent-strong) !important; }
+.crash-badge.green { background: var(--color-accent-soft) !important; border-color: var(--color-accent) !important; }
+
+/* Utility dialogs share the blue action language. */
+#walletCopyAddrBtn { background: var(--color-paper-3) !important; border-color: var(--color-accent) !important; color: var(--color-accent-strong) !important; }
+#walletAddressDisplay { color: var(--color-accent-strong) !important; }
+#resetWalletBtn { background: var(--color-danger-surface) !important; border-color: var(--color-danger) !important; color: var(--color-danger-ink) !important; }
+
+/* Chicken Road: retain the highway interaction model, replace every game-control surface and legacy green signal. */
+.chicken-arena-wrapper, .chicken-card, .chicken-highway-viewport, .chicken-progress-bar-wrap { background: var(--color-paper-2) !important; border-color: var(--color-rule) !important; box-shadow: var(--shadow-card) !important; }
+.chicken-card, .chicken-diff-item, .chicken-input-box, .chicken-view-pill-btn { background: var(--color-paper-3) !important; border-color: var(--color-rule) !important; color: var(--color-ink) !important; }
+.chicken-label, .chicken-diff-label, .chicken-drag-hint, .chicken-usd-label, .chicken-diff-lanes, .chicken-sol-suffix { color: var(--color-muted) !important; }
+.chicken-lanes-count, .chicken-diff-item.active .chicken-diff-name, .chicken-diff-item.active .chicken-diff-lanes, .chicken-usd-label { color: var(--color-accent-strong) !important; }
+.chicken-input-box:focus-within, .chicken-diff-item.active, .chicken-diff-item:hover, .chicken-view-pill-btn:hover { background: var(--color-accent-soft) !important; border-color: var(--color-accent) !important; }
+.chicken-quick-btn, .chicken-view-pill-btn { background: var(--color-paper-3) !important; border: var(--rule-hair) solid var(--color-rule) !important; color: var(--color-ink-2) !important; }
+.chicken-quick-btn:hover { background: var(--color-accent-soft) !important; color: var(--color-ink) !important; }
+.chicken-main-btn, .chicken-cashout-btn { background: var(--color-accent) !important; color: var(--color-accent-ink) !important; border-color: var(--color-accent-strong) !important; box-shadow: 0 .5rem 1.5rem var(--color-accent-shadow) !important; }
+.chicken-main-btn:hover, .chicken-cashout-btn:hover { background: var(--color-accent-strong) !important; }
+.chicken-hop-btn { background: var(--color-paper-3) !important; border-color: var(--color-accent) !important; color: var(--color-accent-strong) !important; }
+.chicken-diff-dot, .chicken-diff-item.active .chicken-diff-dot { background: var(--color-accent) !important; box-shadow: 0 0 .75rem var(--color-accent-glow) !important; }
+.chicken-highway-viewport::-webkit-scrollbar-thumb { background: var(--color-accent) !important; }
+.chicken-scroll-arrow { background: var(--color-paper-3) !important; border-color: var(--color-rule) !important; color: var(--color-accent-strong) !important; }
+.chicken-scroll-arrow:hover { background: var(--color-accent-soft) !important; border-color: var(--color-accent) !important; }
+.chicken-grass-strip { background: var(--color-accent-soft) !important; }
+.chicken-paved-sidewalk, .chicken-finish-sidewalk { background: var(--color-paper-3) !important; }
+.chicken-mult-tag, .chicken-finish-label { background: var(--color-accent) !important; color: var(--color-accent-ink) !important; border-color: var(--color-accent-strong) !important; }
+
+.gp-statement-footer { max-width: 1180px; margin: var(--space-2xl) auto 0; padding: var(--space-xl) var(--space-md) calc(var(--space-xl) + env(safe-area-inset-bottom)); color: var(--color-ink); }
+.gp-statement-footer p { max-width: 20ch; margin: 0 0 var(--space-lg); font: 700 clamp(2rem, 5vw, 4rem) / 1.02 var(--font-display); letter-spacing: -.055em; overflow-wrap: anywhere; }
+.gp-statement-footer div { display: flex; justify-content: space-between; gap: var(--space-sm); padding-top: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); color: var(--color-muted); font-size: var(--text-xs); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+
+@media (max-width: 1024px) { #gpChatSidebar { width: 264px !important; } .pump-main-shell { padding-left: 24px !important; } }
+@media (max-width: 768px) {
+  .site-nav { width: calc(100% - 1rem) !important; margin-top: .5rem !important; padding: .4rem .5rem !important; }
+  .site-nav .nav-hide-mobile, .site-nav .nav-zone-center { display: none !important; }
+  .nav-banner-logo { width: 146px !important; height: 34px !important; }
+  #gpChatSidebar { display: none !important; }
+  #chatOpenBtn { top: 70px !important; left: 10px !important; }
+  .pump-main-shell { padding: var(--space-sm) var(--space-xs) calc(5rem + env(safe-area-inset-bottom)) !important; }
+  .crash-arena-grid { grid-template-columns: minmax(0, 1fr) !important; padding: var(--space-xs) !important; gap: var(--space-xs) !important; }
+  .crash-stage-col, .crash-canvas-stage { min-height: 380px !important; }
+  .gp-statement-footer { margin-top: var(--space-xl); padding-inline: var(--space-sm); }
+  .gp-statement-footer div { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 414px) { .site-nav__inner { gap: .25rem !important; } #gpWalletBtn { padding-inline: .65rem !important; } .mobile-bottom-bar { background: oklch(18% .03 258 / .95) !important; border-color: var(--color-rule) !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 1ms !important; } }
