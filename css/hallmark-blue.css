@@ -1710,7 +1710,7 @@ button, a, select, input {
 
   /* Compact Safe Navigation */
   .site-nav {
-    height: 56px !important;
+    height: 52px !important;
     padding: 0 8px !important;
     padding-left: max(8px, env(safe-area-inset-left)) !important;
     padding-right: max(8px, env(safe-area-inset-right)) !important;
@@ -1723,102 +1723,146 @@ button, a, select, input {
     justify-content: space-between !important;
     gap: 4px !important;
     width: 100% !important;
+    flex-wrap: nowrap !important;
   }
 
   .nav-zone-left {
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 4px !important;
     flex-shrink: 0 !important;
   }
 
   .nav-brand-logo {
-    height: 28px !important;
+    height: 24px !important;
     width: auto !important;
-    max-width: 44px !important;
+    max-width: 32px !important;
   }
 
   .nav-brand-text {
-    font-size: 15px !important;
+    font-size: 13.5px !important;
     font-weight: 900 !important;
     letter-spacing: -0.02em !important;
   }
 
-  /* CRITICAL: Explicitly hide live SOL price pill on mobile to prevent navbar overflow */
+  /* CRITICAL: Explicitly hide live SOL price pill and desktop buttons on mobile */
   #liveSolPricePill,
   .nav-sol-price-pill,
   .nav-hide-mobile {
     display: none !important;
   }
 
-  /* Compact Wallet Pill */
+  /* Ultra-Compact Wallet Pill */
   .nav-zone-center {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 0 !important;
-    padding: 0 4px !important;
+    margin: 0 2px !important;
   }
 
   .nav-zone-center #gpWalletBtn {
-    height: 32px !important;
-    padding: 0 10px !important;
-    font-size: 12px !important;
-    gap: 5px !important;
-    max-width: 130px !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+    max-width: 95px !important;
+    border-radius: 8px !important;
     box-sizing: border-box !important;
   }
 
   .nav-zone-center #gpWalletBtn img {
-    width: 15px !important;
-    height: 15px !important;
+    width: 13px !important;
+    height: 13px !important;
   }
 
   #walletBalanceDisplay {
-    font-size: 12px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    max-width: 65px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
   }
 
-  /* Navigation Right Items */
+  /* Navigation Right Items: Compact Sleek 28px Icon Buttons */
   .nav-zone-right {
     display: flex !important;
     align-items: center !important;
-    gap: 4px !important;
+    gap: 3px !important;
     flex-shrink: 0 !important;
   }
 
+  /* Daily Case: Compact 28px Icon Only (no text/LOCK badge overflow) */
   #dailyCaseNavBtn {
-    height: 32px !important;
-    padding: 0 8px !important;
-    gap: 4px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
   }
 
-  #dailyCaseNavBtn span:not(#dailyCaseBadge) {
+  #dailyCaseNavBtn img {
+    width: 17px !important;
+    height: 17px !important;
+    object-fit: contain !important;
+  }
+
+  #dailyCaseNavBtn span {
     display: none !important;
   }
 
+  /* Sound Mute, Chat, Notifications: Uniform 28px buttons */
   #gpMuteBtn,
   #notificationsBtn,
   #navChatBtn {
-    width: 32px !important;
-    height: 32px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     flex-shrink: 0 !important;
   }
 
+  #gpMuteBtn svg,
+  #notificationsBtn svg,
+  #navChatBtn svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* Profile Avatar: Compact 28px */
   .nav-profile-container #gpProfileBtn > div {
-    width: 32px !important;
-    height: 32px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .nav-profile-container #gpProfileBtn svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  .nav-profile-container .gp-profile-badge {
+    width: 11px !important;
+    height: 11px !important;
+    font-size: 8px !important;
+    line-height: 11px !important;
   }
 
   /* Main Shell with Bottom Nav clearance */
   .pump-main-shell {
-    padding-top: 64px !important;
+    padding-top: 60px !important;
     padding-left: 10px !important;
     padding-right: 10px !important;
-    padding-bottom: 84px !important;
+    padding-bottom: 80px !important;
     box-sizing: border-box !important;
     min-width: 0 !important;
   }
@@ -1857,7 +1901,7 @@ button, a, select, input {
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    height: 58px !important;
+    height: 52px !important;
     background: rgba(10, 16, 32, 0.96) !important;
     backdrop-filter: blur(24px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
@@ -1873,14 +1917,14 @@ button, a, select, input {
   .mobile-tabs-grid {
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    justify-content: space-around !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
     width: 100% !important;
     height: 100% !important;
-    padding: 0 6px !important;
-    gap: 4px !important;
+    padding: 0 4px !important;
+    gap: 2px !important;
   }
 
   .mobile-tabs-grid::-webkit-scrollbar {
@@ -1888,31 +1932,32 @@ button, a, select, input {
   }
 
   .mobile-tab {
-    flex: 0 0 auto !important;
-    min-width: 50px !important;
+    flex: 1 0 auto !important;
+    min-width: 40px !important;
+    max-width: 48px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 2.5px !important;
+    gap: 2px !important;
     text-decoration: none !important;
     color: #94a3b8 !important;
-    font-size: 9.5px !important;
+    font-size: 8.5px !important;
     font-weight: 800 !important;
-    letter-spacing: 0.02em !important;
+    letter-spacing: 0.01em !important;
     height: 100% !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     transition: all 0.16s ease !important;
     background: transparent !important;
     border: none !important;
     cursor: pointer !important;
-    padding: 4px 6px !important;
+    padding: 3px 1px !important;
   }
 
   .mobile-tab img,
   .mobile-tab svg {
-    width: 20px !important;
-    height: 20px !important;
+    width: 18px !important;
+    height: 18px !important;
     object-fit: contain !important;
     display: block !important;
     transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -1935,7 +1980,7 @@ button, a, select, input {
 
   .mobile-tab-chat {
     border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
-    padding-left: 8px !important;
+    padding-left: 4px !important;
   }
 
   /* Pump & Dump Candlestick Stage Responsive */
