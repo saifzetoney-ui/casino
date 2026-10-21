@@ -240,6 +240,12 @@ class GreenpumpApp {
     this.coinflipFlipping = false;
     this.coinflipStreak = 0;
     this.coinflipHistory = [];
+
+    // Authentication State (Email & Google Optional)
+    this.isLoggedIn = localStorage.getItem('gp_user_logged_in') === 'true';
+    this.userEmail = localStorage.getItem('gp_user_email') || '';
+    this.authMode = 'signup';
+
     // User Profile & Real Money State (Matching Image 2)
     this.username = localStorage.getItem('gp_username') || 'beh';
     this.userLevel = parseInt(localStorage.getItem('gp_level') || '1', 10);
@@ -259,6 +265,7 @@ class GreenpumpApp {
     this.initLoader();
     this.initWallet();
     this.initProfileMenu();
+    this.initAuth();
     this.initPublicChat();
     this.initAirdrop();
     this.initGameSwitching();
@@ -1223,6 +1230,243 @@ class GreenpumpApp {
         this.openWalletDialog(true);
         gpAudio.playClick();
       });
+    }
+  }
+
+  /* ============================================================= */
+  /* AUTHENTICATION: LOGIN & SIGN UP (EMAIL & GOOGLE OPTIONAL) */
+  /* ============================================================= */
+  initAuth() {
+    const tabSignup = document.getElementById('authTabSignup');
+    const tabLogin = document.getElementById('authTabLogin');
+    const googleBtn = document.getElementById('authGoogleBtn');
+    const authForm = document.getElementById('authForm');
+    const togglePwdBtn = document.getElementById('authTogglePwdBtn');
+    const guestBtn = document.getElementById('authGuestBtn');
+    const navLoginBtn = document.getElementById('navLoginBtn');
+    const navSignupBtn = document.getElementById('navSignupBtn');
+    const menuItemAuth = document.getElementById('menuItemAuth');
+
+    // First time visitor detection: open auth modal once automatically
+    const visited = localStorage.getItem('gp_visited_before');
+    if (!visited && !this.isLoggedIn) {
+      localStorage.setItem('gp_visited_before', 'true');
+      setTimeout(() => {
+        this.openAuthModal('signup');
+      }, 700);
+    }
+
+    if (tabSignup) tabSignup.addEventListener('click', () => this.setAuthMode('signup'));
+    if (tabLogin) tabLogin.addEventListener('click', () => this.setAuthMode('login'));
+
+    if (googleBtn) {
+      googleBtn.addEventListener('click', () => this.handleGoogleAuth());
+    }
+
+    if (authForm) {
+      authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleEmailAuth();
+      });
+    }
+
+    if (togglePwdBtn) {
+      togglePwdBtn.addEventListener('click', () => {
+        const pwdInput = document.getElementById('authPasswordInput');
+        if (pwdInput) {
+          const isPwd = pwdInput.type === 'password';
+          pwdInput.type = isPwd ? 'text' : 'password';
+          togglePwdBtn.style.color = isPwd ? '#38bdf8' : '#64748b';
+        }
+      });
+    }
+
+    if (guestBtn) {
+      guestBtn.addEventListener('click', () => this.continueAsGuest());
+    }
+
+    if (navLoginBtn) {
+      navLoginBtn.addEventListener('click', () => this.openAuthModal('login'));
+    }
+    if (navSignupBtn) {
+      navSignupBtn.addEventListener('click', () => this.openAuthModal('signup'));
+    }
+
+    if (menuItemAuth) {
+      menuItemAuth.addEventListener('click', () => {
+        const profileDropdown = document.getElementById('gpProfileDropdown');
+        if (profileDropdown) profileDropdown.hidden = true;
+        if (this.isLoggedIn) {
+          this.handleLogout();
+        } else {
+          this.openAuthModal('login');
+        }
+        if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+      });
+    }
+
+    this.updateAuthUI();
+  }
+
+  setAuthMode(mode) {
+    this.authMode = mode;
+    const tabSignup = document.getElementById('authTabSignup');
+    const tabLogin = document.getElementById('authTabLogin');
+    const title = document.getElementById('authModalTitle');
+    const subtitle = document.getElementById('authModalSubtitle');
+    const usernameGroup = document.getElementById('authUsernameGroup');
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const statusMsg = document.getElementById('authStatusMsg');
+
+    if (statusMsg) statusMsg.style.display = 'none';
+
+    if (mode === 'signup') {
+      if (tabSignup) tabSignup.classList.add('is-active');
+      if (tabLogin) tabLogin.classList.remove('is-active');
+      if (title) title.textContent = 'Welcome to LuckyWin';
+      if (subtitle) subtitle.textContent = 'Play Provably Fair Games with Instant Solana Payouts';
+      if (usernameGroup) usernameGroup.style.display = 'block';
+      if (submitBtn) submitBtn.textContent = 'Create Free Account';
+    } else {
+      if (tabSignup) tabSignup.classList.remove('is-active');
+      if (tabLogin) tabLogin.classList.add('is-active');
+      if (title) title.textContent = 'Welcome Back';
+      if (subtitle) subtitle.textContent = 'Sign in to access your saved progress & earnings';
+      if (usernameGroup) usernameGroup.style.display = 'none';
+      if (submitBtn) submitBtn.textContent = 'Sign In';
+    }
+    if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+  }
+
+  openAuthModal(mode = 'signup') {
+    this.setAuthMode(mode);
+    const modal = document.getElementById('authModal');
+    if (modal && typeof modal.showModal === 'function') {
+      modal.showModal();
+      if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+    }
+  }
+
+  handleGoogleAuth() {
+    const emailPrompt = prompt('Enter your Google Account email to continue:', this.userEmail || 'player@gmail.com');
+    if (!emailPrompt || !emailPrompt.trim()) return;
+
+    const email = emailPrompt.trim().toLowerCase();
+    if (!email.includes('@')) {
+      alert('Please enter a valid Google email address.');
+      return;
+    }
+
+    const name = email.split('@')[0].slice(0, 14);
+    this.loginUser(email, name, 'google');
+  }
+
+  handleEmailAuth() {
+    const emailInput = document.getElementById('authEmailInput');
+    const pwdInput = document.getElementById('authPasswordInput');
+    const usernameInput = document.getElementById('authUsernameInput');
+    const statusMsg = document.getElementById('authStatusMsg');
+
+    const email = (emailInput ? emailInput.value : '').trim().toLowerCase();
+    const pwd = (pwdInput ? pwdInput.value : '').trim();
+    const username = (usernameInput ? usernameInput.value : '').trim();
+
+    const showErr = (msg) => {
+      if (statusMsg) {
+        statusMsg.textContent = msg;
+        statusMsg.className = 'auth-status-msg error';
+        statusMsg.style.display = 'block';
+      }
+    };
+
+    if (!email || !email.includes('@')) {
+      showErr('Please enter a valid email address.');
+      return;
+    }
+
+    if (pwd.length < 6) {
+      showErr('Password must be at least 6 characters.');
+      return;
+    }
+
+    let finalName = this.username;
+    if (this.authMode === 'signup') {
+      finalName = username || email.split('@')[0].slice(0, 14);
+    } else {
+      finalName = this.username && this.username !== 'beh' ? this.username : email.split('@')[0].slice(0, 14);
+    }
+
+    this.loginUser(email, finalName, 'email');
+  }
+
+  loginUser(email, username, provider = 'email') {
+    this.isLoggedIn = true;
+    this.userEmail = email;
+    this.username = username;
+    this.userAuthProvider = provider;
+
+    localStorage.setItem('gp_user_logged_in', 'true');
+    localStorage.setItem('gp_user_email', email);
+    localStorage.setItem('gp_username', username);
+    localStorage.setItem('gp_user_auth_provider', provider);
+
+    const modal = document.getElementById('authModal');
+    if (modal && typeof modal.close === 'function') modal.close();
+
+    const providerLabel = provider === 'google' ? 'Google' : 'Email';
+    this.showToast(`🎉 Welcome, ${username}! (${providerLabel} connected)`);
+    if (gpAudio && gpAudio.playWin) gpAudio.playWin();
+
+    this.updateAuthUI();
+  }
+
+  continueAsGuest() {
+    const modal = document.getElementById('authModal');
+    if (modal && typeof modal.close === 'function') modal.close();
+    this.showToast('⚡ Playing as Guest with in-browser Solana wallet.');
+    if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+  }
+
+  handleLogout() {
+    this.isLoggedIn = false;
+    this.userEmail = '';
+    this.username = 'beh';
+    this.userAuthProvider = 'guest';
+
+    localStorage.removeItem('gp_user_logged_in');
+    localStorage.removeItem('gp_user_email');
+    localStorage.setItem('gp_username', 'beh');
+    localStorage.removeItem('gp_user_auth_provider');
+
+    this.showToast('Signed out. Continuing as Guest.');
+    if (gpAudio && gpAudio.playClick) gpAudio.playClick();
+
+    this.updateAuthUI();
+  }
+
+  updateAuthUI() {
+    const navAuth = document.getElementById('navAuthZone');
+    const usernameDisplay = document.getElementById('profileUsernameDisplay');
+    const profileWallet = document.getElementById('profileWalletTruncated');
+    const menuItemAuthText = document.getElementById('menuItemAuthText');
+
+    if (usernameDisplay) {
+      usernameDisplay.textContent = this.username;
+    }
+
+    if (this.isLoggedIn) {
+      if (navAuth) navAuth.style.display = 'none';
+      if (menuItemAuthText) menuItemAuthText.textContent = 'Sign Out';
+      if (profileWallet && this.userEmail) {
+        profileWallet.textContent = this.userEmail;
+      }
+    } else {
+      if (navAuth) navAuth.style.display = 'inline-flex';
+      if (menuItemAuthText) menuItemAuthText.textContent = 'Sign In / Register';
+      if (profileWallet) {
+        const addr = this.getWalletAddress();
+        profileWallet.textContent = addr ? `${addr.slice(0, 4)}...${addr.slice(-4)} (Guest)` : 'Guest Wallet';
+      }
     }
   }
 
