@@ -241,10 +241,12 @@ class GreenpumpApp {
     this.coinflipStreak = 0;
     this.coinflipHistory = [];
 
-    // Authentication State (Email & Google Optional)
-    this.isLoggedIn = localStorage.getItem('gp_user_logged_in') === 'true';
+    // Authentication State & Persistent Database Session
+    this.sessionToken = localStorage.getItem('gp_session_token') || '';
+    this.isLoggedIn = Boolean(this.sessionToken && localStorage.getItem('gp_user_logged_in') === 'true');
     this.userEmail = localStorage.getItem('gp_user_email') || '';
     this.authMode = 'signup';
+    this.user = null;
 
     // User Profile & Real Money State (Matching Image 2)
     this.username = localStorage.getItem('gp_username') || 'beh';
@@ -1234,26 +1236,40 @@ class GreenpumpApp {
   }
 
   /* ============================================================= */
-  /* AUTHENTICATION: LOGIN & SIGN UP (EMAIL & GOOGLE OPTIONAL) */
+  /* MANDATORY AUTHENTICATION & DATABASE PERSISTENCE ENGINE */
   /* ============================================================= */
   initAuth() {
+    window.gpEngine = this;
     const tabSignup = document.getElementById('authTabSignup');
     const tabLogin = document.getElementById('authTabLogin');
     const googleBtn = document.getElementById('authGoogleBtn');
     const authForm = document.getElementById('authForm');
     const togglePwdBtn = document.getElementById('authTogglePwdBtn');
-    const guestBtn = document.getElementById('authGuestBtn');
     const navLoginBtn = document.getElementById('navLoginBtn');
     const navSignupBtn = document.getElementById('navSignupBtn');
     const menuItemAuth = document.getElementById('menuItemAuth');
+    const authModal = document.getElementById('authModal');
 
-    // First time visitor detection: open auth modal once automatically
-    const visited = localStorage.getItem('gp_visited_before');
-    if (!visited && !this.isLoggedIn) {
-      localStorage.setItem('gp_visited_before', 'true');
-      setTimeout(() => {
-        this.openAuthModal('signup');
-      }, 700);
+    // Prevent closing via Escape / cancel event when not logged in
+    if (authModal) {
+      authModal.addEventListener('cancel', (e) => {
+        if (!this.isLoggedIn) {
+          e.preventDefault();
+          this.shakeAuthCard();
+        }
+      });
+
+      // Prevent closing when clicking backdrop if not logged in
+      authModal.addEventListener('click', (e) => {
+        const rect = authModal.getBoundingClientRect();
+        const isInDialog = (
+          rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+          rect.left <= e.clientX && e.clientX <= rect.left + rect.width
+        );
+        if (!isInDialog && !this.isLoggedIn) {
+          this.shakeAuthCard();
+        }
+      });
     }
 
     if (tabSignup) tabSignup.addEventListener('click', () => this.setAuthMode('signup'));
@@ -1281,10 +1297,6 @@ class GreenpumpApp {
       });
     }
 
-    if (guestBtn) {
-      guestBtn.addEventListener('click', () => this.continueAsGuest());
-    }
-
     if (navLoginBtn) {
       navLoginBtn.addEventListener('click', () => this.openAuthModal('login'));
     }
@@ -1305,7 +1317,78 @@ class GreenpumpApp {
       });
     }
 
+    // Verify existing database session or enforce mandatory registration gate
+    this.checkExistingSession();
     this.updateAuthUI();
+  }
+
+  checkExistingSession() {
+    if (!this.sessionToken) {
+      this.enforceMandatoryAuth();
+      return;
+    }
+
+    fetch('/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + this.sessionToken }
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Session invalid');
+      return res.json();
+    })
+    .then(data => {
+      if (data && data.user) {
+        this.applyUserSession(data.user, this.sessionToken, data.user.authProvider || 'email', false);
+      } else {
+        this.enforceMandatoryAuth();
+      }
+    })
+    .catch(() => {
+      if (this.isLoggedIn && this.userEmail) {
+        this.updateAuthUI();
+      } else {
+        this.enforceMandatoryAuth();
+      }
+    });
+  }
+
+  enforceMandatoryAuth() {
+    this.isLoggedIn = false;
+    const closeBtn = document.getElementById('authCloseBtn');
+    if (closeBtn) closeBtn.style.display = 'none';
+    this.updateAuthUI();
+
+    setTimeout(() => {
+      this.openAuthModal('signup');
+    }, 450);
+  }
+
+  closeAuthModal() {
+    if (!this.isLoggedIn) {
+      this.shakeAuthCard();
+      this.showToast('⚠️ Registration or login is required to access LuckyWin.');
+      return;
+    }
+    const modal = document.getElementById('authModal');
+    if (modal && typeof modal.close === 'function') modal.close();
+  }
+
+  shakeAuthCard() {
+    const card = document.getElementById('authCard');
+    if (card) {
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
+    }
+  }
+
+  requireAuth() {
+    if (!this.isLoggedIn) {
+      this.enforceMandatoryAuth();
+      this.shakeAuthCard();
+      this.showToast('⚠️ Please create an account or log in to play.');
+      return false;
+    }
+    return true;
   }
 
   setAuthMode(mode) {
@@ -1324,16 +1407,16 @@ class GreenpumpApp {
       if (tabSignup) tabSignup.classList.add('is-active');
       if (tabLogin) tabLogin.classList.remove('is-active');
       if (title) title.textContent = 'Welcome to LuckyWin';
-      if (subtitle) subtitle.textContent = 'Play Provably Fair Games with Instant Solana Payouts';
+      if (subtitle) subtitle.textContent = 'Create an account to start playing and save your progress';
       if (usernameGroup) usernameGroup.style.display = 'block';
-      if (submitBtn) submitBtn.textContent = 'Create Free Account';
+      if (submitBtn) submitBtn.textContent = 'Create Account & Play';
     } else {
       if (tabSignup) tabSignup.classList.remove('is-active');
       if (tabLogin) tabLogin.classList.add('is-active');
       if (title) title.textContent = 'Welcome Back';
-      if (subtitle) subtitle.textContent = 'Sign in to access your saved progress & earnings';
+      if (subtitle) subtitle.textContent = 'Sign in to access your saved balance & earnings';
       if (usernameGroup) usernameGroup.style.display = 'none';
-      if (submitBtn) submitBtn.textContent = 'Sign In';
+      if (submitBtn) submitBtn.textContent = 'Sign In & Play';
     }
     if (gpAudio && gpAudio.playClick) gpAudio.playClick();
   }
@@ -1341,14 +1424,20 @@ class GreenpumpApp {
   openAuthModal(mode = 'signup') {
     this.setAuthMode(mode);
     const modal = document.getElementById('authModal');
+    const closeBtn = document.getElementById('authCloseBtn');
+    if (closeBtn) {
+      closeBtn.style.display = this.isLoggedIn ? 'block' : 'none';
+    }
     if (modal && typeof modal.showModal === 'function') {
-      modal.showModal();
+      if (!modal.open) {
+        modal.showModal();
+      }
       if (gpAudio && gpAudio.playClick) gpAudio.playClick();
     }
   }
 
-  handleGoogleAuth() {
-    const emailPrompt = prompt('Enter your Google Account email to continue:', this.userEmail || 'player@gmail.com');
+  async handleGoogleAuth() {
+    const emailPrompt = prompt('Enter your Google Account email to continue:', this.userEmail || '');
     if (!emailPrompt || !emailPrompt.trim()) return;
 
     const email = emailPrompt.trim().toLowerCase();
@@ -1357,14 +1446,35 @@ class GreenpumpApp {
       return;
     }
 
-    const name = email.split('@')[0].slice(0, 14);
-    this.loginUser(email, name, 'google');
+    const name = email.split('@')[0].slice(0, 16);
+    const statusMsg = document.getElementById('authStatusMsg');
+
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Google authentication failed.');
+      }
+      this.applyUserSession(data.user, data.token, 'google', true);
+    } catch (err) {
+      if (statusMsg) {
+        statusMsg.textContent = err.message;
+        statusMsg.className = 'auth-status-msg error';
+        statusMsg.style.display = 'block';
+      }
+      this.shakeAuthCard();
+    }
   }
 
-  handleEmailAuth() {
+  async handleEmailAuth() {
     const emailInput = document.getElementById('authEmailInput');
     const pwdInput = document.getElementById('authPasswordInput');
     const usernameInput = document.getElementById('authUsernameInput');
+    const submitBtn = document.getElementById('authSubmitBtn');
     const statusMsg = document.getElementById('authStatusMsg');
 
     const email = (emailInput ? emailInput.value : '').trim().toLowerCase();
@@ -1377,6 +1487,7 @@ class GreenpumpApp {
         statusMsg.className = 'auth-status-msg error';
         statusMsg.style.display = 'block';
       }
+      this.shakeAuthCard();
     };
 
     if (!email || !email.includes('@')) {
@@ -1389,59 +1500,162 @@ class GreenpumpApp {
       return;
     }
 
-    let finalName = this.username;
-    if (this.authMode === 'signup') {
-      finalName = username || email.split('@')[0].slice(0, 14);
-    } else {
-      finalName = this.username && this.username !== 'beh' ? this.username : email.split('@')[0].slice(0, 14);
+    if (this.authMode === 'signup' && username.length < 2) {
+      showErr('Please choose a username (at least 2 characters).');
+      return;
     }
 
-    this.loginUser(email, finalName, 'email');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+    }
+
+    try {
+      const endpoint = this.authMode === 'signup' ? '/api/auth/register' : '/api/auth/login';
+      const payload = this.authMode === 'signup'
+        ? { email, username, password: pwd, initialBalance: this.balance || 0.05 }
+        : { email, password: pwd };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      this.applyUserSession(data.user, data.token, 'email', true);
+    } catch (err) {
+      showErr(err.message || 'Error connecting to database.');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = this.authMode === 'signup' ? 'Create Account & Play' : 'Sign In & Play';
+      }
+    }
   }
 
-  loginUser(email, username, provider = 'email') {
+  applyUserSession(user, token, provider = 'email', notify = false) {
+    if (!user) return;
     this.isLoggedIn = true;
-    this.userEmail = email;
-    this.username = username;
+    this.sessionToken = token || this.sessionToken;
+    this.user = user;
+    this.userId = user.id;
+    this.userEmail = user.email || this.userEmail;
+    this.username = user.username || this.username;
     this.userAuthProvider = provider;
 
+    if (typeof user.balance === 'number') {
+      this.balance = parseFloat(user.balance.toFixed(4));
+    }
+    if (user.vipRank) this.vipRank = user.vipRank;
+    if (user.userLevel) this.userLevel = user.userLevel;
+    if (user.stats) {
+      this.stats = { ...this.stats, ...user.stats };
+    }
+
+    localStorage.setItem('gp_session_token', this.sessionToken);
     localStorage.setItem('gp_user_logged_in', 'true');
-    localStorage.setItem('gp_user_email', email);
-    localStorage.setItem('gp_username', username);
+    localStorage.setItem('gp_user_email', this.userEmail);
+    localStorage.setItem('gp_username', this.username);
+    localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
     localStorage.setItem('gp_user_auth_provider', provider);
+    localStorage.setItem('gp_stats', JSON.stringify(this.stats));
+
+    const closeBtn = document.getElementById('authCloseBtn');
+    if (closeBtn) closeBtn.style.display = 'block';
 
     const modal = document.getElementById('authModal');
-    if (modal && typeof modal.close === 'function') modal.close();
+    if (modal && typeof modal.close === 'function') {
+      modal.close();
+    }
 
-    const providerLabel = provider === 'google' ? 'Google' : 'Email';
-    this.showToast(`🎉 Welcome, ${username}! (${providerLabel} connected)`);
-    if (gpAudio && gpAudio.playWin) gpAudio.playWin();
-
+    this.updateBalanceUI();
     this.updateAuthUI();
+    this.updateVipDisplay();
+
+    if (notify) {
+      this.showToast(`🎉 Welcome, ${this.username}! Account saved & verified.`);
+      if (gpAudio && gpAudio.playWin) gpAudio.playWin();
+    }
   }
 
-  continueAsGuest() {
-    const modal = document.getElementById('authModal');
-    if (modal && typeof modal.close === 'function') modal.close();
-    this.showToast('⚡ Playing as Guest with in-browser Solana wallet.');
-    if (gpAudio && gpAudio.playClick) gpAudio.playClick();
-  }
+  async handleLogout() {
+    if (this.sessionToken) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: this.sessionToken })
+        });
+      } catch(e) {}
+    }
 
-  handleLogout() {
     this.isLoggedIn = false;
+    this.sessionToken = '';
+    this.user = null;
     this.userEmail = '';
-    this.username = 'beh';
+    this.username = 'Player';
     this.userAuthProvider = 'guest';
 
+    localStorage.removeItem('gp_session_token');
     localStorage.removeItem('gp_user_logged_in');
     localStorage.removeItem('gp_user_email');
-    localStorage.setItem('gp_username', 'beh');
+    localStorage.removeItem('gp_username');
     localStorage.removeItem('gp_user_auth_provider');
 
-    this.showToast('Signed out. Continuing as Guest.');
+    this.showToast('Signed out. Please sign in to resume playing.');
     if (gpAudio && gpAudio.playClick) gpAudio.playClick();
 
-    this.updateAuthUI();
+    this.enforceMandatoryAuth();
+  }
+
+  syncUserToDatabase() {
+    if (!this.sessionToken) return;
+    if (this._syncTimer) clearTimeout(this._syncTimer);
+    this._syncTimer = setTimeout(async () => {
+      try {
+        await fetch('/api/user/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + this.sessionToken
+          },
+          body: JSON.stringify({
+            token: this.sessionToken,
+            balance: this.balance,
+            vipRank: this.vipRank,
+            userLevel: this.userLevel,
+            stats: this.stats
+          })
+        });
+      } catch(e) {}
+    }, 350);
+  }
+
+  recordBetToDatabase(game, betAmount, multiplier, payout, profit, won) {
+    if (!this.sessionToken) return;
+    try {
+      fetch('/api/user/bet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.sessionToken
+        },
+        body: JSON.stringify({
+          token: this.sessionToken,
+          game,
+          betAmount: Number(betAmount) || 0,
+          multiplier: Number(multiplier) || 1,
+          payout: Number(payout) || 0,
+          profit: Number(profit) || 0,
+          won: Boolean(won)
+        })
+      }).catch(() => {});
+    } catch(e) {}
   }
 
   updateAuthUI() {
@@ -1449,23 +1663,25 @@ class GreenpumpApp {
     const usernameDisplay = document.getElementById('profileUsernameDisplay');
     const profileWallet = document.getElementById('profileWalletTruncated');
     const menuItemAuthText = document.getElementById('menuItemAuthText');
+    const closeBtn = document.getElementById('authCloseBtn');
 
     if (usernameDisplay) {
       usernameDisplay.textContent = this.username;
     }
 
     if (this.isLoggedIn) {
+      if (closeBtn) closeBtn.style.display = 'block';
       if (navAuth) navAuth.style.display = 'none';
       if (menuItemAuthText) menuItemAuthText.textContent = 'Sign Out';
       if (profileWallet && this.userEmail) {
         profileWallet.textContent = this.userEmail;
       }
     } else {
+      if (closeBtn) closeBtn.style.display = 'none';
       if (navAuth) navAuth.style.display = 'inline-flex';
       if (menuItemAuthText) menuItemAuthText.textContent = 'Sign In / Register';
       if (profileWallet) {
-        const addr = this.getWalletAddress();
-        profileWallet.textContent = addr ? `${addr.slice(0, 4)}...${addr.slice(-4)} (Guest)` : 'Guest Wallet';
+        profileWallet.textContent = 'Registration Required';
       }
     }
   }
@@ -1576,6 +1792,10 @@ class GreenpumpApp {
     }
     this.updateVipDisplay();
     this.updateDailyCaseUI();
+    this.syncUserToDatabase();
+    if (wager > 0) {
+      this.recordBetToDatabase(game, wager, 1, 0, -wager, false);
+    }
   }
 
   getVipInfo() {
@@ -1806,6 +2026,7 @@ class GreenpumpApp {
     this.balance = parseFloat(Number(this.balance).toFixed(4));
     localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
     this.updateBalanceUI();
+    this.syncUserToDatabase();
   }
 
   updateBalanceUI() {
@@ -1837,6 +2058,15 @@ class GreenpumpApp {
   recordWin(game, payout, multiplier) {
     const amount = Number(payout) || 0;
     if (amount <= 0) return;
+    this.stats.wins = (this.stats.wins || 0) + 1;
+    this.stats.totalProfit = parseFloat(((this.stats.totalProfit || 0) + amount).toFixed(4));
+    if (Number(multiplier) > (this.stats.bestMult || 1)) {
+      this.stats.bestMult = Number(multiplier);
+    }
+    try {
+      localStorage.setItem('gp_stats', JSON.stringify(this.stats));
+    } catch (err) {}
+
     let rows = [];
     try {
       rows = JSON.parse(localStorage.getItem('gp_leaderboard') || '[]');
@@ -1853,6 +2083,8 @@ class GreenpumpApp {
     rows = rows.slice(0, 12);
     localStorage.setItem('gp_leaderboard', JSON.stringify(rows));
     this.renderLeaderboard();
+    this.syncUserToDatabase();
+    this.recordBetToDatabase(game, 0, multiplier, amount, amount, true);
   }
 
   /* ------------------------------------------------------------- */
@@ -2276,6 +2508,7 @@ class GreenpumpApp {
   }
 
   executePumpTrade() {
+    if (!this.requireAuth()) return;
     if (this.isPumpTrading) return;
     if (this.balance < this.pumpBet) {
       this.showInsufficientBalancePrompt();
@@ -2621,6 +2854,7 @@ class GreenpumpApp {
     const mainBtn = document.getElementById('rugMainActionBtn');
     if (mainBtn) {
       mainBtn.addEventListener('click', () => {
+        if (!this.requireAuth()) return;
         if (this.rugState === 'WAITING') {
           if (this.rugHasBetThisRound) {
             this.rugHasBetThisRound = false;
@@ -3637,6 +3871,7 @@ class GreenpumpApp {
   }
 
   startChickenGame() {
+    if (!this.requireAuth()) return;
     if (this.chickenPlaying) return;
     if (this.balance < this.chickenBet) {
       this.showInsufficientBalancePrompt();
@@ -3935,6 +4170,7 @@ class GreenpumpApp {
   }
 
   startMines() {
+    if (!this.requireAuth()) return;
     if (this.minesPlaying) return;
     if (this.balance < this.minesBet) {
       this.showInsufficientBalancePrompt();
@@ -4938,6 +5174,7 @@ class GreenpumpApp {
   }
 
   dealBlackjack() {
+    if (!this.requireAuth()) return;
     if (this.bjPlaying) return;
     const main = parseFloat(this.bjMainBet) || 0;
     const side213 = parseFloat(this.bjSide213) || 0;
@@ -5516,6 +5753,7 @@ class GreenpumpApp {
   }
 
   playHiLoStep(choice) {
+    if (!this.requireAuth()) return;
     if (this.hiloResolving) return;
     const probs = this.hiLoProbabilities();
     const probability = choice === 'higher' ? probs.higher : probs.lower;
@@ -5687,6 +5925,7 @@ class GreenpumpApp {
   }
 
   startFlappyGame() {
+    if (!this.requireAuth()) return;
     if (this.flappyPlaying) return;
     if (this.balance < this.flappyBet) {
       this.showInsufficientBalancePrompt();
@@ -6084,6 +6323,7 @@ class GreenpumpApp {
   }
 
   flipCoinflip() {
+    if (!this.requireAuth()) return;
     if (this.coinflipFlipping) return;
     if (this.balance < this.coinflipBet) {
       this.showInsufficientBalancePrompt();
@@ -6654,6 +6894,7 @@ class GreenpumpApp {
   }
 
   spinDailyCase() {
+    if (!this.requireAuth()) return;
     if (!this.hasPlayedGameToday()) {
       this.showToast('🎮 Please play at least 1 game round today before claiming your Daily Chest!');
       gpAudio.playClick();

@@ -24,13 +24,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
 
   <!-- Greenpump Stylesheets -->
-  <link rel="stylesheet" href="css/greenpump1.css?v=20261022-auth-v7"/>
-  <link rel="stylesheet" href="css/greenpump2.css?v=20261022-auth-v7"/>
-  <link rel="stylesheet" href="css/greenpump-custom.css?v=20261022-auth-v7"/>
-  <link rel="stylesheet" href="css/greenpump-extra.css?v=20261022-auth-v7"/>
-  <link rel="stylesheet" href="css/greenpump-redesign.css?v=20261022-auth-v7"/>
-  <link rel="stylesheet" href="tokens.css?v=20261022-auth-v7"/>
-  <link rel="stylesheet" href="css/hallmark-blue.css?v=20261022-auth-v7"/>
+  <link rel="stylesheet" href="css/greenpump1.css?v=20261022-db-v8"/>
+  <link rel="stylesheet" href="css/greenpump2.css?v=20261022-db-v8"/>
+  <link rel="stylesheet" href="css/greenpump-custom.css?v=20261022-db-v8"/>
+  <link rel="stylesheet" href="css/greenpump-extra.css?v=20261022-db-v8"/>
+  <link rel="stylesheet" href="css/greenpump-redesign.css?v=20261022-db-v8"/>
+  <link rel="stylesheet" href="tokens.css?v=20261022-db-v8"/>
+  <link rel="stylesheet" href="css/hallmark-blue.css?v=20261022-db-v8"/>
 </head>
 <body>
 
@@ -1780,11 +1780,11 @@
     </div>
   </div>
 
-  <!-- Modern Auth Modal: Login & Sign Up (Email & Google Optional) -->
-  <dialog id="authModal" class="modern-auth-dialog" aria-labelledby="authModalTitle">
-    <div class="auth-card">
-      <!-- Close Button -->
-      <button type="button" class="auth-close-btn" id="authCloseBtn" aria-label="Close" onclick="this.closest('dialog').close()">✕</button>
+  <!-- Mandatory Auth Gate: Login & Sign Up (Account Required to Access Casino) -->
+  <dialog id="authModal" class="modern-auth-dialog mandatory-auth-gate" aria-labelledby="authModalTitle">
+    <div class="auth-card" id="authCard">
+      <!-- Close Button (Hidden when not authenticated) -->
+      <button type="button" class="auth-close-btn" id="authCloseBtn" aria-label="Close" style="display: none;" onclick="window.gpEngine && window.gpEngine.closeAuthModal()">✕</button>
 
       <!-- Brand Header -->
       <div class="auth-header">
@@ -1792,7 +1792,7 @@
           <img src="luckywin-logo.png" alt="LuckyWin" class="auth-brand-logo" />
         </div>
         <h2 id="authModalTitle" class="auth-title">Welcome to LuckyWin</h2>
-        <p id="authModalSubtitle" class="auth-subtitle">Play Provably Fair Games with Instant Solana Payouts</p>
+        <p id="authModalSubtitle" class="auth-subtitle">Create an account or sign in to start playing and save your progress</p>
       </div>
 
       <!-- Segmented Tab Switcher (Sign Up / Log In) -->
@@ -1851,16 +1851,16 @@
         <div id="authStatusMsg" class="auth-status-msg" style="display:none;"></div>
 
         <button type="submit" id="authSubmitBtn" class="auth-submit-btn">
-          Create Free Account
+          Create Account &amp; Play
         </button>
       </form>
 
-      <!-- Optional / Guest Pass Link (Critical!) -->
-      <div class="auth-guest-footer">
-        <button type="button" id="authGuestBtn" class="auth-guest-link">
-          <span>⚡ Play as Guest (Skip for now)</span>
-        </button>
-        <p class="auth-guest-note">Email &amp; Google are optional. You can play anonymously anytime with Solana.</p>
+      <!-- Security & Trust Note -->
+      <div class="auth-security-footer">
+        <div class="auth-lock-shield">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span>Saved to Secure Database &bull; Real SOL Cashouts</span>
+        </div>
       </div>
     </div>
   </dialog>
@@ -2347,6 +2347,6 @@
 
   <!-- Interactive Script Engine -->
   <script src="js/solana-web3.min.js"></script>
-  <script src="js/greenpump-engine.js?v=20261022-auth-v7"></script>
+  <script src="js/greenpump-engine.js?v=20261022-db-v8"></script>
 </body>
 </html>

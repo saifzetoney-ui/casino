@@ -1,6 +1,7 @@
 const https = require('https');
 const urlModule = require('url');
 const casinoVault = require('../casino-vault');
+const db = require('../database');
 
 const LIVE_ORIGIN = 'https://greenpump.xyz';
 
@@ -131,6 +132,159 @@ module.exports = (req, res) => {
 
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
+
+  function extractToken(req, parsedUrl) {
+    const authHeader = req.headers['authorization'] || '';
+    if (authHeader.startsWith('Bearer ')) {
+      return authHeader.slice(7).trim();
+    }
+    return parsedUrl.searchParams.get('token') || '';
+  }
+
+  // --- AUTH & DATABASE PERSISTENCE ENDPOINTS ---
+  if (pathname === '/api/auth/register') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      try {
+        const result = db.registerUser(body);
+        send(res, 200, JSON.stringify(result));
+      } catch (e) {
+        send(res, 400, JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/auth/login') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      try {
+        const result = db.loginUser(body);
+        send(res, 200, JSON.stringify(result));
+      } catch (e) {
+        send(res, 400, JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/auth/google') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      try {
+        const result = db.googleAuthUser(body);
+        send(res, 200, JSON.stringify(result));
+      } catch (e) {
+        send(res, 400, JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/auth/me') {
+    const token = extractToken(req, parsedUrl);
+    const user = db.getUserByToken(token);
+    if (!user) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized or session expired' }));
+      return;
+    }
+    send(res, 200, JSON.stringify({ user }));
+    return;
+  }
+
+  if (pathname === '/api/auth/logout') {
+    parseJsonBody(req, (err, body) => {
+      const token = (body && body.token) || extractToken(req, parsedUrl);
+      db.destroySession(token);
+      send(res, 200, JSON.stringify({ ok: true }));
+    });
+    return;
+  }
+
+  if (pathname === '/api/user/sync') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      const token = body.token || extractToken(req, parsedUrl);
+      const user = db.getRawUserByToken(token);
+      if (!user) {
+        send(res, 401, JSON.stringify({ error: 'Unauthorized' }));
+        return;
+      }
+      const updated = db.updateUser(user.id, body);
+      send(res, 200, JSON.stringify({ ok: true, user: updated }));
+    });
+    return;
+  }
+
+  if (pathname === '/api/user/bet') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      const token = body.token || extractToken(req, parsedUrl);
+      const user = db.getRawUserByToken(token);
+      const betData = {
+        userId: user ? user.id : (body.userId || 'guest'),
+        username: user ? user.username : (body.username || 'Player'),
+        game: body.game,
+        betAmount: body.betAmount,
+        multiplier: body.multiplier,
+        payout: body.payout,
+        profit: body.profit,
+        won: body.won
+      };
+      const bet = db.recordBet(betData);
+      const freshUser = user ? db.getUserByToken(token) : null;
+      send(res, 200, JSON.stringify({ ok: true, bet, user: freshUser }));
+    });
+    return;
+  }
+
+  if (pathname === '/api/user/bets') {
+    const token = extractToken(req, parsedUrl);
+    const user = db.getUserByToken(token);
+    if (!user) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+    const limit = parseInt(parsedUrl.searchParams.get('limit') || '50', 10);
+    const userBets = db.getUserBets(user.id, limit);
+    send(res, 200, JSON.stringify({ bets: userBets }));
+    return;
+  }
 
   if (pathname === '/api/casino-vault') {
     casinoVault.getVaultStats((err, stats) => {
