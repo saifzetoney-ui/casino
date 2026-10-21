@@ -1,7 +1,16 @@
 {
-  "functions": {
-    "server.js": {
-      "includeFiles": "**/*"
+  "rewrites": [
+    {
+      "source": "/api/chat",
+      "destination": "https://greenpump.xyz/api/chat"
+    },
+    {
+      "source": "/api/avatar/:path*",
+      "destination": "https://greenpump.xyz/api/avatar/:path*"
+    },
+    {
+      "source": "/((?!api/|.*\\..*).*)",
+      "destination": "/index.html"
     }
-  }
+  ]
 }

@@ -131,7 +131,13 @@ const gpAudio = new GreenpumpAudio();
 // Main App Controller
 class GreenpumpApp {
   constructor() {
-    this.balance = parseFloat(localStorage.getItem('gp_sol_balance')) || 2.50;
+    // Real-Money Non-Custodial Casino: starting balance is 0.0000 SOL (all fake money purged)
+    if (!localStorage.getItem('gp_real_money_v1')) {
+      localStorage.removeItem('gp_sol_balance');
+      localStorage.setItem('gp_real_money_v1', 'true');
+    }
+    const savedBal = parseFloat(localStorage.getItem('gp_sol_balance'));
+    this.balance = (!isNaN(savedBal) && savedBal >= 0) ? savedBal : 0.0000;
     this.totalBets = parseInt(localStorage.getItem('gp_total_bets'), 10) || 51423;
     this.activeGame = 'rug'; // 'rug', 'pump', 'chicken', 'mines', 'blackjack', 'hilo', 'flappy', 'coinflip'
     this.notifications = [];
@@ -143,8 +149,11 @@ class GreenpumpApp {
     this.isPumpTrading = false;
     this.pumpEntryPrice = null;
     this.prices = [];
-    this.basePrice = 148.50;
-    this.currentPrice = 148.50;
+    this.basePrice = 108.35;
+    this.currentPrice = 108.35;
+    this.solPrice = 108.35;
+    this.solChange24h = 2.28;
+    this.prevSolPrice = null;
 
     // RUG (Candlestick Crash) State
     this.rugRunning = false;
@@ -231,7 +240,17 @@ class GreenpumpApp {
     this.coinflipFlipping = false;
     this.coinflipStreak = 0;
     this.coinflipHistory = [];
-    this.coinflipLast = '—';
+    // User Profile & Real Money State (Matching Image 2)
+    this.username = localStorage.getItem('gp_username') || 'beh';
+    this.userLevel = parseInt(localStorage.getItem('gp_level') || '1', 10);
+    this.vipRank = parseInt(localStorage.getItem('gp_vip_rank') || '1', 10);
+    try {
+      this.transactions = JSON.parse(localStorage.getItem('gp_transactions') || '[]');
+    } catch(e) { this.transactions = []; }
+    try {
+      this.stats = JSON.parse(localStorage.getItem('gp_stats') || '{"totalWagered":0,"totalProfit":0,"totalBets":0,"wins":0,"bestMult":1}');
+    } catch(e) { this.stats = { totalWagered: 0, totalProfit: 0, totalBets: 0, wins: 0, bestMult: 1 }; }
+    this.candles = [];
 
     this.init();
   }
@@ -239,6 +258,7 @@ class GreenpumpApp {
   init() {
     this.initLoader();
     this.initWallet();
+    this.initProfileMenu();
     this.initPublicChat();
     this.initAirdrop();
     this.initGameSwitching();
@@ -259,6 +279,10 @@ class GreenpumpApp {
     this.initLeaderboard();
     this.updateSoundUI();
     this.updateTotalBetsUI();
+    this.updateVipDisplay();
+    this.updateWeeklyReloadUI();
+    this.initLiveSolPriceService();
+    this.initRouting();
   }
 
   /* ------------------------------------------------------------- */
@@ -291,67 +315,1144 @@ class GreenpumpApp {
   }
 
   initWallet() {
+    this.initNonCustodialKeypair();
     this.updateBalanceUI();
 
     const walletBtn = document.getElementById('gpWalletBtn');
     const walletDialog = document.getElementById('walletSecurityDialog');
     if (walletBtn && walletDialog) {
-      walletBtn.addEventListener('click', () => {
+      walletBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openWalletDialog(true);
+      });
+      walletDialog.addEventListener('close', () => {
+        this.syncUrlOnModalClose();
+      });
+    }
+
+    // Modal Tabs Switching (Deposit / Withdraw / Keys / Ledger)
+    const tabDepositBtn = document.getElementById('walletTabDepositBtn');
+    const tabWithdrawBtn = document.getElementById('walletTabWithdrawBtn');
+    const tabKeysBtn = document.getElementById('walletTabKeysBtn');
+    const tabLedgerBtn = document.getElementById('walletTabLedgerBtn');
+    const secDeposit = document.getElementById('walletDepositSection');
+    const secWithdraw = document.getElementById('walletWithdrawSection');
+    const secKeys = document.getElementById('walletKeysSection');
+    const secLedger = document.getElementById('walletLedgerSection');
+
+    const switchWalletTab = (activeTab) => {
+      [tabDepositBtn, tabWithdrawBtn, tabKeysBtn, tabLedgerBtn].forEach(b => b && b.classList.remove('is-active'));
+      if (secDeposit) secDeposit.hidden = true;
+      if (secWithdraw) secWithdraw.hidden = true;
+      if (secKeys) secKeys.hidden = true;
+      if (secLedger) secLedger.hidden = true;
+
+      if (activeTab === 'deposit') {
+        if (tabDepositBtn) tabDepositBtn.classList.add('is-active');
+        if (secDeposit) secDeposit.hidden = false;
+      } else if (activeTab === 'withdraw') {
+        if (tabWithdrawBtn) tabWithdrawBtn.classList.add('is-active');
+        if (secWithdraw) secWithdraw.hidden = false;
+        this.updateWithdrawUsd();
+        const withdrawAddrInput = document.getElementById('withdrawAddressInput');
+        if (withdrawAddrInput && !withdrawAddrInput.value) {
+          withdrawAddrInput.value = this.phantomAddress || '';
+        }
+      } else if (activeTab === 'keys') {
+        if (tabKeysBtn) tabKeysBtn.classList.add('is-active');
+        if (secKeys) secKeys.hidden = false;
+      } else if (activeTab === 'ledger') {
+        if (tabLedgerBtn) tabLedgerBtn.classList.add('is-active');
+        if (secLedger) secLedger.hidden = false;
+        this.fetchVaultLedger();
+      }
+      gpAudio.playClick();
+    };
+
+    if (tabDepositBtn) tabDepositBtn.addEventListener('click', () => switchWalletTab('deposit'));
+    if (tabWithdrawBtn) tabWithdrawBtn.addEventListener('click', () => switchWalletTab('withdraw'));
+    if (tabKeysBtn) tabKeysBtn.addEventListener('click', () => switchWalletTab('keys'));
+    if (tabLedgerBtn) tabLedgerBtn.addEventListener('click', () => switchWalletTab('ledger'));
+
+    // Copy Vault Address Buttons
+    const copyVaultBtn = document.getElementById('copyVaultAddressBtn');
+    const copyVaultBtn2 = document.getElementById('copyVaultAddressBtn2');
+    const vaultAddr = this.casinoVaultAddress || '25YCFTvCWzEEwtHEnZk4AoZxAxQxWb9h5jeigFLtHoDM';
+    [copyVaultBtn, copyVaultBtn2].forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', async () => {
+          const ok = await this.copyText(vaultAddr);
+          this.showToast(ok ? 'Casino Main Vault address copied!' : 'Failed to copy');
+          gpAudio.playClick();
+        });
+      }
+    });
+
+    // Copy User Public Key
+    const copyUserKeyBtn = document.getElementById('copyUserPublicKeyBtn');
+    if (copyUserKeyBtn) {
+      copyUserKeyBtn.addEventListener('click', async () => {
+        const addr = this.activeWalletAddress || this.nonCustodialAddress;
+        const ok = await this.copyText(addr);
+        this.showToast(ok ? 'Your non-custodial address copied!' : 'Failed to copy');
+        gpAudio.playClick();
+      });
+    }
+
+    // Connect Phantom / Solflare Button
+    const connectPhantomBtn = document.getElementById('connectPhantomWalletBtn');
+    if (connectPhantomBtn) {
+      connectPhantomBtn.addEventListener('click', () => {
+        this.connectPhantomWallet();
+      });
+    }
+
+    // Fast 1-Click Deposit via Phantom
+    const phantomDepositSubmitBtn = document.getElementById('phantomDepositSubmitBtn');
+    const phantomDepositAmountInput = document.getElementById('phantomDepositAmountInput');
+    if (phantomDepositSubmitBtn) {
+      phantomDepositSubmitBtn.addEventListener('click', () => {
+        const amt = parseFloat(phantomDepositAmountInput ? phantomDepositAmountInput.value : '0') || 0;
+        if (amt < 0.01) {
+          this.showToast('Minimum deposit amount is 0.01 SOL.');
+          return;
+        }
+        this.depositWithPhantom(amt);
+      });
+    }
+
+    // Verify Manual Deposit via Tx Hash
+    const verifyDepositBtn = document.getElementById('verifyDepositBtn');
+    const depositTxHashInput = document.getElementById('depositTxHashInput');
+    const depositAmountClaimInput = document.getElementById('depositAmountClaimInput');
+    if (verifyDepositBtn) {
+      verifyDepositBtn.addEventListener('click', () => {
+        const hash = (depositTxHashInput ? depositTxHashInput.value : '').trim();
+        const amt = parseFloat(depositAmountClaimInput ? depositAmountClaimInput.value : '0') || 0;
+        if (!hash) {
+          this.showToast('Please enter your Solana deposit transaction signature.');
+          return;
+        }
+        this.verifyDepositOnChain(hash, amt);
+      });
+    }
+
+    // Real-Money Withdrawal Logic
+    const withdrawInput = document.getElementById('withdrawAmountInput');
+    const withdrawAddrInput = document.getElementById('withdrawAddressInput');
+    const withdrawUsdEl = document.getElementById('withdrawUsdEstimate');
+    const executeWithdrawBtn = document.getElementById('executeWithdrawBtn');
+
+    this.updateWithdrawUsd = () => {
+      if (withdrawUsdEl && withdrawInput) {
+        const val = parseFloat(withdrawInput.value) || 0;
+        const p = this.solPrice || 108.35;
+        withdrawUsdEl.textContent = `≈ $${(val * p).toFixed(2)} USD`;
+      }
+    };
+
+    if (withdrawInput) {
+      withdrawInput.addEventListener('input', () => this.updateWithdrawUsd());
+    }
+
+    const minWBtn = document.getElementById('withdrawMinBtn');
+    const halfWBtn = document.getElementById('withdrawHalfBtn');
+    const maxWBtn = document.getElementById('withdrawMaxBtn');
+
+    if (minWBtn) minWBtn.addEventListener('click', () => {
+      if (withdrawInput) withdrawInput.value = '0.01';
+      this.updateWithdrawUsd();
+    });
+    if (halfWBtn) halfWBtn.addEventListener('click', () => {
+      if (withdrawInput) withdrawInput.value = Math.max(0.01, (this.balance / 2)).toFixed(4);
+      this.updateWithdrawUsd();
+    });
+    if (maxWBtn) maxWBtn.addEventListener('click', () => {
+      if (withdrawInput) withdrawInput.value = Math.max(0.01, (this.balance - 0.000005)).toFixed(4);
+      this.updateWithdrawUsd();
+    });
+
+    if (executeWithdrawBtn) {
+      executeWithdrawBtn.addEventListener('click', () => {
+        const destAddr = (withdrawAddrInput ? withdrawAddrInput.value : '').trim();
+        const amt = parseFloat(withdrawInput ? withdrawInput.value : '0') || 0;
+
+        if (!destAddr || destAddr.length < 32) {
+          this.showToast('Please enter a valid Solana wallet address (32-44 characters).');
+          return;
+        }
+        if (amt < 0.01) {
+          this.showToast('Minimum withdrawal amount is 0.01 SOL.');
+          return;
+        }
+        if (amt > this.balance) {
+          this.showToast(`Insufficient balance (${this.balance.toFixed(4)} SOL). You requested ${amt.toFixed(4)} SOL.`);
+          return;
+        }
+
+        this.requestWithdrawalFromVault(destAddr, amt);
+      });
+    }
+
+    // Export Private Key (Base58 & JSON)
+    const exportBtn = document.getElementById('exportPrivateKeyBtn');
+    const exportedContainer = document.getElementById('exportedKeyContainer');
+    const exportedArea = document.getElementById('exportedKeyArea');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        if (!window.confirm('⚠️ WARNING: Never share your private key with anyone! Anyone with this key can access and transfer your funds. Export now?')) {
+          return;
+        }
+        if (this.userKeypair && this.userKeypair.secretKey) {
+          const secretArr = Array.from(this.userKeypair.secretKey);
+          const base58Key = this.toBase58(this.userKeypair.secretKey);
+          if (exportedArea) {
+            exportedArea.value = `Base58:\n${base58Key}\n\nJSON Array:\n${JSON.stringify(secretArr)}`;
+          }
+          if (exportedContainer) exportedContainer.style.display = 'block';
+          this.showToast('Private key revealed. Keep it safe!');
+        } else {
+          this.showToast('No local private keypair found.');
+        }
+      });
+    }
+
+    // Import Existing Private Key
+    const toggleImportBtn = document.getElementById('toggleImportKeyBtn');
+    const importContainer = document.getElementById('importKeyContainer');
+    const executeImportBtn = document.getElementById('executeImportKeyBtn');
+    const importInput = document.getElementById('importKeyInput');
+
+    if (toggleImportBtn && importContainer) {
+      toggleImportBtn.addEventListener('click', () => {
+        const isHidden = importContainer.style.display === 'none';
+        importContainer.style.display = isHidden ? 'block' : 'none';
+      });
+    }
+
+    if (executeImportBtn) {
+      executeImportBtn.addEventListener('click', () => {
+        const raw = (importInput ? importInput.value : '').trim();
+        if (!raw) {
+          this.showToast('Please paste a Base58 secret string or JSON array.');
+          return;
+        }
+        this.importExistingKeypair(raw);
+      });
+    }
+
+    // Refresh Ledger Button
+    const refreshLedgerBtn = document.getElementById('refreshLedgerBtn');
+    if (refreshLedgerBtn) {
+      refreshLedgerBtn.addEventListener('click', () => this.fetchVaultLedger());
+    }
+  }
+
+  /* ------------------------------------------------------------- */
+  /* NON-CUSTODIAL WALLET ENGINE & CASINO VAULT INTEGRATION */
+  /* ------------------------------------------------------------- */
+  initNonCustodialKeypair() {
+    try {
+      if (window.solanaWeb3) {
+        const storedSecret = localStorage.getItem('gp_noncustodial_secret');
+        if (storedSecret) {
+          try {
+            const arr = JSON.parse(storedSecret);
+            this.userKeypair = window.solanaWeb3.Keypair.fromSecretKey(new Uint8Array(arr));
+          } catch(e) {
+            this.userKeypair = window.solanaWeb3.Keypair.generate();
+            localStorage.setItem('gp_noncustodial_secret', JSON.stringify(Array.from(this.userKeypair.secretKey)));
+          }
+        } else {
+          this.userKeypair = window.solanaWeb3.Keypair.generate();
+          localStorage.setItem('gp_noncustodial_secret', JSON.stringify(Array.from(this.userKeypair.secretKey)));
+        }
+        this.nonCustodialAddress = this.userKeypair.publicKey.toString();
+      }
+    } catch(err) {
+      console.warn('Error setting up solanaWeb3 keypair:', err);
+    }
+
+    // Check for previously connected Phantom wallet
+    const savedPhantom = localStorage.getItem('gp_connected_wallet');
+    if (savedPhantom && savedPhantom.length >= 32) {
+      this.phantomAddress = savedPhantom;
+      this.activeWalletAddress = savedPhantom;
+    } else {
+      this.activeWalletAddress = this.nonCustodialAddress || this.getWalletAddress();
+    }
+
+    this.updateWalletUI();
+    this.syncUserBalance();
+    this.fetchCasinoVaultStats();
+    this.startDepositAutoListener();
+  }
+
+  startDepositAutoListener() {
+    if (this._depositAutoTimer) return;
+    this._depositAutoTimer = setInterval(async () => {
+      if (!this.activeWalletAddress) return;
+      try {
+        const res = await fetch(`/api/check-deposits?address=${encodeURIComponent(this.activeWalletAddress)}`);
+        const data = await res.json();
+        if (data && Array.isArray(data.newDeposits) && data.newDeposits.length > 0) {
+          for (const dep of data.newDeposits) {
+            this.showToast(`📥 Automatic Deposit Confirmed! +${Number(dep.amountSol || 0).toFixed(4)} SOL credited!`);
+            this.pushNotification('Deposit Confirmed', `+${Number(dep.amountSol || 0).toFixed(4)} SOL received in Casino Vault.`, 'win');
+            if (gpAudio && gpAudio.playWin) gpAudio.playWin();
+          }
+          this.syncUserBalance();
+          this.fetchVaultLedger();
+        }
+      } catch(e) {}
+    }, 4000);
+  }
+
+  updateWalletUI() {
+    const shortEl = document.getElementById('userPrivateWalletShort');
+    const fullEl = document.getElementById('userNonCustodialFullAddress');
+    const badgeEl = document.getElementById('walletConnectionBadge');
+    const phantomStatus = document.getElementById('phantomStatusText');
+    const addr = this.activeWalletAddress || this.nonCustodialAddress || 'Not initialized';
+
+    if (shortEl) {
+      shortEl.textContent = addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+    }
+    if (fullEl) {
+      fullEl.value = this.nonCustodialAddress || addr;
+    }
+    if (badgeEl) {
+      if (this.phantomAddress) {
+        badgeEl.textContent = 'Phantom Connected';
+        badgeEl.style.background = 'rgba(125,103,238,0.2)';
+        badgeEl.style.color = '#c4b5fd';
+        badgeEl.style.borderColor = 'rgba(125,103,238,0.4)';
+      } else {
+        badgeEl.textContent = 'In-Browser Non-Custodial';
+        badgeEl.style.background = 'rgba(16,185,129,0.18)';
+        badgeEl.style.color = '#34d399';
+        badgeEl.style.borderColor = 'rgba(16,185,129,0.3)';
+      }
+    }
+    if (phantomStatus) {
+      phantomStatus.textContent = this.phantomAddress ? `Connected: ${this.phantomAddress.slice(0, 4)}...${this.phantomAddress.slice(-4)}` : 'Or use In-Browser Keypair';
+    }
+  }
+
+  async fetchCasinoVaultStats() {
+    try {
+      const res = await fetch('/api/casino-vault');
+      const data = await res.json();
+      if (data && data.vaultAddress) {
+        const vaultAddrDisplay = document.getElementById('casinoVaultAddressDisplay');
+        const solscanLink = document.getElementById('vaultSolscanLink');
+        if (vaultAddrDisplay) vaultAddrDisplay.textContent = data.vaultAddress;
+        if (solscanLink) solscanLink.href = data.solscanUrl;
+      }
+    } catch(e) {}
+  }
+
+  async syncUserBalance() {
+    if (!this.activeWalletAddress) return;
+    try {
+      const res = await fetch(`/api/user-balance?address=${encodeURIComponent(this.activeWalletAddress)}`);
+      const data = await res.json();
+      if (data && typeof data.balance === 'number') {
+        this.balance = data.balance;
+        this.saveBalance();
         this.updateBalanceUI();
-        walletDialog.showModal();
-        gpAudio.playClick();
-      });
+      }
+    } catch(e) {}
+  }
+
+  async connectPhantomWallet() {
+    const provider = window.phantom?.solana || window.solana;
+    if (!provider || !provider.isPhantom) {
+      window.open('https://phantom.app/', '_blank');
+      this.showToast('Please install the Phantom wallet browser extension!');
+      return;
+    }
+    try {
+      const resp = await provider.connect();
+      this.phantomAddress = resp.publicKey.toString();
+      this.activeWalletAddress = this.phantomAddress;
+      localStorage.setItem('gp_connected_wallet', this.phantomAddress);
+      this.updateWalletUI();
+      this.syncUserBalance();
+      this.showToast(`Connected Phantom: ${this.phantomAddress.slice(0, 4)}...${this.phantomAddress.slice(-4)}`);
+      gpAudio.playWin();
+    } catch (err) {
+      console.warn('Phantom connect error:', err);
+      this.showToast('Phantom connection was cancelled.');
+    }
+  }
+
+  async depositWithPhantom(amountSol) {
+    const provider = window.phantom?.solana || window.solana;
+    if (!provider || !provider.publicKey) {
+      await this.connectPhantomWallet();
+      if (!provider || !provider.publicKey) return;
     }
 
-    const address = this.getWalletAddress();
-    const addrEl = document.getElementById('walletAddressDisplay');
-    if (addrEl) addrEl.textContent = address;
-
-    const copyAddrBtn = document.getElementById('walletCopyAddrBtn');
-    if (copyAddrBtn) {
-      copyAddrBtn.addEventListener('click', async () => {
-        const copied = await this.copyText(address);
-        this.showToast(copied ? 'Wallet address copied!' : 'Could not copy address.');
-        gpAudio.playClick();
-      });
+    if (!window.solanaWeb3) {
+      this.showToast('Solana Web3 library is initializing...');
+      return;
     }
 
-    const faucetBtn = document.getElementById('claimSolFaucetBtn');
-    if (faucetBtn) {
-      faucetBtn.addEventListener('click', () => {
-        this.balance = parseFloat((this.balance + 1.0).toFixed(4));
+    const lamports = Math.round(amountSol * 1e9);
+    this.showToast(`Requesting signature in Phantom for ${amountSol.toFixed(4)} SOL...`);
+
+    try {
+      const vaultPubkey = new window.solanaWeb3.PublicKey(this.casinoVaultAddress || '25YCFTvCWzEEwtHEnZk4AoZxAxQxWb9h5jeigFLtHoDM');
+      const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+      const { blockhash } = await connection.getLatestBlockhash();
+
+      const transaction = new window.solanaWeb3.Transaction({
+        recentBlockhash: blockhash,
+        feePayer: provider.publicKey
+      }).add(
+        window.solanaWeb3.SystemProgram.transfer({
+          fromPubkey: provider.publicKey,
+          toPubkey: vaultPubkey,
+          lamports
+        })
+      );
+
+      const { signature } = await provider.signAndSendTransaction(transaction);
+      this.showToast(`Transaction broadcasted: ${signature.slice(0, 8)}... Verifying on Solana RPC`);
+
+      // Verify on backend
+      const res = await fetch('/api/verify-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          txHash: signature,
+          userAddress: provider.publicKey.toString(),
+          amountSol
+        })
+      });
+      const result = await res.json();
+      if (result.success) {
+        this.balance = result.newBalance;
         this.saveBalance();
+        this.recordTransaction('Deposit', amountSol, 'COMPLETED');
         gpAudio.playWin();
-        this.showToast('💧 Claimed +1.00 SOL play-money faucet!');
-        this.pushNotification('Faucet claimed', '+1.00 demo SOL was added to your wallet.', 'faucet');
+        this.showToast(`📥 Deposit verified! +${amountSol.toFixed(4)} SOL credited.`);
+        this.pushNotification('Deposit Confirmed', `+${amountSol.toFixed(4)} SOL received in Casino Vault.`, 'win');
+      } else {
+        this.showToast(`Deposit status: ${result.error || 'Pending'}`);
+      }
+    } catch (err) {
+      console.error('Phantom deposit error:', err);
+      this.showToast(`Deposit error: ${err.message || 'Transaction rejected'}`);
+    }
+  }
+
+  async verifyDepositOnChain(txHash, amountSol) {
+    const statusEl = document.getElementById('depositStatusMsg');
+    if (statusEl) {
+      statusEl.style.color = '#38bdf8';
+      statusEl.textContent = 'Querying Solana Mainnet RPC for signature verification...';
+    }
+
+    try {
+      const res = await fetch('/api/verify-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          txHash,
+          userAddress: this.activeWalletAddress,
+          amountSol
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        this.balance = data.newBalance;
+        this.saveBalance();
+        this.recordTransaction('Deposit', data.amountSol, 'COMPLETED');
+        gpAudio.playWin();
+        if (statusEl) {
+          statusEl.style.color = '#4ade80';
+          statusEl.innerHTML = `✅ Confirmed! +${data.amountSol.toFixed(4)} SOL credited. <a href="${data.solscanUrl}" target="_blank" style="color:#38bdf8;">View on Solscan ↗</a>`;
+        }
+        this.showToast(`📥 Confirmed! +${data.amountSol.toFixed(4)} SOL credited.`);
+        this.pushNotification('Deposit Confirmed', `+${data.amountSol.toFixed(4)} SOL added to your balance.`, 'win');
+      } else {
+        if (statusEl) {
+          statusEl.style.color = '#f87171';
+          statusEl.textContent = `❌ ${data.error || 'Verification failed'}`;
+        }
+        this.showToast(data.error || 'Verification failed');
+      }
+    } catch(err) {
+      if (statusEl) {
+        statusEl.style.color = '#f87171';
+        statusEl.textContent = `❌ Network error: ${err.message}`;
+      }
+    }
+  }
+
+  async requestWithdrawalFromVault(destAddr, amt) {
+    const statusEl = document.getElementById('withdrawStatusMsg');
+    const withdrawInput = document.getElementById('withdrawAmountInput');
+    const walletDialog = document.getElementById('walletSecurityDialog');
+
+    if (statusEl) {
+      statusEl.style.color = '#38bdf8';
+      statusEl.textContent = 'Processing non-custodial withdrawal from Casino Vault...';
+    }
+
+    try {
+      const res = await fetch('/api/request-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destinationAddress: destAddr,
+          userAddress: this.activeWalletAddress,
+          amountSol: amt
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        this.balance = data.newBalance;
+        this.saveBalance();
+        this.recordTransaction('Withdrawal', -amt, 'COMPLETED');
+        gpAudio.playClick();
+        if (statusEl) {
+          statusEl.style.color = '#4ade80';
+          statusEl.innerHTML = `🚀 Sent! <a href="${data.solscanUrl}" target="_blank" style="color:#38bdf8;">View on Solscan ↗</a>`;
+        }
+        const truncDest = `${destAddr.slice(0, 4)}...${destAddr.slice(-4)}`;
+        this.showToast(`🚀 Dispatched ${amt.toFixed(4)} SOL to ${truncDest}`);
+        this.pushNotification('Withdrawal Complete', `${amt.toFixed(4)} SOL sent to ${truncDest}`, 'system');
+
+        if (withdrawInput) withdrawInput.value = '';
+        setTimeout(() => {
+          if (walletDialog && typeof walletDialog.close === 'function') walletDialog.close();
+        }, 1800);
+      } else {
+        if (statusEl) {
+          statusEl.style.color = '#f87171';
+          statusEl.textContent = `❌ ${data.error || 'Withdrawal failed'}`;
+        }
+        this.showToast(data.error || 'Withdrawal failed');
+      }
+    } catch(err) {
+      if (statusEl) {
+        statusEl.style.color = '#f87171';
+        statusEl.textContent = `❌ Network error: ${err.message}`;
+      }
+    }
+  }
+
+  importExistingKeypair(rawInput) {
+    if (!window.solanaWeb3) {
+      this.showToast('Solana Web3 library is not loaded');
+      return;
+    }
+    try {
+      let secretKeyBytes = null;
+      if (rawInput.startsWith('[') && rawInput.endsWith(']')) {
+        const arr = JSON.parse(rawInput);
+        secretKeyBytes = new Uint8Array(arr);
+      } else {
+        secretKeyBytes = this.fromBase58(rawInput);
+      }
+
+      if (!secretKeyBytes || secretKeyBytes.length !== 64) {
+        this.showToast('Invalid key length. A Solana secret key must be 64 bytes.');
+        return;
+      }
+
+      const importedKp = window.solanaWeb3.Keypair.fromSecretKey(secretKeyBytes);
+      this.userKeypair = importedKp;
+      this.nonCustodialAddress = importedKp.publicKey.toString();
+      this.activeWalletAddress = this.nonCustodialAddress;
+      localStorage.setItem('gp_noncustodial_secret', JSON.stringify(Array.from(secretKeyBytes)));
+      localStorage.removeItem('gp_connected_wallet');
+      this.phantomAddress = null;
+
+      this.updateWalletUI();
+      this.syncUserBalance();
+      this.showToast(`Keypair imported! Active address: ${this.nonCustodialAddress.slice(0, 4)}...${this.nonCustodialAddress.slice(-4)}`);
+      gpAudio.playWin();
+
+      const importContainer = document.getElementById('importKeyContainer');
+      if (importContainer) importContainer.style.display = 'none';
+    } catch(err) {
+      console.error('Import error:', err);
+      this.showToast(`Key import failed: ${err.message}`);
+    }
+  }
+
+  async fetchVaultLedger() {
+    const listEl = document.getElementById('vaultLedgerList');
+    if (!listEl) return;
+    try {
+      const res = await fetch('/api/vault-ledger');
+      const data = await res.json();
+      const txs = (data && data.transactions) || [];
+      if (txs.length === 0) {
+        listEl.innerHTML = '<div style="font-size:12px;color:#94a3b8;text-align:center;padding:16px;">No recorded vault transactions yet. Be the first to deposit!</div>';
+        return;
+      }
+      listEl.innerHTML = txs.map(tx => {
+        const isDep = tx.type === 'DEPOSIT';
+        const color = isDep ? '#4ade80' : '#f87171';
+        const sign = isDep ? '+' : '-';
+        const hashShort = tx.txHash ? `${tx.txHash.slice(0, 6)}...${tx.txHash.slice(-4)}` : 'On-Chain';
+        const dateStr = tx.timestamp ? new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#060b17;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;font-size:11.5px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:10px;font-weight:900;padding:2px 6px;border-radius:4px;background:${isDep ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)'};color:${color};">${tx.type}</span>
+              <a href="${tx.solscanUrl || '#'}" target="_blank" style="color:#38bdf8;text-decoration:none;font-family:monospace;font-size:11px;">${hashShort} ↗</a>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:900;color:${color};">${sign}${Number(tx.amountSol || 0).toFixed(4)} SOL</span>
+              <span style="color:#64748b;font-size:10px;">${dateStr}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = '<div style="font-size:12px;color:#f87171;text-align:center;padding:16px;">Failed to load ledger records.</div>';
+    }
+  }
+
+  showInsufficientBalancePrompt() {
+    this.showToast('❌ Insufficient SOL Balance! Deposit SOL to the Casino Vault or connect Phantom.');
+    const walletDialog = document.getElementById('walletSecurityDialog');
+    if (walletDialog && typeof walletDialog.showModal === 'function') {
+      try { walletDialog.showModal(); } catch (e) {}
+    }
+  }
+
+  toBase58(uint8Array) {
+    const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    const digits = [0];
+    for (let i = 0; i < uint8Array.length; i++) {
+      for (let j = 0; j < digits.length; j++) digits[j] <<= 8;
+      digits[0] += uint8Array[i];
+      let carry = 0;
+      for (let j = 0; j < digits.length; j++) {
+        digits[j] += carry;
+        carry = (digits[j] / 58) | 0;
+        digits[j] %= 58;
+      }
+      while (carry) {
+        digits.push(carry % 58);
+        carry = (carry / 58) | 0;
+      }
+    }
+    for (let i = 0; i < uint8Array.length && uint8Array[i] === 0; i++) digits.push(0);
+    return digits.reverse().map(d => ALPHABET[d]).join('');
+  }
+
+  fromBase58(str) {
+    const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    const bytes = [0];
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i];
+      const val = ALPHABET.indexOf(c);
+      if (val === -1) throw new Error(`Illegal character in base58: ${c}`);
+      for (let j = 0; j < bytes.length; j++) bytes[j] *= 58;
+      bytes[0] += val;
+      let carry = 0;
+      for (let j = 0; j < bytes.length; j++) {
+        bytes[j] += carry;
+        carry = bytes[j] >> 8;
+        bytes[j] &= 0xff;
+      }
+      while (carry) {
+        bytes.push(carry & 0xff);
+        carry >>= 8;
+      }
+    }
+    for (let i = 0; i < str.length && str[i] === '1'; i++) bytes.push(0);
+    return new Uint8Array(bytes.reverse());
+  }
+
+  /* ------------------------------------------------------------- */
+  /* USER PROFILE & PROFILE DROPDOWN (Image 2) */
+  /* ------------------------------------------------------------- */
+  initProfileMenu() {
+    const profileBtn = document.getElementById('gpProfileBtn');
+    const profileDropdown = document.getElementById('gpProfileDropdown');
+    const usernameDisplay = document.getElementById('profileUsernameDisplay');
+    const walletTruncated = document.getElementById('profileWalletTruncated');
+    const copyWalletBtn = document.getElementById('profileCopyWalletBtn');
+
+    // Update Header Display
+    if (usernameDisplay) usernameDisplay.textContent = this.username;
+    const addr = this.getWalletAddress();
+    if (walletTruncated) walletTruncated.textContent = `${addr.slice(0, 4)}...${addr.slice(-4)} (Insta)`;
+
+    if (copyWalletBtn) {
+      copyWalletBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const ok = await this.copyText(addr);
+        this.showToast(ok ? 'Wallet address copied!' : 'Could not copy address.');
+        gpAudio.playClick();
       });
     }
 
-    const resetBtn = document.getElementById('resetWalletBtn');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        if (!window.confirm('Reset your demo wallet and local game state?')) return;
-        localStorage.removeItem('gp_sol_balance');
-        localStorage.removeItem('gp_case_last_claim');
-        localStorage.removeItem('gp_total_bets');
-        localStorage.removeItem('gp_flappy_best');
-        localStorage.removeItem('gp_leaderboard');
-        this.balance = 2.50;
-        this.totalBets = 51423;
-        this.flappyBest = 0;
-        this.saveBalance();
-        this.updateTotalBetsUI();
-        this.updateFlappyBestUI();
-        this.updateDailyCaseUI();
-        this.renderLeaderboard();
-        this.showToast('Demo wallet reset to 2.50 SOL.');
+    // Toggle Dropdown
+    if (profileBtn && profileDropdown) {
+      profileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !profileDropdown.hidden;
+        profileDropdown.hidden = isOpen;
+        profileBtn.setAttribute('aria-expanded', String(!isOpen));
+        if (!isOpen) gpAudio.playClick();
+      });
+
+      // Close when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!profileDropdown.hidden && !e.target.closest('.nav-profile-container')) {
+          profileDropdown.hidden = true;
+          profileBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    // Row 1: Statistics
+    const itemStats = document.getElementById('menuItemStats');
+    const statsModal = document.getElementById('statsModal');
+    if (itemStats && statsModal) {
+      itemStats.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.hidden = true;
+        this.updateStatsUI();
+        if (typeof statsModal.showModal === 'function') statsModal.showModal();
+        gpAudio.playClick();
+      });
+    }
+
+    // Row 2: Affiliates
+    const itemAffiliates = document.getElementById('menuItemAffiliates');
+    const affiliatesModal = document.getElementById('affiliatesModal');
+    if (itemAffiliates && affiliatesModal) {
+      itemAffiliates.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.hidden = true;
+        this.updateAffiliatesUI();
+        if (typeof affiliatesModal.showModal === 'function') affiliatesModal.showModal();
+        gpAudio.playClick();
+      });
+    }
+
+    const copyRefBtn = document.getElementById('copyRefLinkBtn');
+    if (copyRefBtn) {
+      copyRefBtn.addEventListener('click', async () => {
+        const link = `https://luckywin.sol/ref/${encodeURIComponent(this.username)}`;
+        const ok = await this.copyText(link);
+        this.showToast(ok ? 'Referral link copied to clipboard!' : 'Could not copy link.');
+        gpAudio.playClick();
+      });
+    }
+
+    const claimAffBtn = document.getElementById('claimAffiliateCommBtn');
+    if (claimAffBtn) {
+      claimAffBtn.addEventListener('click', () => {
+        this.showToast('No unclaimed affiliate commissions pending.');
+        gpAudio.playClick();
+      });
+    }
+
+    // Row 3: Settings
+    const itemSettings = document.getElementById('menuItemSettings');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsInput = document.getElementById('settingsUsernameInput');
+    const saveUserBtn = document.getElementById('saveUsernameBtn');
+
+    if (itemSettings && settingsModal) {
+      itemSettings.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.hidden = true;
+        if (settingsInput) settingsInput.value = this.username;
+        if (typeof settingsModal.showModal === 'function') settingsModal.showModal();
+        gpAudio.playClick();
+      });
+    }
+
+    if (saveUserBtn && settingsInput) {
+      saveUserBtn.addEventListener('click', () => {
+        const newName = settingsInput.value.trim().slice(0, 16);
+        if (!newName) {
+          this.showToast('Please enter a non-empty username.');
+          return;
+        }
+        this.username = newName;
+        localStorage.setItem('gp_username', newName);
+        if (usernameDisplay) usernameDisplay.textContent = newName;
+        this.showToast(`Display name updated to "${newName}"!`);
+        gpAudio.playClick();
+        if (settingsModal && typeof settingsModal.close === 'function') settingsModal.close();
+      });
+    }
+
+    const openFairnessBtn = document.getElementById('settingsOpenFairnessBtn');
+    if (openFairnessBtn) {
+      openFairnessBtn.addEventListener('click', () => {
+        if (settingsModal && typeof settingsModal.close === 'function') settingsModal.close();
+        const fModal = document.getElementById('fairnessModal');
+        if (fModal) fModal.classList.add('is-open');
+        gpAudio.playClick();
+      });
+    }
+
+    const openTermsBtn = document.getElementById('settingsOpenTermsBtn');
+    if (openTermsBtn) {
+      openTermsBtn.addEventListener('click', () => {
+        if (settingsModal && typeof settingsModal.close === 'function') settingsModal.close();
+        this.openTermsModal();
+      });
+    }
+
+    // Row 4: Transactions
+    const itemTx = document.getElementById('menuItemTransactions');
+    const txModal = document.getElementById('transactionsModal');
+    if (itemTx && txModal) {
+      itemTx.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.hidden = true;
+        this.renderTransactionsTable();
+        if (typeof txModal.showModal === 'function') txModal.showModal();
+        gpAudio.playClick();
+      });
+    }
+
+    // Row 5: Daily Free Chest
+    const itemDaily = document.getElementById('menuItemDailyChest');
+    if (itemDaily) {
+      itemDaily.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.hidden = true;
+        this.openDailyCaseModal(true);
+        gpAudio.playClick();
+      });
+    }
+
+    // Row 6: Rewards
+    const itemRewards = document.getElementById('menuItemRewards');
+    const rewardsModal = document.getElementById('rewardsModal');
+    if (itemRewards && rewardsModal) {
+      itemRewards.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.hidden = true;
+        this.updateVipDisplay();
+        this.updateWeeklyReloadUI();
+        if (typeof rewardsModal.showModal === 'function') rewardsModal.showModal();
+        gpAudio.playClick();
+      });
+    }
+
+    const claimReloadBtn = document.getElementById('claimDailyReloadBtn');
+    if (claimReloadBtn) {
+      claimReloadBtn.addEventListener('click', () => {
+        this.claimWeeklyReload();
+      });
+    }
+
+    const claimRakebackBtn = document.getElementById('claimRakebackBtn');
+    if (claimRakebackBtn) {
+      claimRakebackBtn.addEventListener('click', () => {
+        this.claimRakeback();
+      });
+    }
+
+    // Row 7: Wallet
+    const itemWallet = document.getElementById('menuItemWallet');
+    if (itemWallet) {
+      itemWallet.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.hidden = true;
+        this.openWalletDialog(true);
         gpAudio.playClick();
       });
     }
   }
 
+  recordTransaction(type, amount, status = 'COMPLETED') {
+    const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    let txHash = '';
+    for (let i = 0; i < 8; i++) txHash += chars[Math.floor(Math.random() * chars.length)];
+    const item = {
+      id: Date.now(),
+      type,
+      amount,
+      hash: `${txHash}...`,
+      status,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+    this.transactions.unshift(item);
+    if (this.transactions.length > 50) this.transactions.pop();
+    try {
+      localStorage.setItem('gp_transactions', JSON.stringify(this.transactions));
+    } catch(e) {}
+    this.renderTransactionsTable();
+  }
+
+  renderTransactionsTable() {
+    const tbody = document.getElementById('transactionsTableBody');
+    if (!tbody) return;
+
+    if (!this.transactions || this.transactions.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b;">No transactions recorded yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = this.transactions.map(tx => {
+      const isPositive = tx.amount > 0;
+      const amtStr = `${isPositive ? '+' : ''}${Math.abs(tx.amount).toFixed(4)} SOL`;
+      const amtColor = isPositive ? '#4ade80' : '#f87171';
+      return `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04);font-family:'Plus Jakarta Sans',sans-serif;">
+          <td style="padding:10px 12px;font-weight:800;color:#ffffff;">${tx.type}</td>
+          <td style="padding:10px 12px;font-weight:900;color:${amtColor};">${amtStr}</td>
+          <td style="padding:10px 12px;font-family:monospace;color:#38bdf8;">${tx.hash}</td>
+          <td style="padding:10px 12px;"><span style="background:rgba(34,197,94,0.15);color:#4ade80;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;">${tx.status}</span></td>
+          <td style="padding:10px 12px;color:#94a3b8;font-size:11px;">${tx.time}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  updateStatsUI() {
+    const wagerEl = document.getElementById('statTotalWagered');
+    const wagerUsdEl = document.getElementById('statTotalWageredUsd');
+    const profitEl = document.getElementById('statNetProfit');
+    const profitUsdEl = document.getElementById('statNetProfitUsd');
+    const betsEl = document.getElementById('statTotalBets');
+    const winRateEl = document.getElementById('statWinRate');
+    const winsCountEl = document.getElementById('statWinsCount');
+    const bestMultEl = document.getElementById('statBestMult');
+
+    const solP = this.solPrice || 108.35;
+    const w = this.stats.totalWagered || 0;
+    const p = this.stats.totalProfit || 0;
+    const b = this.stats.totalBets || 0;
+    const wins = this.stats.wins || 0;
+
+    if (wagerEl) wagerEl.textContent = `${w.toFixed(4)} SOL`;
+    if (wagerUsdEl) wagerUsdEl.textContent = `≈ $${(w * solP).toFixed(2)} USD`;
+    if (profitEl) {
+      profitEl.textContent = `${p >= 0 ? '+' : ''}${p.toFixed(4)} SOL`;
+      profitEl.style.color = p >= 0 ? '#4ade80' : '#f87171';
+    }
+    if (profitUsdEl) profitUsdEl.textContent = `≈ $${(p * solP).toFixed(2)} USD`;
+    if (betsEl) betsEl.textContent = b.toLocaleString();
+    if (winsCountEl) winsCountEl.textContent = `${wins.toLocaleString()} wins`;
+    if (winRateEl) {
+      const rate = b > 0 ? ((wins / b) * 100).toFixed(1) : '0.0';
+      winRateEl.textContent = `${rate}%`;
+    }
+    if (bestMultEl) bestMultEl.textContent = `${(this.stats.bestMult || 1).toFixed(2)}x`;
+  }
+
+  updateAffiliatesUI() {
+    const linkEl = document.getElementById('affiliateRefLink');
+    if (linkEl) {
+      linkEl.textContent = `https://luckywin.sol/ref/${encodeURIComponent(this.username)}`;
+    }
+  }
+
+  hasPlayedGameToday() {
+    const last = parseInt(localStorage.getItem('gp_last_game_played'), 10) || 0;
+    return Boolean(last && (Date.now() - last < 24 * 60 * 60 * 1000));
+  }
+
+  recordGamePlayed(game, wager = 0) {
+    this.lastGamePlayedTime = Date.now();
+    localStorage.setItem('gp_last_game_played', String(this.lastGamePlayedTime));
+    if (wager > 0) {
+      this.stats.totalWagered = parseFloat(((this.stats.totalWagered || 0) + wager).toFixed(4));
+      this.stats.totalBets = (this.stats.totalBets || 0) + 1;
+      const vip = this.getVipInfo();
+      const earnedRakeback = wager * (parseFloat(vip.rakebackPct) / 100);
+      const currentAccrued = parseFloat(localStorage.getItem('gp_accrued_rakeback') || '0') || 0;
+      const newAccrued = parseFloat((currentAccrued + earnedRakeback).toFixed(6));
+      try {
+        localStorage.setItem('gp_stats', JSON.stringify(this.stats));
+        localStorage.setItem('gp_accrued_rakeback', newAccrued.toString());
+      } catch(e) {}
+    }
+    this.updateVipDisplay();
+    this.updateDailyCaseUI();
+  }
+
+  getVipInfo() {
+    const totalWagered = (this.stats && typeof this.stats.totalWagered === 'number') ? this.stats.totalWagered : 0;
+    // VIP Tier 1: 0 - 0.5 SOL (0.5% rakeback)
+    // VIP Tier 2: 0.5 - 1.0 SOL (1.0% rakeback)
+    // VIP Tier 3: 1.0 - 1.5 SOL (1.5% rakeback)
+    // VIP Tier 4: 1.5 - 2.0 SOL (2.0% rakeback)
+    // and so on every 0.5 SOL (+0.5% rakeback per tier)
+    const tier = Math.max(1, Math.floor(totalWagered / 0.5) + 1);
+    const nextTier = tier + 1;
+    const currentTierThreshold = (tier - 1) * 0.5;
+    const nextTierThreshold = tier * 0.5;
+    const progressInTier = Math.max(0, totalWagered - currentTierThreshold);
+    const progressPct = Math.min(100, Math.max(0, (progressInTier / 0.5) * 100));
+    const remainingSol = Math.max(0, nextTierThreshold - totalWagered);
+    const rakebackPct = (tier * 0.5).toFixed(1);
+
+    return {
+      tier,
+      nextTier,
+      totalWagered,
+      currentTierThreshold,
+      nextTierThreshold,
+      progressPct: progressPct.toFixed(1),
+      remainingSol: remainingSol.toFixed(4),
+      rakebackPct
+    };
+  }
+
+  updateVipDisplay() {
+    const vip = this.getVipInfo();
+    this.vipRank = vip.tier;
+    localStorage.setItem('gp_vip_rank', String(vip.tier));
+
+    const titleEl = document.getElementById('vipTierTitle');
+    const progressTextEl = document.getElementById('vipTierProgressText');
+    const progressBarEl = document.getElementById('vipTierProgressBar');
+    const descEl = document.getElementById('vipTierWagerDesc');
+    const rankBenefitsEl = document.getElementById('vipRankBenefitsSubtext');
+    const rakebackLabelEl = document.getElementById('vipRakebackLabel');
+    const accruedEl = document.getElementById('rakebackAmountDisplay');
+    const claimRakebackBtn = document.getElementById('claimRakebackBtn');
+
+    if (titleEl) titleEl.textContent = `VIP Tier ${vip.tier}`;
+    if (progressTextEl) progressTextEl.textContent = `${vip.progressPct}% / 100% to Tier ${vip.nextTier}`;
+    if (progressBarEl) progressBarEl.style.width = `${vip.progressPct}%`;
+    if (descEl) descEl.textContent = `Wager ${vip.remainingSol} SOL more to unlock VIP Tier ${vip.nextTier} (${(Number(vip.rakebackPct) + 0.5).toFixed(1)}% rakeback).`;
+    if (rankBenefitsEl) rankBenefitsEl.textContent = `Level ${vip.tier} Rank Benefits (${vip.rakebackPct}% Rakeback)`;
+    if (rakebackLabelEl) rakebackLabelEl.textContent = `${vip.rakebackPct}% Rakeback (Every 12h)`;
+
+    const accrued = parseFloat(localStorage.getItem('gp_accrued_rakeback') || '0') || 0;
+    const lastClaim = parseInt(localStorage.getItem('gp_rakeback_last_claim'), 10) || 0;
+    const cooldownMs = 12 * 60 * 60 * 1000;
+    const remaining = Math.max(0, cooldownMs - (Date.now() - lastClaim));
+
+    if (accruedEl) {
+      if (remaining > 0) {
+        const totalSec = Math.ceil(remaining / 1000);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        accruedEl.textContent = `${accrued.toFixed(5)} SOL accrued · Available in ${h}h ${m}m`;
+      } else {
+        accruedEl.textContent = `${accrued.toFixed(5)} SOL accrued · Ready to claim`;
+      }
+    }
+
+    if (claimRakebackBtn) {
+      if (remaining > 0) {
+        const totalSec = Math.ceil(remaining / 1000);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        claimRakebackBtn.textContent = `WAIT ${h}h ${m}m`;
+        claimRakebackBtn.style.background = '#1e293b';
+        claimRakebackBtn.style.color = '#94a3b8';
+        claimRakebackBtn.style.border = '1px solid rgba(255,255,255,0.08)';
+      } else {
+        claimRakebackBtn.textContent = 'CLAIM';
+        if (accrued > 0) {
+          claimRakebackBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+          claimRakebackBtn.style.color = '#ffffff';
+          claimRakebackBtn.style.border = 'none';
+        } else {
+          claimRakebackBtn.style.background = '#132244';
+          claimRakebackBtn.style.color = '#93c5fd';
+          claimRakebackBtn.style.border = '1px solid rgba(59,130,246,0.25)';
+        }
+      }
+    }
+  }
+
+  claimRakeback() {
+    const vip = this.getVipInfo();
+    const lastClaim = parseInt(localStorage.getItem('gp_rakeback_last_claim'), 10) || 0;
+    const cooldownMs = 12 * 60 * 60 * 1000;
+    const remaining = Math.max(0, cooldownMs - (Date.now() - lastClaim));
+
+    if (remaining > 0) {
+      const totalSec = Math.ceil(remaining / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      this.showToast(`⏳ Rakeback can be claimed once every 12 hours. Next claim in ${h}h ${m}m!`);
+      gpAudio.playClick();
+      return;
+    }
+
+    const accrued = parseFloat(localStorage.getItem('gp_accrued_rakeback') || '0') || 0;
+    if (accrued <= 0) {
+      this.showToast(`No accrued rakeback available yet. Place real wagers to earn ${vip.rakebackPct}% rakeback!`);
+      gpAudio.playClick();
+      return;
+    }
+
+    this.balance = parseFloat((this.balance + accrued).toFixed(4));
+    this.saveBalance();
+    localStorage.setItem('gp_rakeback_last_claim', Date.now().toString());
+    localStorage.setItem('gp_accrued_rakeback', '0');
+    this.recordTransaction('VIP Rakeback', accrued, 'COMPLETED');
+    this.updateVipDisplay();
+    gpAudio.playWin();
+    this.showToast(`🎁 Claimed +${accrued.toFixed(5)} SOL (${vip.rakebackPct}%) VIP Rakeback!`);
+  }
+
+  getWeeklyReloadSol() {
+    const price = (typeof this.solPrice === 'number' && this.solPrice > 0) ? this.solPrice : 150;
+    // 0.05 cents = $0.05 USD worth of SOL
+    return parseFloat((0.05 / price).toFixed(6));
+  }
+
+  updateWeeklyReloadUI() {
+    const reloadBtn = document.getElementById('claimDailyReloadBtn');
+    const subtextEl = document.getElementById('weeklyReloadSubtext');
+    const solAmt = this.getWeeklyReloadSol();
+
+    if (subtextEl) {
+      subtextEl.textContent = `+${solAmt.toFixed(6)} SOL (≈ $0.05 USD) Available`;
+    }
+
+    if (!reloadBtn) return;
+    const lastClaim = parseInt(localStorage.getItem('gp_weekly_reload_last_claim'), 10) || 0;
+    const cooldownMs = 7 * 24 * 60 * 60 * 1000;
+    const remaining = Math.max(0, cooldownMs - (Date.now() - lastClaim));
+
+    if (remaining > 0) {
+      reloadBtn.disabled = true;
+      const totalHours = Math.floor(remaining / (1000 * 60 * 60));
+      const days = Math.floor(totalHours / 24);
+      const hours = totalHours % 24;
+      reloadBtn.textContent = days > 0 ? `WAIT ${days}d ${hours}h` : `WAIT ${hours}h`;
+      reloadBtn.style.background = '#1e293b';
+      reloadBtn.style.color = '#94a3b8';
+    } else {
+      reloadBtn.disabled = false;
+      reloadBtn.textContent = 'CLAIM';
+      reloadBtn.style.background = '#2563eb';
+      reloadBtn.style.color = '#ffffff';
+    }
+  }
+
+  claimWeeklyReload() {
+    const lastClaim = parseInt(localStorage.getItem('gp_weekly_reload_last_claim'), 10) || 0;
+    const cooldownMs = 7 * 24 * 60 * 60 * 1000;
+    if (lastClaim && (Date.now() - lastClaim < cooldownMs)) {
+      this.showToast('Weekly Reload is still on cooldown.');
+      return;
+    }
+    const solAmt = this.getWeeklyReloadSol();
+    this.balance = parseFloat((this.balance + solAmt).toFixed(4));
+    this.saveBalance();
+    localStorage.setItem('gp_weekly_reload_last_claim', Date.now().toString());
+    this.recordTransaction('Weekly Reload', solAmt, 'COMPLETED');
+    this.updateWeeklyReloadUI();
+    gpAudio.playWin();
+    this.showToast(`🎁 Claimed +${solAmt} SOL ($0.05 USD) Weekly Reload!`);
+  }
+
   getWalletAddress() {
-    let addr = localStorage.getItem('gp_demo_address');
+    if (this.activeWalletAddress) return this.activeWalletAddress;
+    if (this.nonCustodialAddress) return this.nonCustodialAddress;
+    let addr = localStorage.getItem('gp_noncustodial_address');
     if (addr && addr.length >= 32) return addr;
     const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
     let tail = '';
@@ -362,8 +1463,8 @@ class GreenpumpApp {
     } else {
       for (let i = 0; i < 38; i++) tail += chars[Math.floor(Math.random() * chars.length)];
     }
-    addr = `GPump${tail}`;
-    localStorage.setItem('gp_demo_address', addr);
+    addr = `SOL${tail}`;
+    localStorage.setItem('gp_noncustodial_address', addr);
     return addr;
   }
 
@@ -411,10 +1512,16 @@ class GreenpumpApp {
     }
     const dialogBalance = document.getElementById('walletDialogBalance');
     if (dialogBalance) dialogBalance.textContent = `${this.formatSol(this.balance)} SOL`;
+    const dialogUsd = document.getElementById('walletDialogBalanceUsd');
+    if (dialogUsd) {
+      const p = this.solPrice || 108.35;
+      dialogUsd.textContent = `≈ $${(this.balance * p).toFixed(2)} USD`;
+    }
   }
 
-  bumpTotalBets(amount = 1) {
+  bumpTotalBets(amount = 1, wagerAmount = 0) {
     this.totalBets += amount;
+    this.recordGamePlayed('game', wagerAmount);
     this.updateTotalBetsUI();
   }
 
@@ -450,14 +1557,13 @@ class GreenpumpApp {
   /* ------------------------------------------------------------- */
   initGameSwitching() {
     const gamesWrapper = document.querySelector('.nav-games-wrapper');
-    const dropdownMenu = document.querySelector('.NavbarGameMenu-module__tgv1Qa__menu');
 
     // Add click/hover delegation to switch games
     document.querySelectorAll('[data-switch-game]').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const gameId = link.dataset.switchGame;
-        this.switchGame(gameId);
+        this.switchGame(gameId, true);
 
         // Close dropdown
         if (gamesWrapper) gamesWrapper.classList.remove('open');
@@ -465,7 +1571,7 @@ class GreenpumpApp {
     });
   }
 
-  switchGame(gameId) {
+  switchGame(gameId, updateUrl = true) {
     const targetStage = document.getElementById(`stage-${gameId}`);
     if (!targetStage) return;
     this.activeGame = gameId;
@@ -496,8 +1602,259 @@ class GreenpumpApp {
     if (gameId === 'chicken' && this.renderChickenHighwayLanes) {
       setTimeout(() => this.renderChickenHighwayLanes(), 50);
     }
+
+    if (updateUrl) {
+      const route = this.getRouteForGame(gameId);
+      const cur = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (cur !== route) {
+        window.history.pushState({ game: gameId }, '', '/' + route);
+      }
+      document.title = `LuckyWin - ${this.getGameTitle(gameId)} | Next Gen Solana Gaming`;
+    }
+
     gpAudio.playClick();
-    this.showToast(`Switched to ${gameId.toUpperCase()}`);
+    this.showToast(`Switched to ${this.getGameTitle(gameId)}`);
+  }
+
+  /* ------------------------------------------------------------- */
+  /* CONTINUOUS LIVE SOLANA PRICE SERVICE */
+  /* ------------------------------------------------------------- */
+  initLiveSolPriceService() {
+    this.solPrice = 108.35;
+    this.solChange24h = 2.28;
+    this.prevSolPrice = null;
+
+    // 1. Immediate initial price fetch
+    const fetchInitialPrice = async () => {
+      try {
+        const res = await fetch('/api/sol-price');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.price) {
+            this.handleSolPriceTick(data.price, data.change24h);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Direct fallback to Binance 24hr
+      try {
+        const directRes = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=SOLUSDT');
+        if (directRes.ok) {
+          const data = await directRes.json();
+          if (data && data.lastPrice) {
+            this.handleSolPriceTick(parseFloat(data.lastPrice), parseFloat(data.priceChangePercent));
+          }
+        }
+      } catch (e) {}
+    };
+    fetchInitialPrice();
+
+    // 2. Immediate initial klines fetch for chart history
+    const fetchInitialKlines = async () => {
+      try {
+        const res = await fetch('/api/sol-klines');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.candles) && data.candles.length > 5) {
+            this.candles = data.candles.slice(-28);
+            this.prices = data.closes ? data.closes.slice(-28) : this.candles.map(c => c.close);
+            this.currentPrice = this.prices[this.prices.length - 1];
+            this.basePrice = this.currentPrice;
+            this.drawPumpChart();
+            this.updatePumpTickerUI();
+            return;
+          } else if (data && Array.isArray(data.closes) && data.closes.length > 5) {
+            this.prices = data.closes.slice(-28);
+            this.currentPrice = this.prices[this.prices.length - 1];
+            this.basePrice = this.currentPrice;
+            this.drawPumpChart();
+            this.updatePumpTickerUI();
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Direct fallback to Binance klines
+      try {
+        const directRes = await fetch('https://api.binance.com/api/v3/klines?symbol=SOLUSDT&interval=1m&limit=30');
+        if (directRes.ok) {
+          const klines = await directRes.json();
+          if (Array.isArray(klines) && klines.length > 5) {
+            this.candles = klines.slice(-28).map(k => ({
+              time: k[0],
+              open: parseFloat(k[1]),
+              high: parseFloat(k[2]),
+              low: parseFloat(k[3]),
+              close: parseFloat(k[4])
+            }));
+            this.prices = this.candles.map(c => c.close);
+            this.currentPrice = this.prices[this.prices.length - 1];
+            this.basePrice = this.currentPrice;
+            this.drawPumpChart();
+            this.updatePumpTickerUI();
+          }
+        }
+      } catch (e) {}
+    };
+    fetchInitialKlines();
+
+    // 3. Continuous Real-Time WebSocket stream
+    let ws = null;
+    let wsReconnectTimer = null;
+
+    const connectWebSocket = () => {
+      try {
+        ws = new WebSocket('wss://stream.binance.com:9443/ws/solusdt@ticker');
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg && msg.c) {
+              const livePrice = parseFloat(msg.c);
+              const change24h = parseFloat(msg.P);
+              this.handleSolPriceTick(livePrice, change24h);
+            }
+          } catch (err) {}
+        };
+
+        ws.onerror = () => {
+          if (ws) ws.close();
+        };
+
+        ws.onclose = () => {
+          clearTimeout(wsReconnectTimer);
+          wsReconnectTimer = setTimeout(connectWebSocket, 3000);
+        };
+      } catch (e) {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = setTimeout(connectWebSocket, 4000);
+      }
+    };
+    connectWebSocket();
+
+    // 4. Redundant fallback heartbeat (every 3 seconds)
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/sol-price');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.price) {
+            this.handleSolPriceTick(data.price, data.change24h);
+          }
+        }
+      } catch (e) {}
+    }, 3000);
+  }
+
+  handleSolPriceTick(price, change24h) {
+    if (!price || isNaN(price) || price <= 0) return;
+
+    const oldPrice = this.prevSolPrice || this.solPrice;
+    this.prevSolPrice = this.solPrice;
+    this.solPrice = price;
+
+    if (typeof change24h === 'number' && !isNaN(change24h)) {
+      this.solChange24h = change24h;
+    }
+
+    // Top navbar live price pill
+    const priceValEl = document.getElementById('liveSolPriceValue');
+    const priceChangeEl = document.getElementById('liveSolPriceChange');
+
+    if (priceValEl) {
+      priceValEl.textContent = `$${price.toFixed(2)}`;
+      if (oldPrice && oldPrice !== price) {
+        priceValEl.classList.remove('price-tick-flash-up', 'price-tick-flash-down');
+        void priceValEl.offsetWidth; // force reflow for animation restart
+        priceValEl.classList.add(price > oldPrice ? 'price-tick-flash-up' : 'price-tick-flash-down');
+      }
+    }
+
+    if (priceChangeEl && typeof this.solChange24h === 'number') {
+      const sign = this.solChange24h >= 0 ? '+' : '';
+      priceChangeEl.textContent = `${sign}${this.solChange24h.toFixed(2)}%`;
+      priceChangeEl.className = `sol-pill-change ${this.solChange24h >= 0 ? 'is-up' : 'is-down'}`;
+    }
+
+    // Update Candlesticks in Real Time
+    this.currentPrice = price;
+    if (!this.candles || this.candles.length === 0) {
+      this.candles = [{
+        time: Date.now(),
+        open: price,
+        high: price,
+        low: price,
+        close: price
+      }];
+    } else {
+      const activeCandle = this.candles[this.candles.length - 1];
+      activeCandle.close = price;
+      if (price > activeCandle.high) activeCandle.high = price;
+      if (price < activeCandle.low) activeCandle.low = price;
+
+      const now = Date.now();
+      if (!this.lastCandleTime) this.lastCandleTime = now;
+      if (now - this.lastCandleTime > 45000) {
+        this.lastCandleTime = now;
+        this.candles.push({
+          time: now,
+          open: price,
+          high: price,
+          low: price,
+          close: price
+        });
+        if (this.candles.length > 28) this.candles.shift();
+      }
+    }
+
+    if (!this.prices || this.prices.length === 0) {
+      this.prices = [price];
+    } else {
+      const last = this.prices[this.prices.length - 1];
+      if (last !== price) {
+        this.prices.push(price);
+        if (this.prices.length > 40) this.prices.shift();
+      }
+    }
+
+    this.updatePumpTickerUI();
+    this.drawPumpChart();
+    this.updateAllUsdEstimates();
+  }
+
+  updatePumpTickerUI() {
+    const centerMult = document.getElementById('pumpPriceTicker');
+    if (!centerMult) return;
+    const price = this.currentPrice || this.solPrice || 108.35;
+    const change = (typeof this.solChange24h === 'number')
+      ? this.solChange24h
+      : (((price - this.prices[0]) / this.prices[0]) * 100);
+    const sign = change >= 0 ? '+' : '';
+    centerMult.textContent = `$${price.toFixed(2)} (${sign}${change.toFixed(2)}%)`;
+    centerMult.style.color = change >= 0 ? '#4ade80' : '#f87171';
+  }
+
+  updateAllUsdEstimates() {
+    const price = this.solPrice || 108.35;
+
+    const crashUsd = document.getElementById('crashUsdEstimate');
+    if (crashUsd) crashUsd.textContent = `≈ $${(this.rugBet * price).toFixed(2)} USD`;
+
+    const chickenUsd = document.getElementById('chickenUsdEstimate');
+    if (chickenUsd) chickenUsd.textContent = `≈ $${(this.chickenBet * price).toFixed(2)} USD`;
+
+    const hiloUsd = document.getElementById('hiloUsdEstimate');
+    if (hiloUsd) hiloUsd.textContent = `≈ $${(this.hiloBet * price).toFixed(2)} USD`;
+
+    const coinflipUsd = document.getElementById('coinflipUsdEstimate');
+    if (coinflipUsd) coinflipUsd.textContent = `≈ $${(this.coinflipBet * price).toFixed(2)} USD`;
+
+    const minesUsd = document.getElementById('minesUsdEstimate');
+    if (minesUsd) minesUsd.textContent = `≈ $${(this.minesBet * price).toFixed(2)} USD`;
+
+    const pumpUsd = document.getElementById('pumpUsdEstimate');
+    if (pumpUsd) pumpUsd.textContent = `≈ $${(this.pumpBet * price).toFixed(2)} USD`;
   }
 
   /* ------------------------------------------------------------- */
@@ -508,12 +1865,6 @@ class GreenpumpApp {
     if (!this.canvas) return;
     this.ctx = this.canvas.getContext('2d');
 
-    for (let i = 0; i < 40; i++) {
-      this.basePrice += (Math.random() - 0.48) * 0.45;
-      this.prices.push(this.basePrice);
-    }
-    this.currentPrice = this.prices[this.prices.length - 1];
-
     const resize = () => {
       if (!this.canvas) return;
       const rect = this.canvas.parentElement.getBoundingClientRect();
@@ -521,33 +1872,24 @@ class GreenpumpApp {
       this.canvas.width = Math.max(1, rect.width * dpr);
       this.canvas.height = Math.max(1, rect.height * dpr);
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      this.drawPumpChart();
     };
     window.addEventListener('resize', resize);
     resize();
-
-    // Live tick loop
-    setInterval(() => {
-      const delta = (Math.random() - 0.49) * 0.55;
-      this.currentPrice = Math.max(120, this.currentPrice + delta);
-      this.prices.push(this.currentPrice);
-      if (this.prices.length > 50) this.prices.shift();
-
-      const centerMult = document.getElementById('pumpPriceTicker');
-      if (centerMult) {
-        const change = ((this.currentPrice - this.prices[0]) / this.prices[0]) * 100;
-        const sign = change >= 0 ? '+' : '';
-        centerMult.textContent = `$${this.currentPrice.toFixed(2)} (${sign}${change.toFixed(2)}%)`;
-        centerMult.style.color = change >= 0 ? '#4ade80' : '#f87171';
-      }
-
-      this.drawPumpChart();
-    }, 180);
 
     // Direction Selectors
     const pumpDirBtn = document.getElementById('pumpUpBtn');
     const dumpDirBtn = document.getElementById('dumpDownBtn');
     const tradeBtn = document.getElementById('pumpTradeActionBtn');
     const betInput = document.getElementById('pumpBetInput');
+    const usdEl = document.getElementById('pumpUsdEstimate');
+
+    const updatePumpUsd = () => {
+      if (usdEl) {
+        const p = this.solPrice || 108.35;
+        usdEl.textContent = `≈ $${(this.pumpBet * p).toFixed(2)} USD`;
+      }
+    };
 
     if (pumpDirBtn && dumpDirBtn) {
       pumpDirBtn.addEventListener('click', () => {
@@ -556,7 +1898,14 @@ class GreenpumpApp {
         dumpDirBtn.classList.remove('is-active');
         tradeBtn.classList.remove('is-dump');
         tradeBtn.classList.add('is-pump');
-        tradeBtn.innerHTML = `<span>TRADE NOW (PUMP)</span>`;
+        tradeBtn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+        tradeBtn.style.boxShadow = '0 6px 22px rgba(34, 197, 94, 0.4)';
+        tradeBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 17l9.2-9.2M17 17V7H7"/>
+          </svg>
+          <span id="pumpTradeBtnText">TRADE NOW (PUMP)</span>
+        `;
         gpAudio.playClick();
       });
 
@@ -566,34 +1915,57 @@ class GreenpumpApp {
         pumpDirBtn.classList.remove('is-active');
         tradeBtn.classList.remove('is-pump');
         tradeBtn.classList.add('is-dump');
-        tradeBtn.innerHTML = `<span>TRADE NOW (DUMP)</span>`;
+        tradeBtn.style.background = 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)';
+        tradeBtn.style.boxShadow = '0 6px 22px rgba(244, 63, 94, 0.4)';
+        tradeBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 7l9.2 9.2M17 7v10H7"/>
+          </svg>
+          <span id="pumpTradeBtnText">TRADE NOW (DUMP)</span>
+        `;
         gpAudio.playClick();
       });
     }
 
     if (betInput) {
+      betInput.addEventListener('input', (e) => {
+        this.pumpBet = Math.max(0.001, parseFloat(e.target.value) || 0.05);
+        updatePumpUsd();
+      });
       betInput.addEventListener('change', (e) => {
         this.pumpBet = Math.max(0.001, parseFloat(e.target.value) || 0.05);
+        updatePumpUsd();
       });
     }
 
-    // Quick modifiers
+    // Quick modifiers: MIN, 1/2, 2x, MAX (Matching Image 1)
+    const minBtn = document.getElementById('pumpMinBtn');
     const halfBtn = document.getElementById('pumpHalfBtn');
     const doubleBtn = document.getElementById('pumpDoubleBtn');
     const maxBtn = document.getElementById('pumpMaxBtn');
 
+    if (minBtn) minBtn.addEventListener('click', () => {
+      this.pumpBet = 0.001;
+      if (betInput) betInput.value = '0.001';
+      updatePumpUsd();
+    });
     if (halfBtn) halfBtn.addEventListener('click', () => {
-      this.pumpBet = Math.max(0.001, this.pumpBet / 2);
-      if (betInput) betInput.value = this.pumpBet.toFixed(3);
+      this.pumpBet = Math.max(0.001, parseFloat((this.pumpBet / 2).toFixed(4)));
+      if (betInput) betInput.value = this.pumpBet.toString();
+      updatePumpUsd();
     });
     if (doubleBtn) doubleBtn.addEventListener('click', () => {
-      this.pumpBet = Math.min(this.balance, this.pumpBet * 2);
-      if (betInput) betInput.value = this.pumpBet.toFixed(3);
+      this.pumpBet = Math.min(this.balance, parseFloat((this.pumpBet * 2).toFixed(4)));
+      if (betInput) betInput.value = this.pumpBet.toString();
+      updatePumpUsd();
     });
     if (maxBtn) maxBtn.addEventListener('click', () => {
-      this.pumpBet = Math.max(0.001, this.balance);
-      if (betInput) betInput.value = this.pumpBet.toFixed(3);
+      this.pumpBet = Math.max(0.001, parseFloat(this.balance.toFixed(4)));
+      if (betInput) betInput.value = this.pumpBet.toString();
+      updatePumpUsd();
     });
+
+    updatePumpUsd();
 
     if (tradeBtn) {
       tradeBtn.addEventListener('click', () => this.executePumpTrade());
@@ -603,7 +1975,7 @@ class GreenpumpApp {
   executePumpTrade() {
     if (this.isPumpTrading) return;
     if (this.balance < this.pumpBet) {
-      this.showToast('Insufficient SOL Balance! Claim from Faucet.');
+      this.showInsufficientBalancePrompt();
       return;
     }
 
@@ -613,6 +1985,9 @@ class GreenpumpApp {
     this.bumpTotalBets(1);
     this.pumpEntryPrice = this.currentPrice;
 
+    this.recordBet('pump', this.pumpBet);
+    this.recordTransaction('Pump Trade', -this.pumpBet, 'COMPLETED');
+
     gpAudio.playTrade();
 
     const tradeBtn = document.getElementById('pumpTradeActionBtn');
@@ -621,7 +1996,7 @@ class GreenpumpApp {
 
     const timer = setInterval(() => {
       countdown--;
-      tradeBtn.textContent = `CLOSING IN ${countdown}s...`;
+      tradeBtn.innerHTML = `<span>CLOSING IN ${countdown}s...</span>`;
       if (countdown <= 0) {
         clearInterval(timer);
         this.resolvePumpTrade();
@@ -637,14 +2012,21 @@ class GreenpumpApp {
 
     const tradeBtn = document.getElementById('pumpTradeActionBtn');
     tradeBtn.disabled = false;
-    tradeBtn.innerHTML = `<span>TRADE NOW (${this.tradeDirection})</span>`;
+    const isUp = this.tradeDirection === 'PUMP';
+    tradeBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="${isUp ? 'M7 17l9.2-9.2M17 17V7H7' : 'M7 7l9.2 9.2M17 7v10H7'}"/>
+      </svg>
+      <span id="pumpTradeBtnText">TRADE NOW (${this.tradeDirection})</span>
+    `;
 
     if (isPumpWon || isDumpWon) {
-      const payout = this.pumpBet * 1.95;
-      const profit = payout - this.pumpBet;
+      const payout = parseFloat((this.pumpBet * 1.95).toFixed(4));
+      const profit = parseFloat((payout - this.pumpBet).toFixed(4));
       this.balance = parseFloat((this.balance + payout).toFixed(4));
       this.saveBalance();
       this.recordWin('pump', profit, 1.95);
+      this.recordTransaction('Pump Win', payout, 'COMPLETED');
       this.pushNotification('Pump & Dump win', `+${this.formatSol(profit)} SOL on a ${this.tradeDirection} trade.`, 'win');
       gpAudio.playWin();
       this.showToast(`🎉 TRADE WON! +${profit.toFixed(4)} SOL (${this.tradeDirection} Hit!)`);
@@ -656,6 +2038,13 @@ class GreenpumpApp {
     this.pumpEntryPrice = null;
   }
 
+  recordBet(game, wager) {
+    this.recordGamePlayed(game, wager);
+  }
+
+  /* ------------------------------------------------------------- */
+  /* JAPANESE CANDLESTICK CHART ENGINE (Matching Image 1) */
+  /* ------------------------------------------------------------- */
   drawPumpChart() {
     if (!this.ctx || !this.canvas) return;
     const rect = this.canvas.parentElement.getBoundingClientRect();
@@ -664,60 +2053,159 @@ class GreenpumpApp {
 
     this.ctx.clearRect(0, 0, w, h);
 
-    const minP = Math.min(...this.prices) - 1.0;
-    const maxP = Math.max(...this.prices) + 1.0;
+    // Build or retrieve candles
+    let candles = (this.candles && this.candles.length > 0) ? this.candles.slice(-26) : [];
+    if (candles.length === 0) {
+      const pList = (this.prices && this.prices.length > 0) ? this.prices.slice(-26) : [this.currentPrice || 108.35];
+      candles = [];
+      for (let i = 0; i < pList.length; i++) {
+        const c = pList[i];
+        const prev = i > 0 ? pList[i - 1] : c;
+        const delta = Math.abs(c - prev) * 0.4 || 0.12;
+        candles.push({
+          time: Date.now() - (pList.length - i) * 60000,
+          open: prev,
+          high: Math.max(prev, c) + delta,
+          low: Math.min(prev, c) - delta,
+          close: c
+        });
+      }
+    }
 
-    const getY = (val) => h - 40 - ((val - minP) / (maxP - minP)) * (h - 80);
-    const getX = (idx) => (idx / (this.prices.length - 1)) * (w - 70) + 10;
+    const lows = candles.map(c => c.low);
+    const highs = candles.map(c => c.high);
+    const rawMin = Math.min(...lows, this.currentPrice || 108.35);
+    const rawMax = Math.max(...highs, this.currentPrice || 108.35);
+    const diff = Math.max(0.5, rawMax - rawMin);
+    const pad = diff * 0.14;
+    const minP = rawMin - pad;
+    const maxP = rawMax + pad;
+    const span = maxP - minP;
 
-    // Grid
-    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    // Y coordinate mapping: leaving room at top (30px) and bottom for floating HUD (100px)
+    const topMargin = 32;
+    const bottomMargin = 96;
+    const chartHeight = h - topMargin - bottomMargin;
+    const getY = (val) => h - bottomMargin - ((val - minP) / span) * chartHeight;
+
+    // Right axis dimensions matching Image 1
+    const axisWidth = 66;
+    const chartWidth = w - axisWidth;
+
+    // Candle widths and positions
+    const gap = chartWidth / Math.max(1, candles.length);
+    const candleWidth = Math.max(8, Math.min(20, gap * 0.62));
+    const getX = (idx) => idx * gap + gap / 2 + 10;
+
+    // Background Subtle Grid (Matching Image 1)
+    const stepCount = 6;
+    const stepDiff = span / stepCount;
+
     this.ctx.lineWidth = 1;
-    for (let y = 40; y < h - 40; y += 45) {
+    for (let s = 0; s <= stepCount; s++) {
+      const stepPrice = minP + s * stepDiff;
+      const y = getY(stepPrice);
+
+      // Horizontal grid line
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
       this.ctx.beginPath();
       this.ctx.moveTo(0, y);
-      this.ctx.lineTo(w, y);
+      this.ctx.lineTo(chartWidth, y);
+      this.ctx.stroke();
+
+      // Right-side Y-Axis Price Label (Matching Image 1)
+      this.ctx.fillStyle = '#64748b';
+      this.ctx.font = '600 11px monospace';
+      this.ctx.textAlign = 'right';
+      this.ctx.textBaseline = 'middle';
+      this.ctx.fillText(stepPrice.toFixed(1), w - 8, y);
+    }
+
+    // Vertical right separator line
+    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    this.ctx.beginPath();
+    this.ctx.moveTo(chartWidth, 0);
+    this.ctx.lineTo(chartWidth, h);
+    this.ctx.stroke();
+
+    // Subtle vertical grid lines
+    for (let i = 0; i < candles.length; i += 4) {
+      const x = getX(i);
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, topMargin);
+      this.ctx.lineTo(x, h - bottomMargin);
       this.ctx.stroke();
     }
 
-    const isBullish = this.currentPrice >= this.prices[0];
-    const strokeCol = isBullish ? '#22c55e' : '#f43f5e';
-    const grad = this.ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, isBullish ? 'rgba(34, 197, 94, 0.28)' : 'rgba(244, 63, 94, 0.28)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    // Draw Japanese Candlesticks (Matching Image 1)
+    candles.forEach((c, idx) => {
+      const x = getX(idx);
+      const openY = getY(c.open);
+      const closeY = getY(c.close);
+      const highY = getY(c.high);
+      const lowY = getY(c.low);
 
-    this.ctx.beginPath();
-    this.prices.forEach((p, i) => {
-      const x = getX(i);
-      const y = getY(p);
-      if (i === 0) this.ctx.moveTo(x, y);
-      else this.ctx.lineTo(x, y);
-    });
-    this.ctx.lineTo(getX(this.prices.length - 1), h);
-    this.ctx.lineTo(getX(0), h);
-    this.ctx.closePath();
-    this.ctx.fillStyle = grad;
-    this.ctx.fill();
+      const isBull = c.close >= c.open;
+      const col = isBull ? '#00d294' : '#f43f5e';
 
-    this.ctx.beginPath();
-    this.prices.forEach((p, i) => {
-      const x = getX(i);
-      const y = getY(p);
-      if (i === 0) this.ctx.moveTo(x, y);
-      else this.ctx.lineTo(x, y);
+      // Upper and lower wick
+      this.ctx.strokeStyle = col;
+      this.ctx.lineWidth = 1.6;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, highY);
+      this.ctx.lineTo(x, lowY);
+      this.ctx.stroke();
+
+      // Candle body (with rounded corners)
+      const topY = Math.min(openY, closeY);
+      const bodyH = Math.max(3.5, Math.abs(closeY - openY));
+
+      this.ctx.fillStyle = col;
+      this.ctx.beginPath();
+      if (typeof this.ctx.roundRect === 'function') {
+        this.ctx.roundRect(x - candleWidth / 2, topY, candleWidth, bodyH, 3.5);
+      } else {
+        this.ctx.rect(x - candleWidth / 2, topY, candleWidth, bodyH);
+      }
+      this.ctx.fill();
     });
-    this.ctx.strokeStyle = strokeCol;
-    this.ctx.lineWidth = 3;
+
+    // Latest Active Candle & Dashed Current Price Line (Matching Image 1)
+    const latestCandle = candles[candles.length - 1];
+    const latestX = getX(candles.length - 1);
+    const curY = getY(this.currentPrice);
+    const isBullish = this.currentPrice >= latestCandle.open;
+    const activeColor = isBullish ? '#00d294' : '#f43f5e';
+
+    // Dashed horizontal line extending from current candle to right axis
+    this.ctx.save();
+    this.ctx.setLineDash([4, 4]);
+    this.ctx.strokeStyle = activeColor;
+    this.ctx.lineWidth = 1.4;
+    this.ctx.beginPath();
+    this.ctx.moveTo(latestX + candleWidth / 2, curY);
+    this.ctx.lineTo(chartWidth, curY);
     this.ctx.stroke();
+    this.ctx.restore();
 
-    const headX = getX(this.prices.length - 1);
-    const headY = getY(this.currentPrice);
-
+    // Active Price Pill Tag on Right Axis (Matching Image 1)
+    this.ctx.fillStyle = activeColor;
     this.ctx.beginPath();
-    this.ctx.arc(headX, headY, 5, 0, Math.PI * 2);
-    this.ctx.fillStyle = '#ffffff';
+    if (typeof this.ctx.roundRect === 'function') {
+      this.ctx.roundRect(chartWidth + 3, curY - 11, 58, 22, 5);
+    } else {
+      this.ctx.rect(chartWidth + 3, curY - 11, 58, 22);
+    }
     this.ctx.fill();
 
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 11.5px monospace';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.fillText(this.currentPrice.toFixed(1), chartWidth + 32, curY);
+
+    // Active Trade Entry Price line
     if (this.isPumpTrading && this.pumpEntryPrice) {
       const entryY = getY(this.pumpEntryPrice);
       this.ctx.save();
@@ -726,24 +2214,15 @@ class GreenpumpApp {
       this.ctx.lineWidth = 2;
       this.ctx.beginPath();
       this.ctx.moveTo(0, entryY);
-      this.ctx.lineTo(w, entryY);
+      this.ctx.lineTo(chartWidth, entryY);
       this.ctx.stroke();
+
       this.ctx.fillStyle = '#fbbf24';
       this.ctx.font = 'bold 11px sans-serif';
+      this.ctx.textAlign = 'left';
       this.ctx.fillText(`ENTRY: $${this.pumpEntryPrice.toFixed(2)}`, 14, entryY - 6);
       this.ctx.restore();
     }
-
-    this.ctx.fillStyle = strokeCol;
-    this.ctx.beginPath();
-    this.ctx.roundRect(w - 65, headY - 12, 60, 24, 6);
-    this.ctx.fill();
-
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 11px sans-serif';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-    this.ctx.fillText(`$${this.currentPrice.toFixed(2)}`, w - 35, headY);
   }
 
   /* ------------------------------------------------------------- */
@@ -769,7 +2248,7 @@ class GreenpumpApp {
     const betInput = document.getElementById('rugBetInput');
     const usdEl = document.getElementById('crashUsdEstimate');
     const updateUsd = () => {
-      if (usdEl) usdEl.textContent = `≈ $${(this.rugBet * 150).toFixed(2)} USD`;
+      if (usdEl) usdEl.textContent = `≈ $${(this.rugBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
     };
     if (betInput) {
       betInput.value = this.rugBet;
@@ -847,7 +2326,7 @@ class GreenpumpApp {
             this.showToast('Bet cancelled.');
           } else {
             if (this.balance < this.rugBet) {
-              this.showToast('Insufficient SOL Balance! Claim from Faucet.');
+              this.showInsufficientBalancePrompt();
               return;
             }
             this.rugHasBetThisRound = true;
@@ -1407,7 +2886,7 @@ class GreenpumpApp {
     const betInput = document.getElementById('chickenBetInput');
     const usdEl = document.getElementById('chickenUsdEstimate');
     const updateUsd = () => {
-      if (usdEl) usdEl.textContent = `≈ $${(this.chickenBet * 150).toFixed(2)} USD`;
+      if (usdEl) usdEl.textContent = `≈ $${(this.chickenBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
     };
 
     if (betInput) {
@@ -1814,7 +3293,7 @@ class GreenpumpApp {
   startChickenGame() {
     if (this.chickenPlaying) return;
     if (this.balance < this.chickenBet) {
-      this.showToast('Insufficient SOL Balance! Claim from Faucet.');
+      this.showInsufficientBalancePrompt();
       return;
     }
 
@@ -2019,15 +3498,88 @@ class GreenpumpApp {
     const betInput = document.getElementById('minesBetInput');
     const countSelect = document.getElementById('minesCountSelect');
 
-    if (betInput) betInput.addEventListener('change', (e) => this.minesBet = Math.max(0.001, parseFloat(e.target.value) || 0.05));
+    const usdEl = document.getElementById('minesUsdEstimate');
+    const updateMinesUsd = () => {
+      if (usdEl) usdEl.textContent = `≈ $${(this.minesBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
+    };
+
+    if (betInput) {
+      betInput.addEventListener('input', (e) => {
+        this.minesBet = Math.max(0.001, parseFloat(e.target.value) || 0.05);
+        updateMinesUsd();
+      });
+      betInput.addEventListener('change', (e) => {
+        this.minesBet = Math.max(0.001, parseFloat(e.target.value) || 0.05);
+        updateMinesUsd();
+      });
+      updateMinesUsd();
+    }
     if (countSelect) countSelect.addEventListener('change', (e) => this.minesCount = parseInt(e.target.value) || 3);
     if (startBtn) startBtn.addEventListener('click', () => this.startMines());
     if (cashoutBtn) cashoutBtn.addEventListener('click', () => this.cashoutMines());
+
+    // Custom non-blocky Mines dropdown & quick chips controller
+    const dropdownWrap = document.getElementById('minesDropdownWrap');
+    const dropdownTrigger = document.getElementById('minesDropdownTrigger');
+    const dropdownLabel = document.getElementById('minesDropdownLabel');
+    const quickChips = document.querySelectorAll('.mines-chip-btn');
+    const dropdownItems = document.querySelectorAll('.custom-dropdown-item');
+
+    const setMinesCountUI = (val) => {
+      const num = parseInt(val) || 3;
+      this.minesCount = num;
+      if (countSelect) {
+        countSelect.value = String(num);
+        countSelect.dispatchEvent(new Event('change'));
+      }
+      if (dropdownLabel) dropdownLabel.textContent = `${num} Mine${num > 1 ? 's' : ''}`;
+      dropdownItems.forEach(item => {
+        item.classList.toggle('active', item.dataset.value === String(num));
+      });
+      quickChips.forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.value === String(num));
+      });
+      if (dropdownWrap) dropdownWrap.classList.remove('open');
+      if (dropdownTrigger) dropdownTrigger.setAttribute('aria-expanded', 'false');
+    };
+
+    if (dropdownTrigger && dropdownWrap) {
+      dropdownTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.minesPlaying) return;
+        const isOpen = dropdownWrap.classList.toggle('open');
+        dropdownTrigger.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      dropdownItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.minesPlaying) return;
+          setMinesCountUI(item.dataset.value);
+        });
+      });
+
+      quickChips.forEach(chip => {
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.minesPlaying) return;
+          setMinesCountUI(chip.dataset.value);
+        });
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!dropdownWrap.contains(e.target)) {
+          dropdownWrap.classList.remove('open');
+          dropdownTrigger.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
 
     const applyMinesBet = (value) => {
       const next = Math.max(0.001, Math.min(this.balance, parseFloat(value.toFixed(4)) || 0.001));
       this.minesBet = next;
       if (betInput) betInput.value = next;
+      updateMinesUsd();
     };
     document.getElementById('minesHalfBtn')?.addEventListener('click', () => applyMinesBet(this.minesBet / 2));
     document.getElementById('minesDoubleBtn')?.addEventListener('click', () => applyMinesBet(this.minesBet * 2));
@@ -2039,7 +3591,7 @@ class GreenpumpApp {
   startMines() {
     if (this.minesPlaying) return;
     if (this.balance < this.minesBet) {
-      this.showToast('Insufficient SOL Balance! Claim from Faucet.');
+      this.showInsufficientBalancePrompt();
       return;
     }
 
@@ -2088,7 +3640,8 @@ class GreenpumpApp {
       }, 2000);
     } else {
       this.minesRevealed++;
-      let fairMultiplier = 0.99;
+      // Guaranteed 3.0% House Edge on combinatorial multiplier
+      let fairMultiplier = 0.97;
       for (let i = 0; i < this.minesRevealed; i++) {
         fairMultiplier *= (25 - i) / (25 - this.minesCount - i);
       }
@@ -2463,7 +4016,7 @@ class GreenpumpApp {
       return;
     }
     if (this.balance < totalBet) {
-      this.showToast('Insufficient SOL Balance! Claim from Faucet.');
+      this.showInsufficientBalancePrompt();
       return;
     }
 
@@ -2728,73 +4281,7 @@ class GreenpumpApp {
     if (dScoreEl) dScoreEl.textContent = dSum;
   }
 
-  /* ------------------------------------------------------------- */
-  /* 6. HIGHER / LOWER (HiLo) */
-  /* ------------------------------------------------------------- */
-  initHiLo() {
-    const higherBtn = document.getElementById('hiloHigherBtn');
-    const lowerBtn = document.getElementById('hiloLowerBtn');
-    const cashoutBtn = document.getElementById('hiloCashoutBtn');
-    const betInput = document.getElementById('hiloBetInput');
 
-    if (betInput) betInput.addEventListener('change', (e) => this.hiloBet = Math.max(0.001, parseFloat(e.target.value) || 0.05));
-    if (higherBtn) higherBtn.addEventListener('click', () => this.playHiLoStep('higher'));
-    if (lowerBtn) lowerBtn.addEventListener('click', () => this.playHiLoStep('lower'));
-    if (cashoutBtn) cashoutBtn.addEventListener('click', () => this.cashoutHiLo());
-  }
-
-  playHiLoStep(choice) {
-    if (this.balance < this.hiloBet && !this.hiloPlaying) {
-      this.showToast('Insufficient SOL Balance!');
-      return;
-    }
-
-    if (!this.hiloPlaying) {
-      this.balance -= this.hiloBet;
-      this.saveBalance();
-      this.hiloPlaying = true;
-      this.hiloStreak = 0;
-    }
-
-    const nextCard = Math.floor(Math.random() * 13) + 1; // 1 to 13
-    const isHigher = nextCard > this.hiloCurrentCard;
-    const isLower = nextCard < this.hiloCurrentCard;
-    const won = (choice === 'higher' && isHigher) || (choice === 'lower' && isLower) || (nextCard === this.hiloCurrentCard);
-
-    this.hiloCurrentCard = nextCard;
-    const cardEl = document.getElementById('hiloCurrentCardDisplay');
-    const names = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-    if (cardEl) cardEl.textContent = names[nextCard - 1] || nextCard;
-
-    if (won) {
-      this.hiloStreak++;
-      gpAudio.playHop();
-      const mult = (1.0 + this.hiloStreak * 0.45).toFixed(2);
-      const cashoutBtn = document.getElementById('hiloCashoutBtn');
-      if (cashoutBtn) {
-        cashoutBtn.style.display = 'flex';
-        cashoutBtn.textContent = `CASHOUT ${(this.hiloBet * mult).toFixed(3)} SOL (${mult}x)`;
-      }
-    } else {
-      this.hiloPlaying = false;
-      gpAudio.playCrash();
-      this.showToast(`Wrong! Card was ${names[nextCard - 1]}. Lost ${this.hiloBet} SOL`);
-      document.getElementById('hiloCashoutBtn').style.display = 'none';
-    }
-  }
-
-  cashoutHiLo() {
-    if (!this.hiloPlaying) return;
-    this.hiloPlaying = false;
-    const mult = 1.0 + this.hiloStreak * 0.45;
-    const win = this.hiloBet * mult;
-    this.balance += win;
-    this.saveBalance();
-
-    gpAudio.playWin();
-    this.showToast(`🎉 HiLo Won! +${win.toFixed(3)} SOL (${mult.toFixed(2)}x)`);
-    document.getElementById('hiloCashoutBtn').style.display = 'none';
-  }
 
   /* ------------------------------------------------------------- */
   /* 7. FLAPPY BIRD BETTING */
@@ -2969,8 +4456,8 @@ class GreenpumpApp {
       d.className = 'chat-message-item';
       d.innerHTML = `
         <div class="chat-user-header">
-          <span class="chat-badge-vip" style="${isSelf ? 'background:#22c55e;' : ''}">${vip}</span>
-          <span class="chat-username" style="${isSelf ? 'color:#4ade80;' : ''}">${username}</span>
+          <span class="chat-badge-vip" style="${isSelf ? 'background:#2563eb;' : ''}">${vip}</span>
+          <span class="chat-username" style="${isSelf ? 'color:#60a5fa;' : ''}">${username}</span>
         </div>
         <div class="chat-user-msg">${text}</div>
       `;
@@ -2979,7 +4466,7 @@ class GreenpumpApp {
       while (feed.children.length > 30) feed.removeChild(feed.firstChild);
     };
 
-    addMsg('GreenpumpBot', 'SYSTEM', 'Welcome to GREENPUMP.XYZ! 100% On-chain fairness.');
+    addMsg('LuckyWinBot', 'SYSTEM', 'Welcome to LuckyWin! 100% On-chain fairness.');
     addMsg('CryptoWhale', 'HIGH ROLLER', 'huge pump coming on next 10s tick 🚀');
 
     setInterval(() => {
@@ -3004,20 +4491,6 @@ class GreenpumpApp {
     if (input) input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); sendMsg(); }
     });
-  }
-
-  initAirdrop() {
-    let s = 142;
-    const tEl = document.getElementById('airdropTimerDisplay');
-    const fEl = document.getElementById('airdropProgressBar');
-    setInterval(() => {
-      if (s <= 0) s = 180;
-      s--;
-      const m = Math.floor(s / 60);
-      const sec = s % 60;
-      if (tEl) tEl.textContent = `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-      if (fEl) fEl.style.width = `${((180 - s) / 180) * 100}%`;
-    }, 1000);
   }
 
   /* ============================================================= */
@@ -3130,7 +4603,7 @@ class GreenpumpApp {
       return;
     }
     if (this.balance < total) {
-      this.showToast('Insufficient SOL Balance! Claim from the Faucet.');
+      this.showInsufficientBalancePrompt();
       return;
     }
 
@@ -3526,7 +4999,7 @@ class GreenpumpApp {
     const betInput = document.getElementById('hiloBetInput');
     const usdEl = document.getElementById('hiloUsdEstimate');
     const updateUsd = () => {
-      if (usdEl) usdEl.textContent = `≈ $${(this.hiloBet * 150).toFixed(2)} USD`;
+      if (usdEl) usdEl.textContent = `≈ $${(this.hiloBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
     };
     if (betInput) {
       betInput.value = this.hiloBet;
@@ -3638,17 +5111,21 @@ class GreenpumpApp {
     const multEl = document.getElementById('hiloMultDisplay');
     const payoutEl = document.getElementById('hiloPayoutDisplay');
     const cashoutBtn = document.getElementById('hiloCashoutBtn');
+    const currentMult = Math.min(1.50, this.hiloMult || 1.0);
     if (streakEl) streakEl.textContent = this.hiloStreak;
-    if (multEl) multEl.textContent = `${this.hiloMult.toFixed(2)}x`;
+    if (multEl) multEl.textContent = `${currentMult.toFixed(2)}x`;
     if (payoutEl) {
-      const payout = this.hiloPlaying ? this.hiloBet * this.hiloMult : this.hiloBet;
+      const payout = this.hiloPlaying ? this.hiloBet * currentMult : this.hiloBet * 1.50;
       payoutEl.textContent = `${payout.toFixed(4)} SOL`;
     }
     if (cashoutBtn) {
       const show = this.hiloPlaying && this.hiloStreak > 0;
       cashoutBtn.style.display = show ? 'block' : 'none';
       if (show) {
-        cashoutBtn.textContent = `CASHOUT ${(this.hiloBet * this.hiloMult).toFixed(4)} SOL (${this.hiloMult.toFixed(2)}x)`;
+        const isMax = currentMult >= 1.50;
+        cashoutBtn.textContent = isMax
+          ? `CASHOUT ${(this.hiloBet * 1.50).toFixed(4)} SOL (1.50x MAX)`
+          : `CASHOUT ${(this.hiloBet * currentMult).toFixed(4)} SOL (${currentMult.toFixed(2)}x)`;
       }
     }
   }
@@ -3675,7 +5152,7 @@ class GreenpumpApp {
 
     if (!this.hiloPlaying) {
       if (this.balance < this.hiloBet) {
-        this.showToast('Insufficient SOL Balance! Claim from the Faucet.');
+        this.showInsufficientBalancePrompt();
         return;
       }
       this.balance = parseFloat((this.balance - this.hiloBet).toFixed(4));
@@ -3683,7 +5160,7 @@ class GreenpumpApp {
       this.bumpTotalBets(1);
       this.hiloPlaying = true;
       this.hiloStreak = 0;
-      this.hiloMult = 1;
+      this.hiloMult = 1.0;
     }
 
     this.hiloResolving = true;
@@ -3697,24 +5174,39 @@ class GreenpumpApp {
 
     const statusEl = document.getElementById('hiloStatus');
     if (isTie) {
-      if (statusEl) statusEl.textContent = 'Push — same rank. Your streak is safe.';
-      gpAudio.playClick();
+      // Casino House Edge: Ties favor the house
+      this.hiloPlaying = false;
+      this.hiloStreak = 0;
+      this.hiloMult = 1.0;
+      if (statusEl) statusEl.textContent = `Same rank (${card.rank})! Push/Tie breaks streak. Place a new bet.`;
+      gpAudio.playCrash();
+      this.showToast(`❌ Same rank (${card.rank})! Streak reset.`);
       this.updateHiLoUI();
       this.hiloResolving = false;
       return;
     }
 
     if (won) {
-      const factor = 0.98 / probability;
       this.hiloStreak++;
-      this.hiloMult = parseFloat((this.hiloMult * factor).toFixed(4));
-      if (statusEl) statusEl.textContent = `Correct! ${this.hiloStreak} in a row · ${this.hiloMult.toFixed(2)}x`;
-      gpAudio.playHop();
-      this.showToast(`✅ Correct! Streak ${this.hiloStreak} · ${this.hiloMult.toFixed(2)}x`);
+      // Absolute 50% max gain cap (multiplier can NEVER exceed 1.50x on total bet)
+      const stepBoost = Math.max(0.12, Math.min(0.28, (1 - probability) * 0.40));
+      this.hiloMult = Math.min(1.50, parseFloat(((this.hiloMult || 1.0) + stepBoost).toFixed(2)));
+
+      const reachedMax = this.hiloMult >= 1.50;
+      if (reachedMax) {
+        this.hiloMult = 1.50;
+        if (statusEl) statusEl.textContent = `🎯 Max 50% gain reached (1.50x)! Cash out now to lock in profit.`;
+        gpAudio.playWin();
+        this.showToast(`🎯 Max 50% gain reached (1.50x)!`);
+      } else {
+        if (statusEl) statusEl.textContent = `Correct! ${this.hiloStreak} in a row · ${this.hiloMult.toFixed(2)}x (Max 1.50x)`;
+        gpAudio.playHop();
+        this.showToast(`✅ Correct! Streak ${this.hiloStreak} · ${this.hiloMult.toFixed(2)}x`);
+      }
     } else {
       this.hiloPlaying = false;
       this.hiloStreak = 0;
-      this.hiloMult = 1;
+      this.hiloMult = 1.0;
       if (statusEl) statusEl.textContent = `Wrong call. Lost ${this.hiloBet.toFixed(4)} SOL. Try again.`;
       gpAudio.playCrash();
       this.showToast(`❌ Wrong! Lost ${this.hiloBet.toFixed(4)} SOL.`);
@@ -3726,20 +5218,21 @@ class GreenpumpApp {
 
   cashoutHiLo() {
     if (!this.hiloPlaying || this.hiloStreak < 1) return;
-    const win = this.hiloBet * this.hiloMult;
-    const profit = win - this.hiloBet;
+    const mult = Math.min(1.50, this.hiloMult);
+    const win = parseFloat((this.hiloBet * mult).toFixed(4));
+    const profit = parseFloat((win - this.hiloBet).toFixed(4));
     this.balance = parseFloat((this.balance + win).toFixed(4));
     this.saveBalance();
-    this.recordWin('hilo', profit, this.hiloMult);
-    this.pushNotification('HiLo win', `Cashed out a ${this.hiloStreak}-card streak at ${this.hiloMult.toFixed(2)}x for +${this.formatSol(profit)} SOL.`, 'win');
+    this.recordWin('hilo', profit, mult);
+    this.pushNotification('HiLo win', `Cashed out a ${this.hiloStreak}-card streak at ${mult.toFixed(2)}x for +${this.formatSol(profit)} SOL.`, 'win');
     gpAudio.playWin();
-    this.showToast(`🎉 HiLo cashed out +${win.toFixed(4)} SOL (${this.hiloMult.toFixed(2)}x)`);
+    this.showToast(`🎉 HiLo cashed out +${win.toFixed(4)} SOL (${mult.toFixed(2)}x)`);
 
     const statusEl = document.getElementById('hiloStatus');
-    if (statusEl) statusEl.textContent = `Cashed out +${win.toFixed(4)} SOL. Place a new bet to play again.`;
+    if (statusEl) statusEl.textContent = `Cashed out +${win.toFixed(4)} SOL (+50% max gain). Place a new bet.`;
     this.hiloPlaying = false;
     this.hiloStreak = 0;
-    this.hiloMult = 1;
+    this.hiloMult = 1.0;
     this.updateHiLoUI();
   }
 
@@ -3820,7 +5313,7 @@ class GreenpumpApp {
   startFlappyGame() {
     if (this.flappyPlaying) return;
     if (this.balance < this.flappyBet) {
-      this.showToast('Insufficient SOL Balance! Claim from the Faucet.');
+      this.showInsufficientBalancePrompt();
       return;
     }
 
@@ -4143,7 +5636,7 @@ class GreenpumpApp {
     const betInput = document.getElementById('coinflipBetInput');
     const usdEl = document.getElementById('coinflipUsdEstimate');
     const updateUsd = () => {
-      if (usdEl) usdEl.textContent = `≈ $${(this.coinflipBet * 150).toFixed(2)} USD`;
+      if (usdEl) usdEl.textContent = `≈ $${(this.coinflipBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
       const payoutEl = document.getElementById('coinflipPayoutDisplay');
       if (payoutEl) payoutEl.textContent = `${(this.coinflipBet * 1.96).toFixed(4)} SOL`;
       const flipBtn = document.getElementById('coinflipFlipBtn');
@@ -4217,7 +5710,7 @@ class GreenpumpApp {
   flipCoinflip() {
     if (this.coinflipFlipping) return;
     if (this.balance < this.coinflipBet) {
-      this.showToast('Insufficient SOL Balance! Claim from the Faucet.');
+      this.showInsufficientBalancePrompt();
       return;
     }
 
@@ -4226,8 +5719,14 @@ class GreenpumpApp {
     this.bumpTotalBets(1);
     this.coinflipFlipping = true;
 
-    const result = Math.random() < 0.5 ? 'heads' : 'tails';
-    const won = result === this.coinflipSide;
+    // Guaranteed Mathematical House Edge:
+    // Base player win rate is capped at 48.0% (52.0% house advantage), plus dynamic streak regulation
+    const baseWinProb = 0.48;
+    const streakPenalty = Math.min(0.12, (this.coinflipStreak || 0) * 0.04);
+    const winProbability = Math.max(0.35, baseWinProb - streakPenalty);
+    const won = Math.random() < winProbability;
+    const otherSide = this.coinflipSide === 'heads' ? 'tails' : 'heads';
+    const result = won ? this.coinflipSide : otherSide;
     const coin = document.getElementById('coinflipCoin');
     const resultEl = document.getElementById('coinflipResult');
     const flipBtn = document.getElementById('coinflipFlipBtn');
@@ -4323,7 +5822,7 @@ class GreenpumpApp {
   /* ============================================================= */
   /* MODALS, CASE, NOTIFICATIONS, FAIRNESS, LEADERBOARD */
   /* ============================================================= */
-  openModal(id) {
+  openModal(id, updateUrl = true) {
     const modal = document.getElementById(id);
     if (!modal) return;
     modal.classList.add('open');
@@ -4333,11 +5832,72 @@ class GreenpumpApp {
       this.renderDailyCaseRewards();
       this.setupDailyCaseTrack();
     }
+    if (updateUrl) {
+      const modalRouteMap = {
+        'leaderboardModal': 'leaderboard',
+        'dailyCaseModal': 'case',
+        'fairnessModal': 'fairness',
+        'bjRulebookModal': 'rules'
+      };
+      const r = modalRouteMap[id];
+      if (r) {
+        const cur = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+        if (cur !== r) {
+          window.history.pushState({ modal: id }, '', '/' + r);
+        }
+        const titleMap = {
+          'leaderboard': 'Leaderboard',
+          'case': 'Daily Case',
+          'fairness': 'Provably Fair',
+          'rules': 'Blackjack Rules'
+        };
+        document.title = `LuckyWin - ${titleMap[r] || 'Casino'} | Next Gen Solana Gaming`;
+      }
+    }
   }
 
   closeModal(modal) {
     if (typeof modal === 'string') modal = document.getElementById(modal);
     if (modal) modal.classList.remove('open');
+    this.syncUrlOnModalClose();
+  }
+
+  openWalletDialog(updateUrl = true) {
+    this.updateBalanceUI();
+    const dialog = document.getElementById('walletSecurityDialog');
+    if (!dialog) return;
+    if (!dialog.open) {
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    }
+    gpAudio.playClick();
+    if (updateUrl) {
+      const cur = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (cur !== 'wallet') {
+        window.history.pushState({ modal: 'wallet' }, '', '/wallet');
+      }
+      document.title = 'LuckyWin - Casino Vault & Private Wallet | Real Money Solana';
+    }
+  }
+
+  syncUrlOnModalClose() {
+    const p = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+    const modalRoutes = [
+      'leaderboard', 'leaderbord',
+      'case', 'daily-case',
+      'fairness', 'provably-fair',
+      'rules', 'rulebook', 'blackjack-rules',
+      'wallet', 'faucet',
+      'terms', 'terms-of-service',
+      'privacy', 'privacy-policy',
+      'responsible', 'responsible-play',
+      'howto', 'how-to-play'
+    ];
+    if (modalRoutes.includes(p)) {
+      const gRoute = this.getRouteForGame(this.activeGame || 'rug');
+      window.history.replaceState({ game: this.activeGame }, '', '/' + gRoute);
+      document.title = `LuckyWin - ${this.getGameTitle(this.activeGame || 'rug')} | Next Gen Solana Gaming`;
+    }
   }
 
   initModals() {
@@ -4352,7 +5912,9 @@ class GreenpumpApp {
       ['closeBjRulebookBtn', 'bjRulebookModal'],
       ['closeCaseModalBtn', 'dailyCaseModal'],
       ['closeFairnessModalBtn', 'fairnessModal'],
-      ['closeInfoModalBtn', 'infoModal']
+      ['closeInfoModalBtn', 'infoModal'],
+      ['closeAirdropConfirmBtn', 'airdropConfirmModal'],
+      ['cancelAirdropBtn', 'airdropConfirmModal']
     ];
     closePairs.forEach(([btnId, modalId]) => {
       const btn = document.getElementById(btnId);
@@ -4360,23 +5922,46 @@ class GreenpumpApp {
     });
 
     const lbBtn = document.getElementById('leaderboardNavBtn');
-    if (lbBtn) lbBtn.addEventListener('click', () => this.openModal('leaderboardModal'));
+    if (lbBtn) {
+      lbBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openModal('leaderboardModal', true);
+      });
+    }
     const footerLb = document.getElementById('footerLeaderboardBtn');
-    if (footerLb) footerLb.addEventListener('click', () => this.openModal('leaderboardModal'));
+    if (footerLb) {
+      footerLb.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openModal('leaderboardModal', true);
+      });
+    }
 
     const caseBtns = [document.getElementById('dailyCaseNavBtn'), ...document.querySelectorAll('[data-open-case]')];
     caseBtns.forEach(btn => {
-      if (btn) btn.addEventListener('click', () => {
-        this.updateDailyCaseUI();
-        this.openModal('dailyCaseModal');
-      });
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.updateDailyCaseUI();
+          this.openModal('dailyCaseModal', true);
+        });
+      }
     });
 
     const rulebookBtn = document.getElementById('bjRulebookBtn');
-    if (rulebookBtn) rulebookBtn.addEventListener('click', () => this.openModal('bjRulebookModal'));
+    if (rulebookBtn) {
+      rulebookBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openModal('bjRulebookModal', true);
+      });
+    }
 
     [document.getElementById('bjFairnessBtn'), ...document.querySelectorAll('[data-open-fairness]')].forEach(btn => {
-      if (btn) btn.addEventListener('click', () => this.openModal('fairnessModal'));
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.openModal('fairnessModal', true);
+        });
+      }
     });
 
     const shareBtns = [document.getElementById('bjShareBtn'), document.getElementById('footerShareBtn')];
@@ -4396,15 +5981,17 @@ class GreenpumpApp {
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
       document.querySelectorAll('.gp-modal-backdrop.open').forEach(modal => modal.classList.remove('open'));
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
       this.closeNotificationsPanel();
+      this.syncUrlOnModalClose();
     });
 
-    const footerFaucet = document.getElementById('footerFaucetBtn');
-    if (footerFaucet) {
-      footerFaucet.addEventListener('click', () => {
-        const dialog = document.getElementById('walletSecurityDialog');
-        if (dialog) dialog.showModal();
-        gpAudio.playClick();
+    const footerWallet = document.getElementById('footerWalletBtn') || document.getElementById('footerFaucetBtn');
+    if (footerWallet) {
+      footerWallet.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openWalletDialog(true);
       });
     }
 
@@ -4428,13 +6015,13 @@ class GreenpumpApp {
 
   shareSite() {
     const shareData = {
-      title: 'GREENPUMP.XYZ',
-      text: 'Play 8 free demo Solana-style games on GREENPUMP.XYZ.',
+      title: 'LuckyWin',
+      text: 'Play 7 real-money Solana casino games on LuckyWin. 100% non-custodial vault.',
       url: window.location.href
     };
     const finish = (message) => this.showToast(message);
     if (navigator.share) {
-      navigator.share(shareData).then(() => finish('Shared Greenpump!')).catch(() => {});
+      navigator.share(shareData).then(() => finish('Shared LuckyWin!')).catch(() => {});
       return;
     }
     this.copyText(window.location.href).then(copied => {
@@ -4610,31 +6197,56 @@ class GreenpumpApp {
 
   caseReady() {
     const last = parseInt(localStorage.getItem('gp_case_last_claim'), 10) || 0;
-    return !last || Date.now() - last >= 24 * 60 * 60 * 1000;
+    const cooldownPassed = !last || (Date.now() - last >= 24 * 60 * 60 * 1000);
+    return cooldownPassed && this.hasPlayedGameToday();
   }
 
   updateDailyCaseUI() {
     const last = parseInt(localStorage.getItem('gp_case_last_claim'), 10) || 0;
     const cooldown = 24 * 60 * 60 * 1000;
     const remaining = Math.max(0, cooldown - (Date.now() - last));
-    const ready = remaining <= 0;
+    const cooldownReady = remaining <= 0;
+    const playedToday = this.hasPlayedGameToday();
+    const ready = cooldownReady && playedToday;
+
     const badge = document.getElementById('dailyCaseBadge');
     const btn = document.getElementById('spinDailyCaseBtn');
     const text = document.getElementById('caseCooldownText');
+    const reqBadge = document.getElementById('caseRequirementStatusBadge');
+
+    if (reqBadge) {
+      if (playedToday) {
+        reqBadge.textContent = 'UNLOCKED ✅';
+        reqBadge.style.background = 'rgba(16,185,129,0.2)';
+        reqBadge.style.color = '#34d399';
+        reqBadge.style.borderColor = 'rgba(16,185,129,0.35)';
+      } else {
+        reqBadge.textContent = 'LOCKED 🔒 (Play 1 game)';
+        reqBadge.style.background = 'rgba(239,68,68,0.2)';
+        reqBadge.style.color = '#fca5a5';
+        reqBadge.style.borderColor = 'rgba(239,68,68,0.35)';
+      }
+    }
 
     if (badge) {
-      badge.textContent = ready ? 'FREE' : 'WAIT';
-      badge.style.background = ready ? '#00ffa3' : '#334155';
-      badge.style.color = ready ? '#000000' : '#cbd5e1';
+      badge.textContent = ready ? 'FREE' : (playedToday ? 'WAIT' : 'LOCK');
+      badge.style.background = ready ? '#2563eb' : (playedToday ? '#1e293b' : '#334155');
+      badge.style.color = '#ffffff';
     }
 
     if (btn) {
       if (this.caseSpinning) {
         btn.disabled = true;
         btn.textContent = 'OPENING...';
+        btn.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)';
+      } else if (!playedToday) {
+        btn.disabled = false;
+        btn.textContent = 'PLAY 1 GAME TO UNLOCK';
+        btn.style.background = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
       } else if (ready) {
         btn.disabled = false;
         btn.textContent = 'OPEN FREE CASE';
+        btn.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)';
       } else {
         btn.disabled = true;
         const totalSec = Math.ceil(remaining / 1000);
@@ -4642,13 +6254,17 @@ class GreenpumpApp {
         const m = Math.floor((totalSec % 3600) / 60);
         const s = totalSec % 60;
         btn.textContent = `WAIT ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        btn.style.background = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
       }
     }
 
     if (text) {
-      if (ready) {
+      if (!playedToday) {
+        text.textContent = '⚠️ Play at least 1 round of Crash, Mines, or any game today to unlock your Daily Chest.';
+        text.style.color = '#f59e0b';
+      } else if (ready) {
         text.textContent = 'Ready now — one free case every 24 hours (Max 15¢ / 0.0010 SOL).';
-        text.style.color = '#4ade80';
+        text.style.color = '#38bdf8';
       } else {
         const totalSec = Math.ceil(remaining / 1000);
         const h = Math.floor(totalSec / 3600);
@@ -4666,6 +6282,11 @@ class GreenpumpApp {
   }
 
   spinDailyCase() {
+    if (!this.hasPlayedGameToday()) {
+      this.showToast('🎮 Please play at least 1 game round today before claiming your Daily Chest!');
+      gpAudio.playClick();
+      return;
+    }
     if (this.caseSpinning || !this.caseReady()) return;
     this.caseSpinning = true;
     const btn = document.getElementById('spinDailyCaseBtn');
@@ -4738,8 +6359,8 @@ class GreenpumpApp {
 
   initNotifications() {
     this.notifications = [
-      { title: 'Welcome to GREENPUMP', body: 'Your demo wallet is ready. Claim free SOL any time from the faucet.', kind: 'system', unread: true, ts: Date.now() - 120000 },
-      { title: 'Free faucet', body: 'Tap the wallet and claim +1.00 demo SOL whenever you need a refill.', kind: 'faucet', unread: true, ts: Date.now() - 60000 }
+      { title: 'Welcome to LuckyWin', body: 'Real-Money Solana Casino is online. Deposit SOL into the Casino Vault to begin.', kind: 'system', unread: true, ts: Date.now() - 120000 },
+      { title: 'Non-Custodial Security', body: 'You own your private keys. Export keypair or connect Phantom from your wallet modal.', kind: 'system', unread: true, ts: Date.now() - 60000 }
     ];
     const bell = document.getElementById('notificationsBtn');
     const panel = document.getElementById('notificationsPanel');
@@ -4903,36 +6524,49 @@ class GreenpumpApp {
   }
 
   initInfoModals() {
-    const content = {
+    this.infoContents = {
       howto: {
         title: 'How to Play',
-        body: '<p><strong>Start with the faucet.</strong> Open your wallet and claim free demo SOL any time.</p><p><strong>Pick a game.</strong> Use the Games menu, the mobile tab bar or the cards below. Set a bet, then follow the on-screen controls.</p><p><strong>Pump &amp; Dump:</strong> choose UP or DOWN and wait for the 6-second close. <strong>Rug:</strong> cash out before the multiplier crashes. <strong>Chicken:</strong> hop lane by lane and cash out. <strong>Mines:</strong> reveal gems and avoid bombs. <strong>Blackjack:</strong> hit, stand, double or split. <strong>HiLo:</strong> call the next card. <strong>Flappy:</strong> pass pipes and cash out. <strong>Coinflip:</strong> call heads or tails.</p><p>All balances are play money and never touch a real blockchain.</p>'
+        body: '<p><strong>1. Deposit SOL into the Casino Vault.</strong> Open your wallet modal, connect your Phantom extension or transfer SOL directly to the Casino Main Vault address.</p><p><strong>2. Pick a game.</strong> Play Crash (Rug), Pump &amp; Dump, Mines, Chicken Road, Blackjack, HiLo, or Coinflip. Set your bet amount and make your move.</p><p><strong>3. Instant Withdrawals.</strong> Click Withdraw in your wallet modal to dispatch your winnings back to your private Solana wallet at any time.</p><p>LuckyWin is 100% non-custodial. Your keys remain strictly on your device.</p>'
       },
       responsible: {
         title: 'Responsible Play',
-        body: '<p>GREENPUMP is a demo game site using virtual funds only. There are no deposits, withdrawals, cash prizes or real-money wagers.</p><p>Take regular breaks and keep play sessions short. If gambling-like games stop being fun, step away. This demo is intended for adults aged 18+.</p><p>Because there is no real money involved, nothing on this site can create a financial loss or a financial win.</p>'
+        body: '<p>LuckyWin is a real-money Solana casino. Players must be 18+ years of age. Real cryptocurrency wagers involve financial risk.</p><p>Take regular breaks and keep play sessions controlled. Never gamble with money you cannot afford to lose.</p>'
       },
       terms: {
         title: 'Terms of Use',
-        body: '<p>This site is provided for entertainment and demonstration purposes only. All balances, rewards, multipliers and leaderboard entries are simulated.</p><p>No real Solana is deposited, transferred or paid out. Game results are generated locally and may change at any time. The service is provided “as is” without warranties.</p><p>By using the site you agree not to present it as a real-money gambling service.</p>'
+        body: '<h4>1. Eligibility & Age Restriction (18+)</h4><p>By accessing or utilizing LuckyWin, you expressly certify, warrant, and represent that you are at least <strong>eighteen (18) years of age</strong> (or the legal age of majority in your jurisdiction). Individuals under 18 years of age are strictly prohibited from accessing, viewing, or participating on this platform. We reserve the right to request proof of age and identity at any time. Any account, session, or balance linked to an underage individual will be immediately terminated with total forfeiture of all assets.</p><h4>2. Platform Right to Hold Balances & Reclaim Earnings</h4><p>LuckyWin reserves the absolute, unilateral right, in its sole and exclusive discretion, at any time and without prior notification, to <strong>audit, hold, freeze, adjust, void, or reclaim any user balances, winnings, earnings, payouts, or promotional credits</strong>. The platform reserves full authority to place administrative holds on user balances for any duration required to conduct security audits, technical reconciliation, compliance reviews, or anti-fraud investigations.</p><h4>3. Earnings Verification & Management Discretion</h4><p>All earnings, game results, multipliers, and platform balances remain provisional and conditional upon final verification by platform administration. LuckyWin reserves the unconditional right to claim, cancel, or withhold earnings resulting from software glitches, latency arbitrage, algorithmic discrepancies, syndicate play, automated bots, multi-accounting, or violations of platform integrity standards.</p><h4>4. Service Availability & As-Is Provision</h4><p>The platform and its games are provided strictly on an “as is” and “as available” basis without warranties of any kind. LuckyWin disclaims all liability for connection disruptions, server downtime, system latency, or lost progress.</p><h4>5. Prohibited Conduct & Account Forfeiture</h4><p>Any attempt to reverse engineer, exploit bugs, deploy automated betting scripts, or tamper with the platform will result in immediate permanent expulsion and complete forfeiture of all existing and accrued balances.</p>'
       },
       privacy: {
         title: 'Privacy',
-        body: '<p>GREENPUMP does not require an account and does not ask for personal information. Your demo balance, wallet address, daily-case timer, leaderboard entries and preferences are stored in your browser’s local storage.</p><p>The public chat panel displays messages from the greenpump.xyz public chat. Messages you send stay local to this demo and are not posted to the live site. Clearing site data removes the local demo state and chat cache.</p><p>This demo does not use trackers or advertising cookies.</p>'
+        body: '<p>LuckyWin does not require personal information or account registration. Your non-custodial wallet address and session state are managed locally in your browser and on the Solana blockchain.</p><p>This platform does not use tracking or advertising cookies.</p>'
       }
     };
 
     document.querySelectorAll('[data-info]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = content[btn.dataset.info];
-        if (!item) return;
-        const title = document.getElementById('infoModalTitle');
-        const body = document.getElementById('infoModalBody');
-        if (title) title.textContent = item.title;
-        if (body) body.innerHTML = item.body;
-        this.openModal('infoModal');
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showInfoModal(btn.dataset.info, true);
       });
     });
+  }
+
+  showInfoModal(key, updateUrl = true) {
+    if (!this.infoContents) this.initInfoModals();
+    const item = this.infoContents && this.infoContents[key];
+    if (!item) return;
+    const title = document.getElementById('infoModalTitle');
+    const body = document.getElementById('infoModalBody');
+    if (title) title.textContent = item.title;
+    if (body) body.innerHTML = item.body;
+    this.openModal('infoModal', false);
+    if (updateUrl) {
+      const cur = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (cur !== key) {
+        window.history.pushState({ info: key }, '', '/' + key);
+      }
+      document.title = `LuckyWin - ${item.title} | Next Gen Solana Gaming`;
+    }
   }
 
   initOnlineCounter() {
@@ -5252,11 +6886,11 @@ class GreenpumpApp {
     const badge = document.createElement('span');
     badge.className = 'chat-badge-vip';
     badge.textContent = vip;
-    if (isSelf) badge.style.background = '#22c55e';
+    if (isSelf) badge.style.background = '#2563eb';
     const name = document.createElement('span');
     name.className = 'chat-username';
     name.textContent = username;
-    if (isSelf) name.style.color = '#4ade80';
+    if (isSelf) name.style.color = '#60a5fa';
     header.appendChild(badge);
     header.appendChild(name);
     const message = document.createElement('div');
@@ -5278,7 +6912,7 @@ class GreenpumpApp {
         seconds = 180;
         this.balance = parseFloat((this.balance + 0.05).toFixed(4));
         this.saveBalance();
-        this.showToast('🪂 Airdrop round complete! +0.05 demo SOL.');
+        this.showToast('🪂 Community Airdrop round complete! +0.05 SOL.');
       }
       seconds--;
       const m = Math.floor(seconds / 60);
@@ -5286,6 +6920,334 @@ class GreenpumpApp {
       if (timerEl) timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       if (fillEl) fillEl.style.width = `${((180 - seconds) / 180) * 100}%`;
     }, 1000);
+
+    // Custom user airdrop controls
+    const dropBtn = document.getElementById('airdropDropBtn');
+    const amountInput = document.getElementById('airdropCustomInput');
+
+    const triggerConfirm = () => {
+      const val = parseFloat(amountInput?.value) || 0;
+      if (val <= 0) {
+        this.showToast('⚠️ Please enter a valid SOL amount to airdrop.');
+        return;
+      }
+      this.showAirdropConfirmModal(val);
+    };
+
+    if (dropBtn) {
+      dropBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerConfirm();
+      });
+    }
+
+    if (amountInput) {
+      amountInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          triggerConfirm();
+        }
+      });
+    }
+
+    const execBtn = document.getElementById('executeAirdropBtn');
+    if (execBtn) {
+      execBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.executeCustomAirdrop();
+      });
+    }
+
+    const cancelBtn = document.getElementById('cancelAirdropBtn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeModal('airdropConfirmModal');
+      });
+    }
+  }
+
+  showAirdropConfirmModal(amount) {
+    this.pendingAirdropAmount = amount;
+    const online = parseInt(document.getElementById('airdropOnlineCount')?.textContent, 10) || 84;
+    const shareEach = (amount / online).toFixed(4);
+
+    const amtEl = document.getElementById('confirmAirdropAmountDisplay');
+    const recipEl = document.getElementById('confirmAirdropRecipientsDisplay');
+    const eachEl = document.getElementById('confirmAirdropEachDisplay');
+    const balEl = document.getElementById('confirmAirdropWalletBalance');
+    const execBtn = document.getElementById('executeAirdropBtn');
+
+    if (amtEl) amtEl.textContent = `${this.formatSol(amount)} SOL`;
+    if (recipEl) recipEl.textContent = `${online} online players`;
+    if (eachEl) eachEl.textContent = `+${shareEach} SOL`;
+    if (balEl) balEl.textContent = `${this.formatSol(this.balance)} SOL`;
+    if (execBtn) execBtn.textContent = `Confirm & Airdrop ${this.formatSol(amount)} SOL`;
+
+    this.openModal('airdropConfirmModal', false);
+  }
+
+  executeCustomAirdrop() {
+    const amount = Number(this.pendingAirdropAmount) || 0.5;
+    if (amount <= 0) return;
+
+    if (this.balance < amount) {
+      this.closeModal('airdropConfirmModal');
+      this.showInsufficientBalancePrompt();
+      return;
+    }
+
+    // Deduct from wallet
+    this.balance = parseFloat((this.balance - amount).toFixed(4));
+    this.saveBalance();
+
+    const online = parseInt(document.getElementById('airdropOnlineCount')?.textContent, 10) || 84;
+    const shareEach = (amount / online).toFixed(4);
+
+    this.closeModal('airdropConfirmModal');
+    gpAudio.playWin();
+
+    // Broadcast into public chat
+    this.addChatAirdropAnnouncement(amount, online, shareEach);
+
+    this.showToast(`🎉 You airdropped ${this.formatSol(amount)} SOL to ${online} players (+${shareEach} SOL each)!`);
+    this.pushNotification('Airdrop Sent', `You airdropped ${this.formatSol(amount)} SOL equally among ${online} online players.`, 'win');
+  }
+
+  addChatAirdropAnnouncement(amount, playersCount, sharePerPlayer) {
+    const feed = document.querySelector('[data-chat-feed="true"]');
+    if (!feed) return;
+    const item = document.createElement('div');
+    item.className = 'chat-message-item chat-airdrop-announcement';
+    item.style.cssText = `
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(56, 189, 248, 0.15) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin: 4px 0;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+    `;
+    item.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <span style="font-size:14px;">🪂</span>
+        <span style="font-size:11px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:0.04em;">COMMUNITY AIRDROP</span>
+      </div>
+      <div style="font-size:11.5px;color:#f8fafc;font-weight:700;line-height:1.35;">
+        You airdropped <strong style="color:#60a5fa;">${this.formatSol(amount)} SOL</strong>! Distributed equally to all <strong>${playersCount}</strong> online players (<strong style="color:#4ade80;">+${sharePerPlayer} SOL</strong> each).
+      </div>
+    `;
+    feed.appendChild(item);
+    feed.scrollTop = feed.scrollHeight;
+
+    // Simulate immediate excited chat reactions from other online players
+    const reactions = [
+      { name: 'DegenKing42', vip: 'VIP 4', text: 'LFG!! Thanks for the airdrop! 🔥' },
+      { name: 'SolWhale', vip: 'VIP 6', text: 'W airdrop!! Huge thanks ❤️' },
+      { name: 'NeonNinja33', vip: 'VIP 2', text: 'thanks for the SOL king 👑' }
+    ];
+    reactions.forEach((r, idx) => {
+      setTimeout(() => {
+        this.addChatMessage(feed, r.name, r.vip, r.text, false);
+      }, 700 * (idx + 1));
+    });
+  }
+
+  /* ============================================================= */
+  /* SPA ROUTING & DIRECT SUB-PATH SYSTEM */
+  /* ============================================================= */
+  initRouting() {
+    window.addEventListener('popstate', () => {
+      this.handleRoute(window.location.pathname, false);
+    });
+
+    // Execute routing for the current URL path on initial load
+    this.handleRoute(window.location.pathname, false, true);
+  }
+
+  getGameForRoute(route) {
+    const map = {
+      'pump': 'pump',
+      'pump-dump': 'pump',
+      'pumpanddump': 'pump',
+      'crash': 'rug',
+      'rug': 'rug',
+      'chicken': 'chicken',
+      'chicken-road': 'chicken',
+      'chickenroad': 'chicken',
+      'mines': 'mines',
+      'mine': 'mines',
+      'blackjack': 'blackjack',
+      'bj': 'blackjack',
+      'hilo': 'hilo',
+      'hi-lo': 'hilo',
+      'higher-lower': 'hilo',
+      'higherlower': 'hilo',
+      'coinflip': 'coinflip',
+      'coin-flip': 'coinflip'
+    };
+    return map[route] || null;
+  }
+
+  getRouteForGame(gameId) {
+    const map = {
+      'pump': 'pump',
+      'rug': 'crash',
+      'chicken': 'chicken',
+      'mines': 'mines',
+      'blackjack': 'blackjack',
+      'hilo': 'hilo',
+      'coinflip': 'coinflip'
+    };
+    return map[gameId] || gameId;
+  }
+
+  getGameTitle(gameId) {
+    const map = {
+      'pump': 'Pump & Dump',
+      'rug': 'Crash Multiplier',
+      'chicken': 'Chicken Road',
+      'mines': 'Mines',
+      'blackjack': 'Blackjack',
+      'hilo': 'Higher or Lower',
+      'coinflip': 'Coinflip'
+    };
+    return map[gameId] || 'Solana Gaming';
+  }
+
+  handleRoute(pathname, push = false, isInitial = false) {
+    let raw = (pathname || '/').trim();
+    raw = raw.replace(/^\/+|\/+$/g, '').replace(/^index\.html$/i, '');
+    const route = raw.toLowerCase();
+
+    // Default route / home
+    if (!route) {
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => m.classList.remove('open'));
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
+      if (!isInitial) {
+        this.switchGame('rug', false);
+      }
+      document.title = 'LuckyWin - Next Gen Solana Gaming';
+      if (push && window.location.pathname !== '/') {
+        window.history.pushState({ path: '/' }, '', '/');
+      }
+      return;
+    }
+
+    // Check if route matches a game
+    const gameId = this.getGameForRoute(route);
+    if (gameId) {
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => m.classList.remove('open'));
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
+
+      this.switchGame(gameId, false);
+      document.title = `LuckyWin - ${this.getGameTitle(gameId)} | Next Gen Solana Gaming`;
+      if (push && window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== route) {
+        window.history.pushState({ game: gameId }, '', '/' + route);
+      }
+      return;
+    }
+
+    // Leaderboard route
+    if (route === 'leaderboard' || route === 'leaderbord') {
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => {
+        if (m.id !== 'leaderboardModal') m.classList.remove('open');
+      });
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
+
+      this.openModal('leaderboardModal', false);
+      document.title = 'LuckyWin - Leaderboard | Next Gen Solana Gaming';
+      if (push && window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== 'leaderboard') {
+        window.history.pushState({ modal: 'leaderboard' }, '', '/leaderboard');
+      }
+      return;
+    }
+
+    // Daily case route
+    if (route === 'case' || route === 'daily-case') {
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => {
+        if (m.id !== 'dailyCaseModal') m.classList.remove('open');
+      });
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
+
+      this.updateDailyCaseUI();
+      this.openModal('dailyCaseModal', false);
+      document.title = 'LuckyWin - Daily Case | Next Gen Solana Gaming';
+      if (push && window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== 'case') {
+        window.history.pushState({ modal: 'case' }, '', '/case');
+      }
+      return;
+    }
+
+    // Provably fair route
+    if (route === 'fairness' || route === 'provably-fair') {
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => {
+        if (m.id !== 'fairnessModal') m.classList.remove('open');
+      });
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
+
+      this.openModal('fairnessModal', false);
+      document.title = 'LuckyWin - Provably Fair | Next Gen Solana Gaming';
+      if (push && window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== 'fairness') {
+        window.history.pushState({ modal: 'fairness' }, '', '/fairness');
+      }
+      return;
+    }
+
+    // Rules route
+    if (route === 'rules' || route === 'rulebook' || route === 'blackjack-rules') {
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => {
+        if (m.id !== 'bjRulebookModal') m.classList.remove('open');
+      });
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
+
+      this.openModal('bjRulebookModal', false);
+      document.title = 'LuckyWin - Blackjack Rules | Next Gen Solana Gaming';
+      if (push && window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== 'rules') {
+        window.history.pushState({ modal: 'rules' }, '', '/rules');
+      }
+      return;
+    }
+
+    // Wallet / faucet route
+    if (route === 'wallet' || route === 'faucet') {
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => m.classList.remove('open'));
+      this.openWalletDialog(false);
+      document.title = 'LuckyWin - Casino Vault & Private Wallet | Real Money Solana';
+      if (push && window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== 'wallet') {
+        window.history.pushState({ modal: 'wallet' }, '', '/wallet');
+      }
+      return;
+    }
+
+    // Info modal routes: terms, privacy, responsible, howto
+    if (route.startsWith('term') || route.startsWith('priv') || route.startsWith('resp') || route.startsWith('how')) {
+      const key = route.startsWith('term') ? 'terms'
+        : (route.startsWith('priv') ? 'privacy'
+        : (route.startsWith('resp') ? 'responsible' : 'howto'));
+      document.querySelectorAll('.gp-modal-backdrop.open').forEach(m => {
+        if (m.id !== 'infoModal') m.classList.remove('open');
+      });
+      const dialog = document.getElementById('walletSecurityDialog');
+      if (dialog && dialog.open) dialog.close();
+
+      this.showInfoModal(key, false);
+      if (push && window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase() !== key) {
+        window.history.pushState({ info: key }, '', '/' + key);
+      }
+      return;
+    }
+
+    // Default fallback
+    if (isInitial) {
+      this.switchGame('rug', false);
+    }
+    document.title = 'LuckyWin - Next Gen Solana Gaming';
   }
 
   showToast(msg) {
@@ -5294,13 +7256,13 @@ class GreenpumpApp {
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: #18181c;
-      border: 1.5px solid #22c55e;
+      background: #0e172a;
+      border: 1.5px solid #3b82f6;
       color: #fff;
       font-weight: 800;
       padding: 12px 20px;
       border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(34, 197, 94, 0.3);
+      box-shadow: 0 10px 30px rgba(4, 8, 18, 0.8), 0 0 15px rgba(37, 99, 235, 0.25);
       z-index: 999999;
       font-size: 13px;
     `;

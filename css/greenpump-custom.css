@@ -2824,7 +2824,13 @@ body {
   gap: 8px;
   max-height: 290px;
   overflow-y: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.crash-players-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .crash-player-row {

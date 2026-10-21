@@ -29,12 +29,17 @@ const MIME = {
 };
 
 function send(res, status, body, type = 'text/plain; charset=utf-8') {
-  res.writeHead(status, {
-    'Content-Type': type,
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff'
-  });
-  res.end(body);
+  if (!res || res.headersSent) return;
+  try {
+    res.writeHead(status, {
+      'Content-Type': type,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    res.end(body);
+  } catch (e) {
+    console.error('[Server] send error:', e.message);
+  }
 }
 
 function proxyLive(req, res, url) {
@@ -99,8 +104,35 @@ function serveStatic(req, res, url) {
     return;
   }
 
+  function streamFile(targetPath) {
+    fs.stat(targetPath, (err, s) => {
+      if (err || !s.isFile()) {
+        send(res, 404, 'Not found');
+        return;
+      }
+      const type = MIME[path.extname(targetPath).toLowerCase()] || 'application/octet-stream';
+      res.writeHead(200, {
+        'Content-Type': type,
+        'Content-Length': s.size,
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff'
+      });
+      if (req.method === 'HEAD') {
+        res.end();
+        return;
+      }
+      const stream = fs.createReadStream(targetPath);
+      stream.on('error', () => res.destroy());
+      stream.pipe(res);
+    });
+  }
+
   fs.stat(filePath, (error, stat) => {
     if (error || !stat.isFile()) {
+      if (!path.extname(pathname)) {
+        streamFile(path.resolve(ROOT, './index.html'));
+        return;
+      }
       send(res, 404, 'Not found');
       return;
     }
@@ -124,8 +156,282 @@ function serveStatic(req, res, url) {
   });
 }
 
+let cachedSolPrice = null;
+let lastSolPriceFetch = 0;
+
+function once(fn) {
+  let called = false;
+  return function(...args) {
+    if (called) return;
+    called = true;
+    fn.apply(this, args);
+  };
+}
+
+function fetchSolPrice(rawCallback) {
+  const callback = once(rawCallback);
+  const now = Date.now();
+  if (cachedSolPrice && (now - lastSolPriceFetch < 2000)) {
+    return callback(null, cachedSolPrice);
+  }
+
+  const req = https.get('https://api.binance.com/api/v3/ticker/24hr?symbol=SOLUSDT', {
+    headers: { 'User-Agent': 'LuckyWin/1.0', 'Accept': 'application/json' },
+    timeout: 4000
+  }, (res) => {
+    let data = '';
+    res.on('data', chunk => data += chunk);
+    res.on('end', () => {
+      try {
+        const json = JSON.parse(data);
+        if (json && json.lastPrice) {
+          cachedSolPrice = {
+            price: parseFloat(json.lastPrice),
+            change24h: parseFloat(json.priceChangePercent),
+            high24h: parseFloat(json.highPrice),
+            low24h: parseFloat(json.lowPrice),
+            timestamp: now,
+            source: 'binance'
+          };
+          lastSolPriceFetch = now;
+          return callback(null, cachedSolPrice);
+        }
+      } catch (e) {}
+      fallbackCoinbase(callback);
+    });
+  });
+
+  req.on('error', () => fallbackCoinbase(callback));
+  req.on('timeout', () => { req.destroy(); fallbackCoinbase(callback); });
+}
+
+function fallbackCoinbase(rawCallback) {
+  const callback = once(rawCallback);
+  const now = Date.now();
+  const req = https.get('https://api.coinbase.com/v2/prices/SOL-USD/spot', {
+    headers: { 'User-Agent': 'LuckyWin/1.0', 'Accept': 'application/json' },
+    timeout: 4000
+  }, (res) => {
+    let data = '';
+    res.on('data', chunk => data += chunk);
+    res.on('end', () => {
+      try {
+        const json = JSON.parse(data);
+        if (json && json.data && json.data.amount) {
+          cachedSolPrice = {
+            price: parseFloat(json.data.amount),
+            change24h: 0,
+            high24h: parseFloat(json.data.amount),
+            low24h: parseFloat(json.data.amount),
+            timestamp: now,
+            source: 'coinbase'
+          };
+          lastSolPriceFetch = now;
+          return callback(null, cachedSolPrice);
+        }
+      } catch (e) {}
+      if (cachedSolPrice) return callback(null, cachedSolPrice);
+      callback(new Error('Failed to fetch SOL price'));
+    });
+  });
+
+  req.on('error', (err) => {
+    if (cachedSolPrice) return callback(null, cachedSolPrice);
+    callback(err);
+  });
+  req.on('timeout', () => {
+    req.destroy();
+    if (cachedSolPrice) return callback(null, cachedSolPrice);
+    callback(new Error('Coinbase timeout'));
+  });
+}
+
+let cachedKlines = null;
+let lastKlinesFetch = 0;
+
+function fetchSolKlines(rawCallback) {
+  const callback = once(rawCallback);
+  const now = Date.now();
+  if (cachedKlines && (now - lastKlinesFetch < 10000)) {
+    return callback(null, cachedKlines);
+  }
+
+  const req = https.get('https://api.binance.com/api/v3/klines?symbol=SOLUSDT&interval=1m&limit=40', {
+    headers: { 'User-Agent': 'LuckyWin/1.0', 'Accept': 'application/json' },
+    timeout: 5000
+  }, (res) => {
+    let data = '';
+    res.on('data', chunk => data += chunk);
+    res.on('end', () => {
+      try {
+        const json = JSON.parse(data);
+        if (Array.isArray(json) && json.length > 0) {
+          const closes = json.map(k => parseFloat(k[4]));
+          const candles = json.map(k => ({
+            time: k[0],
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4])
+          }));
+          cachedKlines = { closes, candles, timestamp: now };
+          lastKlinesFetch = now;
+          return callback(null, cachedKlines);
+        }
+      } catch (e) {}
+      if (cachedKlines) return callback(null, cachedKlines);
+      callback(new Error('Failed to fetch klines'));
+    });
+  });
+
+  req.on('error', (err) => {
+    if (cachedKlines) return callback(null, cachedKlines);
+    callback(err);
+  });
+  req.on('timeout', () => {
+    req.destroy();
+    if (cachedKlines) return callback(null, cachedKlines);
+    callback(new Error('Klines timeout'));
+  });
+}
+
+const casinoVault = require('./casino-vault');
+
+function parseJsonBody(req, callback) {
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk;
+    if (body.length > 1e6) {
+      req.destroy();
+      callback(new Error('Payload too large'));
+    }
+  });
+  req.on('end', () => {
+    try {
+      const parsed = body ? JSON.parse(body) : {};
+      callback(null, parsed);
+    } catch (e) {
+      callback(new Error('Invalid JSON'));
+    }
+  });
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+  if (url.pathname === '/api/casino-vault') {
+    casinoVault.getVaultStats((err, stats) => {
+      if (err) {
+        send(res, 500, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
+      } else {
+        send(res, 200, JSON.stringify(stats), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/vault-ledger') {
+    const ledger = casinoVault.getLedger();
+    send(res, 200, JSON.stringify({ transactions: ledger.slice(0, 50) }), 'application/json; charset=utf-8');
+    return;
+  }
+
+  if (url.pathname === '/api/user-balance') {
+    if (req.method === 'GET') {
+      const address = url.searchParams.get('address');
+      const balance = casinoVault.getUserBalance(address);
+      send(res, 200, JSON.stringify({ address, balance }), 'application/json; charset=utf-8');
+      return;
+    }
+    if (req.method === 'POST') {
+      parseJsonBody(req, (err, body) => {
+        if (err || !body || !body.address) {
+          send(res, 400, JSON.stringify({ error: 'Address and delta required' }), 'application/json; charset=utf-8');
+          return;
+        }
+        const delta = Number(body.delta) || 0;
+        const newBal = casinoVault.updateUserBalance(body.address, delta, body.reason);
+        send(res, 200, JSON.stringify({ address: body.address, balance: newBal }), 'application/json; charset=utf-8');
+      });
+      return;
+    }
+  }
+
+  if (url.pathname === '/api/check-deposits') {
+    const address = url.searchParams.get('address') || 'any';
+    casinoVault.scanVaultForNewDeposits(address, (err, result) => {
+      if (err) {
+        send(res, 500, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
+      } else {
+        send(res, 200, JSON.stringify(result || { newDeposits: [] }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/verify-deposit') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
+        return;
+      }
+      casinoVault.verifyDeposit(body, (err, result) => {
+        if (err) {
+          send(res, 400, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
+        } else {
+          send(res, 200, JSON.stringify(result), 'application/json; charset=utf-8');
+        }
+      });
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/request-withdrawal') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
+        return;
+      }
+      casinoVault.requestWithdrawal(body, (err, result) => {
+        if (err) {
+          send(res, 400, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
+        } else {
+          send(res, 200, JSON.stringify(result), 'application/json; charset=utf-8');
+        }
+      });
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/sol-price') {
+    fetchSolPrice((err, data) => {
+      if (err) {
+        send(res, 502, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
+      } else {
+        send(res, 200, JSON.stringify(data), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/sol-klines') {
+    fetchSolKlines((err, data) => {
+      if (err) {
+        send(res, 502, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
+      } else {
+        send(res, 200, JSON.stringify(data), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
 
   if (LIVE_PATHS.some(prefix => url.pathname === prefix || url.pathname.startsWith(prefix + '/'))) {
     proxyLive(req, res, url);
@@ -135,7 +441,11 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res, url);
 });
 
-server.listen(PORT, () => {
-  console.log(`GREENPUMP running at http://localhost:${PORT}`);
-  console.log(`Live chat mirror: ${LIVE_ORIGIN}/api/chat`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`GREENPUMP running at http://localhost:${PORT}`);
+    console.log(`Live chat mirror: ${LIVE_ORIGIN}/api/chat`);
+  });
+}
+
+module.exports = server;
