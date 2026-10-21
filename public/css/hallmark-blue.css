@@ -1,0 +1,1559 @@
+/* ==========================================================================
+   GREENPUMP MASTER BLUE THEME
+   Crisp, human-crafted dark blue iGaming system. Zero AI-slop.
+   ========================================================================== */
+
+/* 1. Global Reset & Theme Mapping */
+:root {
+  /* Override all legacy green variables with the cohesive blue system */
+  --greenpump-emerald: #2563eb !important;
+  --greenpump-emerald-light: #3b82f6 !important;
+  --greenpump-emerald-glow: rgba(37, 99, 235, 0.28) !important;
+  --greenpump-dark-bg: #070c18 !important;
+  --greenpump-panel-bg: #0b1325 !important;
+  --greenpump-card-bg: #0e172a !important;
+  --greenpump-input-bg: #0a1224 !important;
+
+  --gp-bg: #070c18 !important;
+  --gp-bg-soft: #0a1122 !important;
+  --gp-surface: #0b1325 !important;
+  --gp-surface-2: #0e172a !important;
+  --gp-surface-3: #132244 !important;
+  --gp-line: rgba(59, 130, 246, 0.18) !important;
+  --gp-line-soft: rgba(255, 255, 255, 0.08) !important;
+  --gp-line-green: rgba(59, 130, 246, 0.35) !important;
+  --gp-ink: #f8fafc !important;
+  --gp-muted: #94a3b8 !important;
+  --gp-dim: #64748b !important;
+  --gp-green: #3b82f6 !important;
+  --gp-green-strong: #2563eb !important;
+  --gp-green-deep: #1d4ed8 !important;
+  --accent: #2563eb !important;
+  --accent-strong: #3b82f6 !important;
+}
+
+html, body {
+  background-color: #070c18 !important;
+  color: #f8fafc !important;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 48rem),
+              linear-gradient(180deg, #070c18 0%, #050811 100%) !important;
+  background-attachment: fixed !important;
+}
+
+/* Subtle, technical background grid */
+.horizon-grid {
+  opacity: 0.35 !important;
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.08) 1px, transparent 1px) !important;
+  background-size: 44px 44px !important;
+}
+
+/* Loading Screen */
+.LoadingScreen-module__DJ-nqa__screen {
+  background: #070c18 !important;
+}
+.LoadingScreen-module__DJ-nqa__fill {
+  background: linear-gradient(90deg, #1d4ed8 0%, #38bdf8 100%) !important;
+}
+.LoadingScreen-module__DJ-nqa__track {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+/* 2. Top Navigation Bar - Full-Width Edge-to-Edge Bar */
+.site-nav {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 64px !important;
+  margin: 0 !important;
+  z-index: 1000 !important;
+  padding: 0 24px !important;
+  background: rgba(11, 19, 37, 0.96) !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 4px 24px rgba(4, 8, 18, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.site-nav__inner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.nav-zone-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.nav-zone-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Chat sidebar docked cleanly underneath full-width top navbar */
+#gpChatSidebar {
+  top: 76px !important;
+  left: 16px !important;
+  bottom: 16px !important;
+}
+
+#chatOpenBtn {
+  top: 76px !important;
+  left: 12px !important;
+}
+
+@media (max-width: 1360px) {
+  .site-nav {
+    padding: 0 16px !important;
+  }
+  .nav-zone-left {
+    gap: 8px !important;
+  }
+  .nav-zone-right {
+    gap: 6px !important;
+  }
+  .nav-discord-link span {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1220px) {
+  .nav-discord-link {
+    display: none !important;
+  }
+}
+
+/* Navigation Buttons & Links */
+.site-nav button, 
+.site-nav a.nav-hide-mobile,
+.nav-games-wrapper > button {
+  background: #0f1c38 !important;
+  border: 1px solid rgba(59, 130, 246, 0.16) !important;
+  color: #cbd5e1 !important;
+  border-radius: 9999px !important;
+  font-weight: 700 !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.site-nav button:hover, 
+.site-nav a.nav-hide-mobile:hover,
+.nav-games-wrapper > button:hover {
+  background: #182a52 !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Games Dropdown Menu */
+.NavbarGameMenu-module__tgv1Qa__menu {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 40px rgba(4, 8, 18, 0.8) !important;
+  padding: 10px !important;
+}
+
+.nav-game-link {
+  background: #0a1224 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  color: #e2e8f0 !important;
+  transition: all 0.16s ease !important;
+}
+
+.nav-game-link:hover,
+.nav-game-link.active {
+  background: #132244 !important;
+  border-color: #3b82f6 !important;
+  transform: translateY(-1px) !important;
+}
+
+.nav-game-link.active span:last-child {
+  color: #38bdf8 !important;
+}
+
+/* Daily Free Case Pill */
+#dailyCaseNavBtn, .daily-case-nav-btn {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22) 0%, rgba(30, 64, 175, 0.3) 100%) !important;
+  border: 1px solid rgba(96, 165, 250, 0.45) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2) !important;
+}
+
+#dailyCaseNavBtn:hover, .daily-case-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.35) 0%, rgba(30, 64, 175, 0.45) 100%) !important;
+  border-color: #60a5fa !important;
+  transform: translateY(-1px) !important;
+}
+
+#dailyCaseNavBtn span:first-of-type {
+  color: #ffffff !important;
+}
+
+.daily-case-badge, #dailyCaseBadge {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+}
+
+/* Wallet Button */
+#gpWalletBtn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border: 1px solid rgba(147, 197, 253, 0.3) !important;
+  border-radius: 9999px !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35) !important;
+  transition: all 0.18s ease !important;
+}
+
+#gpWalletBtn:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
+}
+
+/* Notification Dot */
+.gp-notif-dot {
+  background: #38bdf8 !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8) !important;
+}
+
+/* 3. Left Public Chat Sidebar */
+#gpChatSidebar {
+  background: #0b1325 !important;
+  border: 1px solid rgba(59, 130, 246, 0.18) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 40px rgba(4, 8, 18, 0.7) !important;
+}
+
+#gpChatSidebar > div:first-child {
+  background: #0e172a !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.14) !important;
+}
+
+#gpChatSidebar [style*="background:#18181c"],
+#gpChatSidebar [style*="background:#121215"],
+#gpChatSidebar [style*="background:#101014"],
+#gpChatSidebar [style*="background:#161722"] {
+  background: #0a1224 !important;
+  border-color: rgba(59, 130, 246, 0.14) !important;
+}
+
+#airdropProgressBar {
+  background: linear-gradient(90deg, #1d4ed8 0%, #38bdf8 100%) !important;
+}
+
+#airdropTimerDisplay {
+  color: #38bdf8 !important;
+}
+
+.gp-chat-live {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+#gpChatSendBtn {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4) !important;
+  border-radius: 8px !important;
+  transition: all 0.16s ease !important;
+}
+
+#gpChatSendBtn:hover {
+  background: #3b82f6 !important;
+  transform: translateY(-1px) !important;
+}
+
+#chatOpenBtn {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  color: #60a5fa !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 8px 24px rgba(4, 8, 18, 0.8) !important;
+}
+
+#chatOpenBtn:hover {
+  background: #132244 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* 4. Common Game Surfaces & Panels */
+.pump-main-shell {
+  padding-top: 16px !important;
+}
+
+.game-stage-view {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 16px !important;
+}
+
+.gp-game-head {
+  margin-bottom: 16px !important;
+}
+
+.gp-game-kicker {
+  color: #60a5fa !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.gp-game-title {
+  color: #ffffff !important;
+  font-family: 'Sora', sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.gp-game-chip {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #94a3b8 !important;
+}
+
+.gp-chip-dot {
+  background: #38bdf8 !important;
+  box-shadow: 0 0 6px #38bdf8 !important;
+}
+
+/* Game Stage Containers */
+.pump-chart-stage,
+.crash-arena-wrapper,
+.chicken-arena-wrapper,
+.mines-shell,
+.bj-arena-stage,
+.hilo-shell,
+.flappy-game-panel,
+.coinflip-shell {
+  background: #0b1325 !important;
+  border: 1px solid rgba(59, 130, 246, 0.18) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 40px rgba(4, 8, 18, 0.7) !important;
+  overflow: hidden !important;
+}
+
+/* Game Control Panels & Cards */
+.crash-card,
+.chicken-card,
+.mines-panel,
+.mines-board-panel,
+.hilo-panel,
+.coinflip-panel,
+.flappy-panel {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.16) !important;
+  border-radius: 16px !important;
+}
+
+/* Input Boxes Across All Games */
+.crash-input-box,
+.chicken-input-box,
+.gp-bet-input,
+.hilo-bet-row,
+.pump-bet-box {
+  background: #0a1224 !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 12px !important;
+  transition: border-color 0.15s ease !important;
+}
+
+.crash-input-box:focus-within,
+.chicken-input-box:focus-within,
+.gp-bet-input:focus-within,
+.hilo-bet-row:focus-within,
+.pump-bet-box:focus-within {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Quick Bet Pills (1/2, 2x, MAX) */
+.crash-quick-btn,
+.chicken-quick-btn,
+.gp-quick-bets button,
+.hilo-quick-row button,
+.bj-pill-btn,
+#pumpHalfBtn, #pumpDoubleBtn, #pumpMaxBtn {
+  background: #132244 !important;
+  border: 1px solid rgba(59, 130, 246, 0.18) !important;
+  color: #93c5fd !important;
+  border-radius: 8px !important;
+  font-weight: 800 !important;
+  transition: all 0.15s ease !important;
+}
+
+.crash-quick-btn:hover,
+.chicken-quick-btn:hover,
+.gp-quick-bets button:hover,
+.hilo-quick-row button:hover,
+.bj-pill-btn:hover,
+#pumpHalfBtn:hover, #pumpDoubleBtn:hover, #pumpMaxBtn:hover {
+  background: #1d4ed8 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Primary Game Action Buttons (Solid Cobalt Blue) */
+.gp-primary-btn,
+.crash-action-btn,
+.chicken-main-btn,
+.coinflip-flip-btn,
+#pumpTradeActionBtn,
+#bjPlaceBetActionBtn,
+#minesStartBtn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border: 1px solid rgba(147, 197, 253, 0.3) !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35) !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+}
+
+.gp-primary-btn:hover,
+.crash-action-btn:hover,
+.chicken-main-btn:hover,
+.coinflip-flip-btn:hover,
+#pumpTradeActionBtn:hover,
+#bjPlaceBetActionBtn:hover,
+#minesStartBtn:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45) !important;
+}
+
+/* In-game Cashout Buttons (High contrast cyan/electric blue) */
+.gp-cashout-btn,
+.chicken-cashout-btn,
+.hilo-cashout,
+#minesCashoutBtn {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  border: 1px solid rgba(125, 211, 252, 0.4) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4) !important;
+  border-radius: 12px !important;
+  transition: all 0.16s ease !important;
+  cursor: pointer !important;
+}
+
+.gp-cashout-btn:hover,
+.chicken-cashout-btn:hover,
+.hilo-cashout:hover,
+#minesCashoutBtn:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 5. Specific Game Details */
+
+/* Pump & Dump HUD */
+.pump-floating-hud {
+  background: rgba(14, 23, 42, 0.95) !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 32px rgba(4, 8, 18, 0.7) !important;
+}
+
+#pumpUpBtn.is-active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+#dumpDownBtn.is-active {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+/* Crash Arena */
+.crash-multipliers-bar {
+  background: #0e172a !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.16) !important;
+}
+
+.crash-badge.green {
+  background: rgba(37, 99, 235, 0.16) !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  color: #60a5fa !important;
+}
+
+.crash-badge.red {
+  background: rgba(239, 68, 68, 0.14) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+}
+
+.crash-player-row {
+  background: #0e172a !important;
+  border-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+/* Chicken Road */
+.chicken-diff-item {
+  background: #0a1224 !important;
+  border: 1px solid rgba(59, 130, 246, 0.16) !important;
+  border-radius: 10px !important;
+}
+
+.chicken-diff-item.active {
+  background: #132244 !important;
+  border-color: #3b82f6 !important;
+}
+
+.chicken-diff-dot, .chicken-diff-item.active .chicken-diff-dot {
+  background: #38bdf8 !important;
+  box-shadow: 0 0 8px #38bdf8 !important;
+}
+
+.chicken-hop-btn {
+  background: #132244 !important;
+  border: 1px solid #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Mines 5x5 Grid */
+.mines-tile {
+  background: #132244 !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(4, 8, 18, 0.5) !important;
+  transition: all 0.15s ease !important;
+}
+
+.mines-tile:hover:not(.revealed):not(:disabled) {
+  background: #1c3260 !important;
+  border-color: #60a5fa !important;
+  transform: translateY(-2px) !important;
+}
+
+.mines-tile.revealed.gem {
+  background: rgba(37, 99, 235, 0.25) !important;
+  border-color: #38bdf8 !important;
+}
+
+.mines-tile.revealed.bomb {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: #ef4444 !important;
+}
+
+/* Custom Mines Non-Blocky Selector */
+.custom-dropdown-wrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.custom-dropdown-trigger {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  background: #0a1224 !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  color: #f8fafc !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 2px 8px rgba(4, 8, 18, 0.4) !important;
+}
+
+.custom-dropdown-trigger:hover {
+  background: #0f1c38 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.18) !important;
+  transform: translateY(-1px);
+}
+
+.custom-dropdown-trigger:focus-visible {
+  outline: 2px solid #38bdf8 !important;
+  outline-offset: 2px;
+}
+
+.custom-dropdown-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.custom-dropdown-icon {
+  font-size: 16px;
+}
+
+.custom-dropdown-chevron {
+  color: #60a5fa;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-dropdown-wrap.open .custom-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.custom-dropdown-wrap.open .custom-dropdown-trigger {
+  border-color: #3b82f6 !important;
+  background: #0f1c38 !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Floating Custom Dropdown Menu (Rounded, Glassy, Not Blocky) */
+.custom-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 90;
+  background: #0b152d !important;
+  border: 1px solid rgba(59, 130, 246, 0.28) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 45px rgba(4, 8, 18, 0.88) !important;
+  padding: 6px !important;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-dropdown-wrap.open .custom-dropdown-menu {
+  display: flex !important;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 14px !important;
+  border-radius: 9px !important;
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  border: 1px solid transparent !important;
+}
+
+.custom-dropdown-item:hover {
+  background: #142347 !important;
+  color: #ffffff !important;
+  transform: translateX(2px);
+}
+
+.custom-dropdown-item.active {
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  font-weight: 800 !important;
+}
+
+.custom-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-item-odds {
+  font-size: 11px;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.14);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.custom-dropdown-item.active .custom-item-odds {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Quick Segmented Chip Selector */
+.mines-quick-chips {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.mines-chip-btn {
+  height: 32px;
+  background: #0a1224 !important;
+  border: 1px solid rgba(59, 130, 246, 0.18) !important;
+  border-radius: 8px !important;
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.mines-chip-btn:hover {
+  background: #132244 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.mines-chip-btn.active {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35) !important;
+}
+
+/* Rounded Bet Input & Quick Bets (Eliminating blockiness) */
+.mines-panel .gp-bet-input {
+  background: #0a1224 !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 12px !important;
+  padding: 8px 14px !important;
+  margin-bottom: 10px !important;
+}
+
+.mines-panel .gp-bet-input:focus-within {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+}
+
+.mines-panel .gp-quick-bets {
+  gap: 8px !important;
+  margin-bottom: 16px !important;
+}
+
+.mines-panel .gp-quick-bets button {
+  height: 34px !important;
+  border-radius: 9px !important;
+  background: #132244 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #93c5fd !important;
+  font-weight: 800 !important;
+}
+
+.mines-panel .gp-quick-bets button:hover {
+  background: #1d4ed8 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+}
+
+/* Blackjack (Midnight Blue Felt) */
+.bj-table-outer {
+  background: #060a14 !important;
+}
+
+.bj-table-felt {
+  background: radial-gradient(circle at 50% 25%, #0f2244 0%, #0a1428 65%, #070e1c 100%) !important;
+  border-color: rgba(59, 130, 246, 0.28) !important;
+  box-shadow: inset 0 0 80px rgba(4, 8, 18, 0.8) !important;
+}
+
+.bj-table-rim {
+  border-color: rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+}
+
+.bj-felt-ambient-glow {
+  background: radial-gradient(ellipse at 50% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 65%) !important;
+}
+
+.bj-capsule-card {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+}
+
+.bj-gameplay-btn.bj-btn-hit {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+}
+.bj-gameplay-btn.bj-btn-stand {
+  background: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.bj-gameplay-btn.bj-btn-double {
+  background: #0f1c38 !important;
+  border: 1px solid #38bdf8 !important;
+  color: #38bdf8 !important;
+}
+
+/* Hilo Card Stage */
+.hilo-choice-higher {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border: 1px solid rgba(147, 197, 253, 0.3) !important;
+  color: #ffffff !important;
+}
+.hilo-choice-lower {
+  background: #132244 !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  color: #cbd5e1 !important;
+}
+.hilo-choice-lower:hover {
+  background: #1c3260 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+}
+
+/* Coinflip Picks & SOL/USDC Badges */
+.coinflip-pick-label {
+  font-family: 'Sora', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  color: #94a3b8 !important;
+  margin-bottom: 8px !important;
+}
+
+.coinflip-pick-row {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 0 !important;
+}
+
+.coinflip-pick {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 16px 12px 14px 12px !important;
+  background: #0a1224 !important;
+  border: 1.5px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 16px !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  outline: none !important;
+}
+
+.coinflip-pick:hover:not(:disabled) {
+  background: #0f1c38 !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.25) !important;
+}
+
+.coinflip-pick.active {
+  background: linear-gradient(180deg, #132448 0%, #0d1a36 100%) !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5), 0 10px 25px -4px rgba(37, 99, 235, 0.35) !important;
+}
+
+.coinflip-pick-coin-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(10, 18, 36, 0.6) 75%);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+}
+
+.coinflip-pick:hover:not(:disabled) .coinflip-pick-coin-wrap {
+  border-color: rgba(96, 165, 250, 0.35);
+  transform: scale(1.05);
+}
+
+.coinflip-pick.active .coinflip-pick-coin-wrap {
+  border-color: rgba(96, 165, 250, 0.6);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(19, 36, 72, 0.8) 75%);
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.35);
+}
+
+.coinflip-pick-coin-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.coinflip-pick-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.coinflip-pick-name {
+  font-family: 'Sora', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  color: #cbd5e1 !important;
+  transition: color 0.15s ease;
+}
+
+.coinflip-pick.active .coinflip-pick-name {
+  color: #ffffff !important;
+}
+
+.coinflip-pick-token {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  color: #64748b !important;
+}
+
+.coinflip-pick.active .coinflip-pick-token {
+  color: #93c5fd !important;
+}
+
+.coinflip-pick-badge {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  padding: 2px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+  transition: all 0.15s ease;
+  margin-top: 2px;
+}
+
+.coinflip-pick.active .coinflip-pick-badge {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+  color: #60a5fa !important;
+}
+
+.coinflip-stats-row {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 360px !important;
+}
+
+/* 6. Modals & Dialogs (Unified Blue Glass) */
+.gp-modal-backdrop, dialog {
+  background: rgba(4, 7, 15, 0.8) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.gp-modal-dialog, dialog[open] {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85) !important;
+  color: #f8fafc !important;
+}
+
+.gp-modal-title {
+  color: #ffffff !important;
+  font-family: 'Sora', sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.gp-modal-close {
+  background: #132244 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #94a3b8 !important;
+  border-radius: 9999px !important;
+}
+
+.gp-modal-close:hover {
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+#infoModal .gp-modal-dialog {
+  max-width: 620px !important;
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 24px !important;
+}
+
+#infoModalBody {
+  overflow-y: auto !important;
+  max-height: 62vh !important;
+  padding-right: 8px !important;
+  margin-top: 10px !important;
+}
+
+#infoModalBody h4 {
+  font-family: 'Sora', sans-serif !important;
+  color: #60a5fa !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  margin: 16px 0 6px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+#infoModalBody h4:first-child {
+  margin-top: 2px !important;
+}
+
+#infoModalBody p {
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  color: #94a3b8 !important;
+  margin-bottom: 12px !important;
+}
+
+#infoModalBody strong {
+  color: #f1f5f9 !important;
+}
+
+/* Daily Case Modal Horizontal Carousel */
+.case-rewards-container {
+  background: #0a1224 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+.case-prize-card {
+  background: #0e172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+#spinDailyCaseBtn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4) !important;
+  border-radius: 12px !important;
+}
+
+/* Wallet Dialog */
+#walletSecurityDialog [style*="background:#0b1010"],
+#walletSecurityDialog [style*="background:#16161c"] {
+  background: #0a1224 !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+#walletCopyAddrBtn {
+  background: #132244 !important;
+  border: 1px solid #3b82f6 !important;
+  color: #93c5fd !important;
+  border-radius: 8px !important;
+}
+
+#walletCopyAddrBtn:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+#walletAddressDisplay {
+  color: #38bdf8 !important;
+}
+
+#claimSolFaucetBtn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35) !important;
+}
+
+#claimSolFaucetBtn:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+}
+
+#resetWalletBtn {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #fca5a5 !important;
+  border-radius: 10px !important;
+}
+
+#resetWalletBtn:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #ffffff !important;
+}
+
+/* Footer */
+.gp-statement-footer {
+  border-top: 1px solid rgba(59, 130, 246, 0.14) !important;
+  color: #64748b !important;
+}
+.gp-statement-footer p {
+  color: #ffffff !important;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070c18;
+}
+::-webkit-scrollbar-thumb {
+  background: #182a52;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* Responsive Nav & Mobile Controls */
+@media (max-width: 900px) {
+  .site-nav {
+    width: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    height: 56px !important;
+    padding: 0 12px !important;
+  }
+  .nav-hide-mobile {
+    display: none !important;
+  }
+  .nav-banner-logo {
+    width: 140px !important;
+    height: 32px !important;
+  }
+  .nav-brand-logo {
+    height: 32px !important;
+    width: auto !important;
+    max-width: 56px !important;
+  }
+  .nav-brand-text {
+    font-size: 18px !important;
+  }
+}
+
+/* LuckyWin Brand Identity */
+.nav-brand-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  padding: 2px 0 !important;
+  cursor: pointer !important;
+}
+
+.nav-brand-logo {
+  height: 38px !important;
+  width: auto !important;
+  max-width: 68px !important;
+  object-fit: contain !important;
+  display: block !important;
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.5)) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease !important;
+}
+
+.nav-brand-link:hover .nav-brand-logo {
+  transform: scale(1.08) !important;
+  filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.85)) !important;
+}
+
+.nav-brand-text {
+  font-family: 'Sora', sans-serif !important;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: baseline !important;
+}
+
+.nav-brand-win {
+  color: #38bdf8 !important;
+  background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* SPA Route Link Enhancements */
+a.nav-game-link,
+a#leaderboardNavBtn,
+a#dailyCaseNavBtn,
+a#gpWalletBtn,
+a.mobile-tab,
+a.gp-footer-link {
+  text-decoration: none !important;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+a.gp-footer-link {
+  color: #94a3b8 !important;
+  display: inline-block;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  transition: color 0.15s ease;
+}
+a.gp-footer-link:hover {
+  color: #38bdf8 !important;
+}
+
+/* Remove scrollbar completely from Rug live players list */
+#rugPlayersList,
+.crash-players-list {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+#rugPlayersList::-webkit-scrollbar,
+.crash-players-list::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Custom Airdrop input & DROP button styling */
+#airdropCustomInput::-webkit-outer-spin-button,
+#airdropCustomInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#airdropCustomInput[type=number] {
+  -moz-appearance: textfield;
+}
+#airdropCustomInput:focus {
+  color: #38bdf8 !important;
+}
+#airdropDropBtn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.6) !important;
+}
+#airdropDropBtn:active {
+  transform: translateY(0);
+}
+
+/* Real-Time Live Solana Price Pill */
+.nav-sol-price-pill {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  height: 34px !important;
+  background: #101a33 !important;
+  border: 1px solid rgba(59, 130, 246, 0.28) !important;
+  border-radius: 8px !important;
+  padding: 0 10px !important;
+  font-size: 13px !important;
+  cursor: default !important;
+  user-select: none !important;
+  transition: all 0.25s ease !important;
+  box-shadow: 0 2px 10px rgba(4, 8, 18, 0.5) !important;
+}
+
+.nav-sol-price-pill:hover {
+  border-color: rgba(96, 165, 250, 0.5) !important;
+  background: #142244 !important;
+}
+
+.sol-pill-icon {
+  width: 17px !important;
+  height: 17px !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.4)) !important;
+}
+
+.sol-pill-symbol {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  letter-spacing: 0.04em !important;
+}
+
+.sol-pill-price {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.01em !important;
+  transition: color 0.2s ease, transform 0.2s ease !important;
+}
+
+.sol-pill-change {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.01em !important;
+}
+
+.sol-pill-change.is-up {
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+.sol-pill-change.is-down {
+  color: #f43f5e !important;
+  background: rgba(244, 63, 94, 0.15) !important;
+  border: 1px solid rgba(244, 63, 94, 0.25) !important;
+}
+
+.sol-live-pulse {
+  display: inline-block !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #10b981 !important;
+  box-shadow: 0 0 8px #10b981 !important;
+  animation: solLivePulseAnim 1.8s infinite ease-in-out !important;
+}
+
+@keyframes solLivePulseAnim {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #10b981; }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+.price-tick-flash-up {
+  animation: priceTickFlashGreen 0.7s ease !important;
+}
+
+.price-tick-flash-down {
+  animation: priceTickFlashRed 0.7s ease !important;
+}
+
+@keyframes priceTickFlashGreen {
+  0% { color: #4ade80 !important; text-shadow: 0 0 10px rgba(74, 222, 128, 0.8) !important; transform: translateY(-1px); }
+  100% { color: #ffffff !important; text-shadow: none !important; transform: translateY(0); }
+}
+
+@keyframes priceTickFlashRed {
+  0% { color: #f87171 !important; text-shadow: 0 0 10px rgba(248, 113, 113, 0.8) !important; transform: translateY(1px); }
+  100% { color: #ffffff !important; text-shadow: none !important; transform: translateY(0); }
+}
+
+/* =====================================================================
+   FULL-SCREEN GAME LAYOUT & CANDLESTICK STAGE (Image 1)
+   ===================================================================== */
+.pump-main-shell {
+  padding-top: 72px !important;
+  padding-bottom: 12px !important;
+  padding-right: 16px !important;
+  min-height: 100vh !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 1025px) {
+  .pump-main-shell {
+    padding-left: 316px !important;
+    transition: padding-left 0.48s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  body.chat-collapsed .pump-main-shell {
+    padding-left: 16px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .pump-main-shell {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 68px !important;
+  }
+}
+
+/* Stage View Height Expansion */
+#stage-pump,
+.pump-chart-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.pump-chart-stage {
+  height: calc(100vh - 84px) !important;
+  min-height: 540px !important;
+  width: 100% !important;
+  position: relative !important;
+  border-radius: 16px !important;
+  background: #090f1d !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+  overflow: hidden !important;
+}
+
+/* Floating HUD Nested Inside Pump Chart (Matching Image 1) */
+.pump-chart-stage .pump-floating-hud {
+  position: absolute !important;
+  bottom: 16px !important;
+  left: 16px !important;
+  right: 16px !important;
+  z-index: 35 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: rgba(13, 20, 36, 0.92) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(59, 130, 246, 0.24) !important;
+  border-radius: 16px !important;
+  padding: 10px 18px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85) !important;
+}
+
+.pump-direction-btns button {
+  padding: 11px 22px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  border-radius: 10px !important;
+  border: none !important;
+  cursor: pointer !important;
+  color: #94a3b8 !important;
+  background: transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.15s ease !important;
+}
+
+.pump-direction-btns button.is-active {
+  background: #101c38 !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+}
+
+#pumpUpBtn.is-active {
+  color: #4ade80 !important;
+  border-color: rgba(74, 222, 128, 0.4) !important;
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.25) !important;
+}
+
+#dumpDownBtn.is-active {
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.4) !important;
+  box-shadow: 0 0 16px rgba(248, 113, 113, 0.25) !important;
+}
+
+.pump-bet-box {
+  background: #090f1d !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  border-radius: 12px !important;
+  padding: 6px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.pump-bet-label {
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+}
+
+#pumpTradeActionBtn {
+  height: 48px !important;
+  padding: 0 28px !important;
+  border-radius: 12px !important;
+  font-size: 14.5px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+#pumpTradeActionBtn:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.1) !important;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.5) !important;
+}
+
+#pumpTradeActionBtn:active {
+  transform: translateY(0) !important;
+}
+
+/* =====================================================================
+   PROFILE BUTTON & DROPDOWN MENU (Image 2)
+   ===================================================================== */
+.gp-profile-dropdown {
+  animation: dropdownFadeSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+.gp-profile-menu-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 9px 12px !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, transform 0.1s ease !important;
+  text-align: left !important;
+  color: #ffffff !important;
+}
+
+.gp-profile-menu-row:hover {
+  background: rgba(59, 130, 246, 0.14) !important;
+}
+
+.gp-profile-menu-row:active {
+  transform: scale(0.98) !important;
+}
+
+/* Modal Tab System */
+.wallet-tab-btn {
+  transition: all 0.15s ease !important;
+}
+
+.wallet-tab-btn.is-active {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4) !important;
+}
+
+.wallet-tab-btn:not(.is-active):hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+}
+
+.sim-deposit-btn {
+  transition: all 0.15s ease !important;
+}
+
+.sim-deposit-btn:hover {
+  transform: translateY(-1px) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+

@@ -1,0 +1,109 @@
+/* ==========================================================================
+   GREENPUMP BLUE THEME DESIGN TOKENS
+   Professional, human-crafted dark blue iGaming & crypto workbench system
+   ========================================================================== */
+
+:root {
+  /* Canvas & Surface Layers (Deep Midnight Slate / Obsidian Blue) */
+  --gp-bg: #070c18;
+  --gp-bg-subtle: #0a1122;
+  --gp-surface-1: #0e172a;
+  --gp-surface-2: #132244;
+  --gp-surface-3: #182a52;
+  --gp-surface-input: #0a1224;
+  --gp-surface-card: #0f1c38;
+  --gp-surface-hover: #1c3260;
+
+  /* Hallmark token mapping */
+  --color-paper: #070c18;
+  --color-paper-2: #0e172a;
+  --color-paper-3: #132244;
+  --color-paper-4: #0a1224;
+
+  /* Typography / Ink Hierarchy */
+  --gp-ink-primary: #f8fafc;
+  --gp-ink-secondary: #cbd5e1;
+  --gp-ink-muted: #94a3b8;
+  --gp-ink-dim: #64748b;
+  --color-ink: #f8fafc;
+  --color-ink-2: #cbd5e1;
+  --color-muted: #94a3b8;
+  --color-neutral: #64748b;
+
+  /* Primary Blue Accent Hierarchy */
+  --gp-blue-base: #2563eb;
+  --gp-blue-hover: #3b82f6;
+  --gp-blue-active: #1d4ed8;
+  --gp-blue-light: #60a5fa;
+  --gp-blue-soft: rgba(37, 99, 235, 0.14);
+  --gp-blue-glow: rgba(59, 130, 246, 0.28);
+  --gp-cyan-accent: #38bdf8;
+  --gp-cyan-soft: rgba(56, 189, 248, 0.15);
+
+  --color-accent: #2563eb;
+  --color-accent-strong: #3b82f6;
+  --color-accent-soft: rgba(37, 99, 235, 0.16);
+  --color-accent-wash: rgba(37, 99, 235, 0.08);
+  --color-accent-shadow: rgba(37, 99, 235, 0.25);
+  --color-accent-glow: rgba(59, 130, 246, 0.32);
+  --color-accent-ink: #ffffff;
+  --color-focus: #38bdf8;
+
+  /* Functional Status Colors (Controlled & Crisp) */
+  --gp-success: #10b981;
+  --gp-success-soft: rgba(16, 185, 129, 0.14);
+  --gp-success-border: rgba(16, 185, 129, 0.35);
+  --gp-danger: #ef4444;
+  --gp-danger-soft: rgba(239, 68, 68, 0.14);
+  --gp-danger-border: rgba(239, 68, 68, 0.35);
+  --gp-warning: #f59e0b;
+  --gp-warning-soft: rgba(245, 158, 11, 0.14);
+
+  --color-danger: #ef4444;
+  --color-danger-surface: rgba(239, 68, 68, 0.12);
+  --color-danger-ink: #fca5a5;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+
+  /* Precision Border / Divider Lines */
+  --gp-border-subtle: rgba(255, 255, 255, 0.07);
+  --gp-border-default: rgba(59, 130, 246, 0.18);
+  --gp-border-accent: rgba(59, 130, 246, 0.45);
+  --gp-border-focus: #3b82f6;
+
+  --color-rule: rgba(59, 130, 246, 0.18);
+  --color-rule-2: rgba(255, 255, 255, 0.08);
+  --rule-hair: 1px;
+
+  /* Typography Stacks */
+  --font-display: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+  /* Radii & Geometry */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 9999px;
+
+  --radius-card: 16px;
+  --radius-input: 10px;
+  --button-radius: 10px;
+  --panel-radius: 16px;
+
+  /* Crisp Shadows (No muddy blobs) */
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.65);
+  --shadow-blue-btn: 0 4px 16px rgba(37, 99, 235, 0.35);
+  --shadow-card: 0 12px 32px rgba(4, 8, 18, 0.65);
+
+  /* Transitions */
+  --dur-micro: 120ms;
+  --dur-short: 200ms;
+  --dur-long: 350ms;
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

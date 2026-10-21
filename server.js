@@ -98,8 +98,14 @@ function serveStatic(req, res, url) {
 
   if (pathname === '/') pathname = '/index.html';
 
-  const filePath = path.resolve(ROOT, '.' + pathname);
-  if (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep)) {
+  let filePath = path.resolve(ROOT, '.' + pathname);
+  if (!fs.existsSync(filePath)) {
+    const pubPath = path.resolve(ROOT, 'public', '.' + pathname);
+    if (fs.existsSync(pubPath)) {
+      filePath = pubPath;
+    }
+  }
+  if (!filePath.startsWith(ROOT + path.sep) && filePath !== ROOT) {
     send(res, 403, 'Forbidden');
     return;
   }

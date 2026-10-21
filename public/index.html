@@ -1,0 +1,2252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+  <meta name="theme-color" content="#081326"/>
+  <title>LuckyWin - Real Money Solana Casino | Non-Custodial Vault</title>
+  <meta name="description" content="LuckyWin - Real Money Solana Casino. 100% Non-Custodial Casino Vault. Play Crash, Coinflip, Mines, Higher or Lower, Chicken Road, Blackjack and Pump & Dump with real SOL."/>
+  <meta name="robots" content="index, follow"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="LuckyWin"/>
+  <meta property="og:title" content="LuckyWin - Real Money Solana Casino | Non-Custodial Vault"/>
+  <meta property="og:description" content="Real money Solana casino with transparent on-chain Casino Main Vault. Instant deposits & withdrawals."/>
+  <meta property="og:image" content="luckywin-logo.png"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="LuckyWin - Real Money Solana Casino | Non-Custodial Vault"/>
+  <meta name="twitter:description" content="Real money Solana casino with non-custodial Casino Main Vault. Instant deposits & withdrawals."/>
+  <meta name="twitter:image" content="luckywin-logo.png"/>
+
+  <link rel="icon" type="image/png" href="luckywin-logo.png"/>
+  <link rel="apple-touch-icon" href="luckywin-logo.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Greenpump Stylesheets -->
+  <link rel="stylesheet" href="css/greenpump1.css"/>
+  <link rel="stylesheet" href="css/greenpump2.css"/>
+  <link rel="stylesheet" href="css/greenpump-custom.css"/>
+  <link rel="stylesheet" href="css/greenpump-extra.css"/>
+  <link rel="stylesheet" href="css/greenpump-redesign.css"/>
+  <link rel="stylesheet" href="tokens.css"/>
+  <link rel="stylesheet" href="css/hallmark-blue.css"/>
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div class="LoadingScreen-module__DJ-nqa__screen" aria-label="Loading LuckyWin">
+    <div class="LoadingScreen-module__DJ-nqa__content">
+      <div class="LoadingScreen-module__DJ-nqa__visual">
+        <img src="luckywin-logo.png" alt="LuckyWin" class="LoadingScreen-module__DJ-nqa__logo" style="width: 150px; height: auto; object-fit: contain; filter: drop-shadow(0 0 35px rgba(56, 189, 248, 0.75));"/>
+      </div>
+      <div class="LoadingScreen-module__DJ-nqa__loading">
+        <div class="LoadingScreen-module__DJ-nqa__track" role="progressbar" aria-label="Loading Greenpump" aria-valuemin="0" aria-valuemax="100">
+          <div class="LoadingScreen-module__DJ-nqa__fill" style="transform: scaleX(0);"></div>
+        </div>
+        <div class="LoadingScreen-module__DJ-nqa__caption">
+          <span>Loading</span>
+          <span class="LoadingScreen-module__DJ-nqa__percentage">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Horizon background grid -->
+  <div class="horizon-grid"></div>
+
+  <!-- Content Layer -->
+  <div class="content-layer">
+
+    <!-- Floating Chat Toggle Button (When sidebar minimized) -->
+    <button id="chatOpenBtn" type="button" title="Open Public Chat" aria-label="Open public chat" style="position:fixed;left:12px;top:84px;z-index:49;background:#0e172a;border:1px solid rgba(59, 130, 246, 0.3);border-radius:12px;padding:9px 15px;display:flex;align-items:center;gap:8px;color:#60a5fa;box-shadow:0 8px 24px rgba(4,8,18,0.7), 0 0 12px rgba(37, 99, 235, 0.2);cursor:pointer;font-weight:800;font-size:13px;letter-spacing:0.02em;transform:translateX(-28px) scale(0.92);opacity:0;pointer-events:none;transition:transform 0.48s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.40s ease, border-color 0.2s ease;will-change:transform, opacity">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#38bdf8">
+        <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span>CHAT</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+        <path d="m9 18 6-6-6-6"></path>
+      </svg>
+    </button>
+
+    <!-- Fixed Left Public Chat Sidebar -->
+    <aside id="gpChatSidebar" aria-label="Public chat" style="width:285px;position:fixed;left:16px;top:80px;bottom:16px;background:#0b1325;border:1px solid rgba(59, 130, 246, 0.18);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 40px rgba(4, 8, 18, 0.7);font-family:'Plus Jakarta Sans', sans-serif;z-index:45;transform:translateX(0);opacity:1;pointer-events:auto;transition:transform 0.48s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.42s ease;will-change:transform, opacity" class="global-public-chat-sidebar">
+      
+      <!-- Airdrop Header Box -->
+      <div style="padding:10px 8px 8px 8px;background:#0e172a;border-bottom:1px solid rgba(59, 130, 246, 0.14);box-shadow:0 4px 18px rgba(0, 0, 0, 0.4);position:relative;flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:center;margin-bottom:6px;filter:drop-shadow(0 0 8px rgba(37, 99, 235, 0.3));transition:all 0.3s ease">
+          <img src="airdrop-logo-selected.png" alt="AIRDROP" style="height:72px;width:100%;max-width:100%;object-fit:contain;display:block"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:6px;background:#0a1224;border:1px solid rgba(59, 130, 246, 0.15);border-radius:12px;padding:4px;box-shadow:0 4px 16px rgba(0, 0, 0, 0.5);align-items:center">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0e172a;border:1px solid rgba(255, 255, 255, 0.06);border-radius:9px;padding:3px 6px;min-width:0;gap:4px">
+            <div style="display:flex;align-items:center;gap:4px;min-width:0;flex:1;">
+              <img src="solana-coin.png" alt="SOL" style="width:16px;height:16px;object-fit:contain;flex-shrink:0;"/>
+              <input id="airdropCustomInput" type="number" step="0.1" min="0.01" value="0.50" placeholder="SOL" title="Enter SOL amount to airdrop" aria-label="Airdrop amount in SOL" style="width:100%;max-width:54px;background:transparent;border:none;color:#ffffff;font-family:'Plus Jakarta Sans', sans-serif;font-size:12.5px;font-weight:900;outline:none;padding:0;letter-spacing:-0.02em;" />
+            </div>
+            <button id="airdropDropBtn" type="button" title="Airdrop SOL to all online players" aria-label="Airdrop SOL" style="font-size:9.5px;font-weight:900;color:#ffffff;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:1px solid rgba(147, 197, 253, 0.35);padding:3px 8px;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 2px 8px rgba(37,99,235,0.4);white-space:nowrap;transition:all 0.15s ease;">DROP</button>
+          </div>
+          <div style="background:#0e172a;border:1px solid rgba(255, 255, 255, 0.06);border-radius:9px;padding:3px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;flex-shrink:0">
+            <span id="airdropTimerDisplay" style="font-family:'Courier New', monospace;font-size:12px;font-weight:900;color:#38bdf8;letter-spacing:0.02em;line-height:1.2">02:22</span>
+            <div style="display:flex;align-items:center;gap:3px;font-size:8.5px;color:#64748b;font-weight:800;margin-top:1px">
+              <span id="airdropOnlineCount">84</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <path d="M16 3.128a4 4 0 0 1 0 7.744"></path>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div style="width:100%;height:3px;background:rgba(255, 255, 255, 0.06);border-radius:2px;margin-top:6px;overflow:hidden">
+          <div id="airdropProgressBar" style="height:100%;width:64%;background:linear-gradient(90deg, #1d4ed8 0%, #38bdf8 100%);border-radius:2px;"></div>
+        </div>
+      </div>
+
+      <!-- Public Chat Title Bar -->
+      <div style="padding:10px 14px;background:#0e172a;border-bottom:1px solid rgba(59, 130, 246, 0.14);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#38bdf8">
+            <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span style="font-size:13px;font-weight:900;color:#ffffff;letter-spacing:0.04em">PUBLIC CHAT</span>
+          <span id="gpChatLiveStatus" class="gp-chat-live" data-state="connecting">CONNECTING</span>
+        </div>
+        <button id="chatMinimizeBtn" type="button" title="Minimize chat" aria-label="Minimize chat" style="background:#132244;border:1px solid rgba(59, 130, 246, 0.2);border-radius:8px;padding:6px 9px;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+            <path d="M9 3v18"></path>
+            <path d="m16 15-3-3 3-3"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Live Chat Feed -->
+      <div data-chat-feed="true" style="flex:1;min-height:0;overflow-anchor:none;scroll-behavior:smooth;padding:6px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;background:transparent"></div>
+
+      <!-- Chat Input Form -->
+      <div style="padding:10px;background:#0e172a;border-top:1px solid rgba(59, 130, 246, 0.14);display:flex;align-items:center;gap:6px;position:relative">
+        <div id="gpEmojiPicker" class="gp-emoji-picker" hidden aria-label="Choose an emoji"></div>
+        <div style="width:100%;display:flex;align-items:center;gap:6px;">
+          <div style="flex:1;background:#0a1224;border:1px solid rgba(59, 130, 246, 0.18);border-radius:10px;padding:6px 8px 6px 12px;display:flex;align-items:center;justify-content:space-between;">
+            <input type="text" id="gpChatInput" placeholder="Type message..." maxlength="180" aria-label="Chat message" style="background:transparent;border:none;color:#ffffff;font-size:12.5px;font-family:'Plus Jakarta Sans', sans-serif;outline:none;width:100%;"/>
+            <button id="gpEmojiBtn" type="button" title="Add emoji" aria-label="Add emoji" style="display:flex;align-items:center;justify-content:center;opacity:0.85;cursor:pointer;background:transparent;border:none;padding:2px;border-radius:6px;">
+              <img src="emojis/pepe_hypers.png" alt="" style="width:20px;height:20px;object-fit:contain"/>
+            </button>
+          </div>
+          <button id="gpChatSendBtn" type="button" aria-label="Send chat message" style="width:34px;height:34px;border-radius:10px;background:#2563eb;border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#ffffff;cursor:pointer;box-shadow:0 2px 10px rgba(37,99,235,0.4)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path>
+              <path d="m21.854 2.147-10.94 10.939"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Total Bets Counter -->
+      <div style="padding:8px 14px;border-top:1px solid rgba(59, 130, 246, 0.12);background:#0a1224;display:flex;align-items:center;justify-content:flex-start;user-select:none;gap:6px">
+        <span id="totalBetsCounter" style="font-size:13px;font-weight:800;color:#ffffff;">51,423</span>
+        <span style="font-size:12px;font-weight:600;color:#94a3b8;">Total Bets</span>
+      </div>
+    </aside>
+
+    <!-- Main Webpage Wrapper -->
+    <div style="min-height:100vh;background:#070c18;color:#ffffff;font-family:'Plus Jakarta Sans', sans-serif">
+      
+      <!-- Top Site Navigation Bar -->
+      <nav class="site-nav">
+        <div class="site-nav__inner">
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0" class="nav-zone-left">
+            <a class="nav-brand-link" href="/" data-switch-game="pump" aria-label="LuckyWin Home">
+              <img src="luckywin-logo.png" alt="LuckyWin" class="nav-brand-logo" />
+              <span class="nav-brand-text">LUCKY<span class="nav-brand-win">WIN</span></span>
+            </a>
+            
+            <!-- Games Dropdown Wrapper (Opens on HOVER) -->
+            <div class="nav-games-wrapper nav-hide-mobile">
+              <button style="display:flex;align-items:center;gap:8px;background:#121215;border:1px solid rgba(255, 255, 255, 0.08);border-radius:8px;padding:6px 14px;color:#ffffff;font-size:13px;font-weight:700;letter-spacing:-0.01em;cursor:pointer;">
+                <img src="nav-games-controller.png" alt="Games" style="width:24px;height:20px;object-fit:contain;display:block"/>
+                <span>Games</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              <!-- Games Dropdown Menu -->
+              <div class="NavbarGameMenu-module__tgv1Qa__menu" style="padding:8px;width:375px;display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;">
+                
+                <a class="nav-game-link" href="/pump" data-switch-game="pump" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="coinflip-coin-v2.png" alt="PUMP" style="width:28px;height:28px;object-fit:contain;"/>
+                    <span style="font-size:13px;font-weight:800;color:#ffffff;">PUMP &amp; DUMP</span>
+                  </div>
+                </a>
+
+                <a class="nav-game-link active" href="/crash" data-switch-game="rug" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="crash-icon.png" alt="RUG" style="width:24px;height:24px;object-fit:contain"/>
+                    <span style="font-size:13px;font-weight:800;color:#f8fafc;">RUG</span>
+                  </div>
+                  <span style="font-size:11px;font-weight:800;color:#38bdf8;">1.00x</span>
+                </a>
+
+                <a class="nav-game-link" href="/chicken" data-switch-game="chicken" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="chicken-icon.png" alt="Chicken Road" style="width:24px;height:24px;object-fit:contain"/>
+                    <span style="font-size:13px;font-weight:800;color:#e2e8f0;">CHICKEN ROAD</span>
+                  </div>
+                </a>
+
+                <a class="nav-game-link" href="/mines" data-switch-game="mines" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="mines-icon.png" alt="Mines" style="width:28px;height:28px;object-fit:contain"/>
+                    <span style="font-size:13px;font-weight:800;color:#e2e8f0;">MINES</span>
+                  </div>
+                </a>
+
+                <a class="nav-game-link" href="/blackjack" data-switch-game="blackjack" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="blackjack-icon.png" alt="Blackjack" style="width:24px;height:24px;object-fit:contain"/>
+                    <span style="font-size:13px;font-weight:800;color:#e2e8f0;">BLACKJACK</span>
+                  </div>
+                </a>
+
+                <a class="nav-game-link" href="/hilo" data-switch-game="hilo" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="hilo-icon.png" alt="Higher Lower" style="width:28px;height:28px;object-fit:contain"/>
+                    <span style="font-size:13px;font-weight:800;color:#e2e8f0;">HIGHER/LOWER</span>
+                  </div>
+                </a>
+
+                <a class="nav-game-link" href="/coinflip" data-switch-game="coinflip" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="coinflip-coin-v2.png" alt="Coinflip" style="width:28px;height:28px;object-fit:contain"/>
+                    <span style="font-size:13px;font-weight:800;color:#e2e8f0;">COINFLIP</span>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+            <!-- Leaderboard Button -->
+            <a id="leaderboardNavBtn" href="/leaderboard" title="Leaderboard" style="text-decoration:none;display:flex;align-items:center;gap:6px;height:34px;background:#121215;border:1px solid rgba(255, 255, 255, 0.08);border-radius:8px;padding:0 12px;color:#e2e8f0;font-size:13px;font-weight:700;cursor:pointer;" class="nav-hide-mobile">
+              <img src="nav-leaderboard-trophy.png" alt="" width="22" height="22" style="display:block;object-fit:contain;"/>
+              <span>Leaderboard</span>
+            </a>
+
+            <!-- Online Player Counter -->
+            <div title="Active players currently online" style="display:flex;align-items:center;gap:8px;height:34px;background:#121215;border:1px solid rgba(255, 255, 255, 0.08);border-radius:8px;padding:0 12px;font-size:13px;cursor:default;" class="nav-hide-mobile">
+              <svg width="17" height="18" viewBox="345 326 600 624" role="img">
+                <image href="nav-online-player.png" width="1254" height="1254"></image>
+              </svg>
+              <span id="onlinePlayersCount" style="font-size:13px;font-weight:800;color:#ffffff;">84</span>
+              <span style="font-size:12px;color:#94a3b8;font-weight:600;">online</span>
+            </div>
+
+            <!-- Real-Time Continuous Solana Price Feed -->
+            <div id="liveSolPricePill" title="Real-time live Solana price stream" class="nav-sol-price-pill nav-hide-mobile">
+              <span class="sol-live-pulse" aria-hidden="true" title="Live Continuous Feed"></span>
+              <img src="solana-coin.png" alt="SOL" class="sol-pill-icon" />
+              <span class="sol-pill-symbol">SOL</span>
+              <span id="liveSolPriceValue" class="sol-pill-price">$108.35</span>
+              <span id="liveSolPriceChange" class="sol-pill-change is-up">+2.28%</span>
+            </div>
+          </div>
+
+          <!-- Center Zone: Wallet Pill -->
+          <div style="flex:1;display:flex;align-items:center;justify-content:center" class="nav-zone-center">
+            <a id="gpWalletBtn" href="/wallet" style="text-decoration:none;display:flex;align-items:center;gap:8px;height:36px;background:#0d1527;border:1px solid rgba(59, 130, 246, 0.28);border-radius:10px;padding:0 16px;color:#ffffff;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 4px 18px rgba(0, 0, 0, 0.6);transition:all 0.15s ease;" title="Instant Solana Wallet">
+              <img src="solana-coin.png" alt="SOL" style="width:17px;height:17px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));"/>
+              <span id="walletBalanceDisplay" style="font-weight:900;letter-spacing:-0.01em;">2.50 SOL</span>
+            </a>
+          </div>
+
+          <!-- Right Zone -->
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0" class="nav-zone-right">
+            <!-- Discord -->
+            <a href="https://discord.gg/greenprinters" target="_blank" rel="noopener noreferrer" title="Join Discord" style="display:flex;align-items:center;justify-content:center;gap:6px;height:34px;background:#121215;border:1px solid rgba(255, 255, 255, 0.08);border-radius:8px;padding:0 10px;color:#e2e8f0;text-decoration:none;font-size:13px;font-weight:700;" class="nav-discord-link nav-hide-mobile">
+              <svg width="16" height="12" viewBox="0 0 127.14 96.36" fill="#5865F2">
+                <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"></path>
+              </svg>
+              <span>Discord</span>
+            </a>
+
+            <!-- Mute Audio -->
+            <button id="gpMuteBtn" type="button" title="Mute casino sound" aria-label="Mute casino sound" aria-pressed="false" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:#121215;border:1px solid rgba(255, 255, 255, 0.08);border-radius:8px;color:#94a3b8;cursor:pointer;">
+              <svg class="sound-on-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
+                <path d="M16 9a5 5 0 0 1 0 6"></path>
+                <path d="M19.364 18.364a9 9 0 0 0 0-12.728"></path>
+              </svg>
+              <svg class="sound-off-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            </button>
+
+            <!-- Daily Free Case -->
+            <a id="dailyCaseNavBtn" href="/case" title="Daily Free Chest" style="text-decoration:none;position:relative;display:flex;align-items:center;gap:7px;height:34px;background:linear-gradient(135deg, rgba(34, 197, 94, 0.16) 0%, rgba(22, 163, 74, 0.22) 100%);border:1px solid rgba(74, 222, 128, 0.45);border-radius:8px;padding:0 10px;cursor:pointer;box-shadow:0 4px 14px rgba(34, 197, 94, 0.2);" class="daily-case-nav-btn">
+              <img src="daily-case-v2.png" alt="Daily Case" width="20" height="20" style="object-fit:contain;"/>
+              <span style="color:#ffffff;font-size:13px;font-weight:800">Daily Chest</span>
+              <span id="dailyCaseBadge" class="daily-case-badge" style="background:#22c55e;color:#052e16;font-size:10px;font-weight:900;padding:2px 6px;border-radius:6px;box-shadow:0 0 8px rgba(34, 197, 94, 0.45)">FREE</span>
+            </a>
+
+            <!-- Notification Bell -->
+            <button id="notificationsBtn" type="button" title="Notifications" aria-label="Notifications" aria-expanded="false" style="position:relative;background:#0f1c38;border:1px solid rgba(59, 130, 246, 0.18);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#94a3b8;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
+                <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path>
+              </svg>
+              <span id="notificationDot" class="gp-notif-dot" aria-hidden="true"></span>
+            </button>
+
+            <!-- Notification Panel -->
+            <div id="notificationsPanel" class="gp-notif-panel" role="dialog" aria-label="Notifications" hidden>
+              <div class="gp-notif-head">
+                <span>Notifications</span>
+                <button type="button" id="clearNotificationsBtn" class="gp-notif-clear">Mark all read</button>
+              </div>
+              <div id="notificationsList" class="gp-notif-list"></div>
+            </div>
+
+            <!-- Profile Button & Dropdown (Matching Image 2) -->
+            <div style="position:relative;" class="nav-profile-container">
+              <button id="gpProfileBtn" type="button" aria-label="Open User Profile" aria-expanded="false" style="position:relative;background:transparent;border:none;padding:0;cursor:pointer;display:flex;align-items:center;outline:none;">
+                <div style="position:relative;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #4ade80 0%, #16a34a 70%, #14532d 100%);border:2px solid rgba(74, 222, 128, 0.6);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(34, 197, 94, 0.4);transition:transform 0.15s ease;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#041408" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <!-- Level 1 Badge at top right -->
+                  <div id="gpProfileBadgeLvl" style="position:absolute;top:-4px;right:-4px;background:#0b0f19;color:#ffffff;border:1.5px solid rgba(255,255,255,0.3);border-radius:50%;width:17px;height:17px;font-size:9.5px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.8)">1</div>
+                  <!-- Online green dot at bottom right -->
+                  <span style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;background:#22c55e;border:2px solid #0b0f19;border-radius:50%;box-shadow:0 0 6px #22c55e;"></span>
+                </div>
+              </button>
+
+              <!-- Profile Dropdown Menu (Image 2) -->
+              <div id="gpProfileDropdown" class="gp-profile-dropdown" hidden style="position:absolute;top:calc(100% + 10px);right:0;width:315px;background:#0d1422;border:1px solid rgba(59, 130, 246, 0.24);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,0.9), 0 0 30px rgba(37,99,235,0.2);padding:14px;z-index:1000;font-family:'Plus Jakarta Sans', sans-serif;">
+                <!-- Profile Header -->
+                <div style="display:flex;align-items:center;gap:12px;padding:4px 4px 14px 4px;border-bottom:1px solid rgba(255, 255, 255, 0.08);">
+                  <div style="position:relative;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #4ade80 0%, #16a34a 70%, #14532d 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 16px rgba(34, 197, 94, 0.4);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#041408" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <div style="position:absolute;top:-4px;right:-4px;background:#0b0f19;color:#ffffff;border:1.5px solid rgba(255,255,255,0.3);border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;">1</div>
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span id="profileUsernameDisplay" style="font-size:16px;font-weight:900;color:#ffffff;letter-spacing:-0.02em;">beh</span>
+                      <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);padding:2px 7px;border-radius:8px;font-size:11px;font-weight:800;color:#cbd5e1;display:inline-flex;align-items:center;gap:4px;">
+                        🛡️ 1
+                      </span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:3px;font-family:monospace;font-size:11px;color:#94a3b8;">
+                      <span id="profileWalletTruncated">3Smc...a5n2 (Insta)</span>
+                      <button id="profileCopyWalletBtn" type="button" title="Copy Wallet Address" style="background:transparent;border:none;color:#38bdf8;cursor:pointer;padding:0;display:flex;align-items:center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 7 Menu Items Matching Image 2 -->
+                <div style="display:flex;flex-direction:column;gap:3px;margin-top:8px;">
+                  <!-- 1. Statistics -->
+                  <button id="menuItemStats" class="gp-profile-menu-row" type="button">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                      </svg>
+                      <span style="font-size:13.5px;font-weight:800;color:#ffffff">Statistics</span>
+                    </div>
+                  </button>
+
+                  <!-- 2. Affiliates -->
+                  <button id="menuItemAffiliates" class="gp-profile-menu-row" type="button">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                      <span style="font-size:13.5px;font-weight:800;color:#ffffff">Affiliates</span>
+                    </div>
+                    <span style="background:rgba(255,255,255,0.08);color:#cbd5e1;font-size:11.5px;font-weight:800;padding:2px 7px;border-radius:6px">0.5%</span>
+                  </button>
+
+                  <!-- 3. Settings -->
+                  <button id="menuItemSettings" class="gp-profile-menu-row" type="button">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <span style="font-size:13.5px;font-weight:800;color:#ffffff">Settings</span>
+                    </div>
+                  </button>
+
+                  <!-- 4. Transactions -->
+                  <button id="menuItemTransactions" class="gp-profile-menu-row" type="button">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                      </svg>
+                      <span style="font-size:13.5px;font-weight:800;color:#ffffff">Transactions</span>
+                    </div>
+                  </button>
+
+                  <!-- 5. Daily Free Chest -->
+                  <button id="menuItemDailyChest" class="gp-profile-menu-row" type="button">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                        <rect width="20" height="5" x="2" y="7"></rect>
+                        <line x1="12" y1="22" x2="12" y2="7"></line>
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                      </svg>
+                      <span style="font-size:13.5px;font-weight:800;color:#ffffff">Daily Free Chest</span>
+                    </div>
+                    <span style="background:#22c55e;color:#052e16;font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:6px;box-shadow:0 0 8px rgba(34, 197, 94, 0.45)">FREE</span>
+                  </button>
+
+                  <!-- 6. Rewards -->
+                  <button id="menuItemRewards" class="gp-profile-menu-row" type="button">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <circle cx="12" cy="8" r="7"></circle>
+                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                      </svg>
+                      <span style="font-size:13.5px;font-weight:800;color:#ffffff">Rewards</span>
+                    </div>
+                    <span id="profileRewardsBadge" style="background:rgba(255,255,255,0.08);color:#cbd5e1;font-size:11.5px;font-weight:800;padding:2px 7px;border-radius:6px">0.0000 SOL</span>
+                  </button>
+
+                  <!-- 7. Wallet -->
+                  <button id="menuItemWallet" class="gp-profile-menu-row" type="button">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path>
+                        <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path>
+                      </svg>
+                      <span style="font-size:13.5px;font-weight:800;color:#ffffff">Wallet</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Game Shell (Stretches Full Screen Under Nav) -->
+      <main class="pump-main-shell" style="width:100%;position:relative;">
+
+        <!-- ========================================================= -->
+        <!-- 1. PUMP & DUMP STAGE (Full-Screen Japanese Candlestick Arena) -->
+        <!-- ========================================================= -->
+        <div class="game-stage-view" id="stage-pump" style="width:100%;">
+          <div class="pump-chart-wrapper" style="width:100%;height:100%;">
+            <div class="pump-chart-stage" style="position:relative;width:100%;height:calc(100vh - 84px);min-height:560px;border-radius:18px;overflow:hidden;background:#090f1d;border:1.5px solid rgba(59, 130, 246, 0.2);box-shadow:0 20px 60px rgba(0, 0, 0, 0.75)">
+              <canvas id="pumpChart" style="display:block;width:100%;height:100%"></canvas>
+              
+              <!-- Floating Bottom HUD Inside Chart (Matching Image 1) -->
+              <div class="pump-floating-hud">
+                <!-- Direction Selection: PUMP (UP) or DUMP (DOWN) -->
+                <div class="pump-direction-btns">
+                  <button id="pumpUpBtn" class="is-active" type="button" aria-pressed="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 7h6v6"></path>
+                      <path d="m22 7-8.5 8.5-5-5L2 17"></path>
+                    </svg>
+                    <span>PUMP (UP)</span>
+                  </button>
+                  <button id="dumpDownBtn" type="button" aria-pressed="false">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 17h6v-6"></path>
+                      <path d="m22 17-8.5-8.5-5 5L2 7"></path>
+                    </svg>
+                    <span>DUMP (DOWN)</span>
+                  </button>
+                </div>
+
+                <!-- Bet Input & Multipliers matching Image 1: MIN, 1/2, 2x, MAX -->
+                <div class="pump-bet-box">
+                  <span class="pump-bet-label">BET (SOL):</span>
+                  <input id="pumpBetInput" type="number" step="0.001" min="0.001" value="0.05" style="background:transparent;border:none;color:#ffffff;font-size:15px;font-weight:900;outline:none;width:82px;font-family:'Plus Jakarta Sans', sans-serif;" aria-label="Bet in SOL"/>
+                  <span id="pumpUsdEstimate" style="font-size:11.5px;color:#94a3b8;font-weight:700;white-space:nowrap;">≈ $5.42 USD</span>
+                  <div class="pump-quick-actions" style="display:flex;gap:4px">
+                    <button id="pumpMinBtn" type="button" style="background:#132244;border:1px solid rgba(59, 130, 246, 0.2);border-radius:6px;padding:5px 8px;color:#93c5fd;font-size:11px;font-weight:800;cursor:pointer">MIN</button>
+                    <button id="pumpHalfBtn" type="button" style="background:#132244;border:1px solid rgba(59, 130, 246, 0.2);border-radius:6px;padding:5px 8px;color:#93c5fd;font-size:11px;font-weight:800;cursor:pointer">1/2</button>
+                    <button id="pumpDoubleBtn" type="button" style="background:#132244;border:1px solid rgba(59, 130, 246, 0.2);border-radius:6px;padding:5px 8px;color:#93c5fd;font-size:11px;font-weight:800;cursor:pointer">2x</button>
+                    <button id="pumpMaxBtn" type="button" style="background:#132244;border:1px solid rgba(59, 130, 246, 0.2);border-radius:6px;padding:5px 8px;color:#93c5fd;font-size:11px;font-weight:800;cursor:pointer">MAX</button>
+                  </div>
+                </div>
+
+                <!-- Big Trade Action Button matching Image 1 -->
+                <div class="pump-action-box">
+                  <button id="pumpTradeActionBtn" class="is-pump" type="button" style="height:50px;padding:0 30px;border-radius:12px;border:none;font-size:15px;font-weight:900;display:inline-flex;align-items:center;gap:9px;cursor:pointer;background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);color:#ffffff;box-shadow:0 6px 22px rgba(34, 197, 94, 0.4);transition:all 0.15s ease;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M7 17l9.2-9.2M17 17V7H7"/>
+                    </svg>
+                    <span id="pumpTradeBtnText">TRADE NOW (PUMP)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 2. RUG (CRASH MULTIPLIER) STAGE -->
+        <!-- ========================================================= -->
+        <div class="game-stage-view active" id="stage-rug">
+          <div class="gp-game-head">
+            <div class="gp-game-head-left">
+              <span class="gp-game-kicker">CRASH MULTIPLIER</span>
+              <h2 class="gp-game-title">Rug</h2>
+            </div>
+            <span class="gp-game-chip"><span class="gp-chip-dot"></span>ROUND IN PROGRESS</span>
+          </div>
+          <div class="crash-arena-wrapper">
+            <!-- Top Recent Multipliers Bar -->
+            <div class="crash-multipliers-bar">
+              <div class="crash-mult-left">
+                <span class="crash-mult-label">RECENT MULTIPLIERS →</span>
+                <div class="crash-mult-history-list" id="crashHistoryList">
+                  <span class="crash-badge red">.03x</span>
+                  <span class="crash-badge green">2.08x</span>
+                  <span class="crash-badge green">6.04x</span>
+                  <span class="crash-badge red">1.01x</span>
+                  <span class="crash-badge green">4.46x</span>
+                  <span class="crash-badge neutral">1.39x</span>
+                  <span class="crash-badge green">3.03x</span>
+                  <span class="crash-badge red">1.04x</span>
+                  <span class="crash-badge neutral">1.64x</span>
+                  <span class="crash-badge neutral">1.14x</span>
+                  <span class="crash-badge neutral">1.47x</span>
+                  <span class="crash-badge neutral">1.78x</span>
+                  <span class="crash-badge neutral">1.89x</span>
+                  <span class="crash-badge green">2.02x</span>
+                  <span class="crash-badge green">3.29x</span>
+                  <span class="crash-badge neutral">1.39x</span>
+                  <span class="crash-badge green">3.22x</span>
+                  <span class="crash-badge green">2.50x</span>
+                </div>
+              </div>
+              <div class="crash-mult-right">
+                <span class="live-dot"></span>
+                <span class="live-text">LIVE HISTORY</span>
+              </div>
+            </div>
+
+            <!-- Main 2-Column Arena -->
+            <div class="crash-arena-grid">
+              <!-- Left Controls Column (360px) -->
+              <div class="crash-controls-col">
+                <!-- Betting & Cashout Card -->
+                <div class="crash-card crash-bet-card">
+                  <!-- Row 1: Header -->
+                  <div class="crash-card-header">
+                    <span class="crash-label">BET AMOUNT (SOL)</span>
+                    <span class="crash-usd-label" id="crashUsdEstimate">≈ $7.50 USD</span>
+                  </div>
+
+                  <!-- Row 2: Bet Input Box -->
+                  <div class="crash-input-box">
+                    <div class="crash-input-left">
+                      <img src="solana-coin.png" alt="SOL" class="crash-sol-icon" />
+                      <input type="number" id="rugBetInput" class="crash-num-input" value="0.05" min="0.001" step="0.01" />
+                    </div>
+                    <div class="crash-quick-group">
+                      <button type="button" class="crash-quick-btn" id="rugHalfBtn">1/2</button>
+                      <button type="button" class="crash-quick-btn" id="rugDoubleBtn">2x</button>
+                      <button type="button" class="crash-quick-btn" id="rugMaxBtn">MAX</button>
+                    </div>
+                  </div>
+
+                  <!-- Row 3: Auto Cashout Label -->
+                  <div class="crash-card-sublabel">AUTO CASHOUT (MULTIPLIER)</div>
+
+                  <!-- Row 4: Auto Cashout Input -->
+                  <div class="crash-input-box target-box">
+                    <span class="crash-target-tag">TARGET</span>
+                    <input type="number" id="rugAutoCashoutInput" class="crash-num-input" placeholder="e.g. 2.00 (Optional)" step="0.1" min="1.01" />
+                  </div>
+
+                  <!-- Row 5: Preset Pills -->
+                  <div class="crash-pills-row">
+                    <button type="button" class="crash-pill-btn" data-target="1.5">1.5x</button>
+                    <button type="button" class="crash-pill-btn" data-target="2.0">2.0x</button>
+                    <button type="button" class="crash-pill-btn" data-target="3.0">3.0x</button>
+                    <button type="button" class="crash-pill-btn" data-target="5.0">5.0x</button>
+                    <button type="button" class="crash-pill-btn" data-target="10.0">10x</button>
+                  </div>
+
+                  <!-- Row 6: Advanced Toggle -->
+                  <div class="crash-advanced-row">
+                    <div class="crash-advanced-left">
+                      <span class="crash-advanced-title">ADVANCED</span>
+                      <span class="crash-off-badge" id="rugAdvancedBadge">OFF</span>
+                    </div>
+                    <label class="crash-toggle-switch">
+                      <input type="checkbox" id="rugAdvancedToggle" />
+                      <span class="crash-slider"></span>
+                    </label>
+                  </div>
+
+                  <!-- Row 7: Action Button -->
+                  <button type="button" class="crash-action-btn" id="rugMainActionBtn">
+                    SCHEDULE BET FOR NEXT ROUND
+                  </button>
+                </div>
+
+                <!-- Active Players Card -->
+                <div class="crash-card crash-players-card">
+                  <div class="crash-players-header">
+                    <div class="crash-players-count">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                      <span id="rugActivePlayersCount">5 Playing</span>
+                    </div>
+                    <div class="crash-pool-total">
+                      <img src="solana-coin.png" alt="" style="width:14px;height:14px;" />
+                      <span id="rugPoolTotalDisplay">0.1500</span>
+                    </div>
+                  </div>
+
+                  <!-- Live Players Rows -->
+                  <div class="crash-players-list" id="rugPlayersList">
+                    <!-- Dynamically populated with active/cashed players -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Candlestick Arena Stage -->
+              <div class="crash-stage-col">
+                <div class="crash-canvas-stage" id="rugStageContainer">
+                  <canvas id="rugCrashCanvas"></canvas>
+
+                  <!-- 3D Gold Floating Multiplier -->
+                  <div class="crash-3d-multiplier-wrapper" id="rugMultDisplayWrapper">
+                    <div class="crash-3d-multiplier" id="rugFloatingMult">8.93x</div>
+                    <div class="crash-round-substatus" id="rugRoundSubstatus"></div>
+                  </div>
+
+                  <!-- Countdown Overlay (Between rounds) -->
+                  <div class="crash-countdown-overlay" id="rugCountdownOverlay" style="display:none;">
+                    <div class="crash-countdown-badge">
+                      <div class="countdown-spinner"></div>
+                      <span>NEXT ROUND IN <strong id="rugCountdownTimer">5.0</strong>s</span>
+                    </div>
+                    <div class="crash-countdown-bar-wrap">
+                      <div class="crash-countdown-bar-fill" id="rugCountdownBar"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 3. CHICKEN ROAD STAGE -->
+        <!-- ========================================================= -->
+        <div class="game-stage-view" id="stage-chicken">
+          <div class="gp-game-head">
+            <div class="gp-game-head-left">
+              <span class="gp-game-kicker">MULTIPLIER RUN</span>
+              <h2 class="gp-game-title">Chicken Road</h2>
+            </div>
+            <span class="gp-game-chip"><span class="gp-chip-dot"></span>22 LANES</span>
+          </div>
+          <div class="chicken-arena-wrapper">
+            <div class="chicken-arena-grid">
+              <!-- Left Controls Column (320px) -->
+              <div class="chicken-controls-col">
+                <div class="chicken-card">
+                  <!-- Row 1: Header -->
+                  <div class="chicken-card-header">
+                    <span class="chicken-label">BET AMOUNT (SOL)</span>
+                    <span class="chicken-usd-label" id="chickenUsdEstimate">≈ $0.15 USD</span>
+                  </div>
+
+                  <!-- Row 2: Input Box -->
+                  <div class="chicken-input-box">
+                    <div class="chicken-input-left">
+                      <img src="solana-coin.png" alt="SOL" class="chicken-sol-icon" />
+                      <input type="number" id="chickenBetInput" class="chicken-num-input" value="0.001" min="0.0001" step="0.001" />
+                    </div>
+                    <span class="chicken-sol-suffix">SOL</span>
+                  </div>
+
+                  <!-- Row 3: Quick Buttons -->
+                  <div class="chicken-quick-group">
+                    <button type="button" class="chicken-quick-btn" id="chickenHalfBtn">1/2</button>
+                    <button type="button" class="chicken-quick-btn" id="chickenDoubleBtn">2x</button>
+                    <button type="button" class="chicken-quick-btn" id="chickenMaxBtn">MAX</button>
+                  </div>
+
+                  <!-- Row 4: Difficulty Header -->
+                  <div class="chicken-diff-header">
+                    <span class="chicken-diff-label">DIFFICULTY LEVEL</span>
+                    <span class="chicken-lanes-count" id="chickenDiffLanesCount">22 LANES</span>
+                  </div>
+
+                  <!-- Row 5: Difficulty Selector -->
+                  <div class="chicken-diff-list">
+                    <div class="chicken-diff-item" data-difficulty="easy">
+                      <div class="chicken-diff-left">
+                        <span class="chicken-diff-dot"></span>
+                        <span class="chicken-diff-name">EASY</span>
+                      </div>
+                      <span class="chicken-diff-lanes">24 Lanes</span>
+                    </div>
+
+                    <div class="chicken-diff-item active" data-difficulty="medium">
+                      <div class="chicken-diff-left">
+                        <span class="chicken-diff-dot"></span>
+                        <span class="chicken-diff-name">MEDIUM</span>
+                      </div>
+                      <span class="chicken-diff-lanes">22 Lanes</span>
+                    </div>
+
+                    <div class="chicken-diff-item" data-difficulty="hard">
+                      <div class="chicken-diff-left">
+                        <span class="chicken-diff-dot"></span>
+                        <span class="chicken-diff-name">HARD</span>
+                      </div>
+                      <span class="chicken-diff-lanes">20 Lanes</span>
+                    </div>
+                  </div>
+
+                  <!-- Row 6: Main Action Buttons -->
+                  <div class="chicken-action-area">
+                    <button type="button" class="chicken-main-btn" id="chickenMainActionBtn">
+                      <span class="btn-primary-text">CROSS HIGHWAY</span>
+                      <span class="btn-sub-text" id="chickenBtnSubtext">START @ 1.12x</span>
+                    </button>
+
+                    <!-- In-game Controls (When active) -->
+                    <div class="chicken-ingame-btns" id="chickenIngameBtns" style="display:none;">
+                      <button type="button" class="chicken-hop-btn" id="chickenHopActionBtn">
+                        HOP NEXT LANE 🐔
+                      </button>
+                      <button type="button" class="chicken-cashout-btn" id="chickenCashoutActionBtn">
+                        CASHOUT
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Highway Stage Column -->
+              <div class="chicken-highway-col">
+                <!-- Top Progress Header -->
+                <div class="chicken-progress-bar-wrap">
+                  <div class="chicken-progress-badge">
+                    <span class="progress-lbl">ROUND PROGRESS</span>
+                    <span class="progress-val" id="chickenProgressDisplay">LANE 0 / 22</span>
+                  </div>
+                  <div class="chicken-highway-view-tools">
+                    <button type="button" class="chicken-view-pill-btn" id="chickenScrollStartBtn" title="Scroll to start">⏮ Start</button>
+                    <button type="button" class="chicken-view-pill-btn" id="chickenCenterBtn" title="Center on chicken">🎯 Chicken</button>
+                    <button type="button" class="chicken-view-pill-btn" id="chickenScrollEndBtn" title="View finish line">Finish ⏭</button>
+                    <span class="chicken-drag-hint">🖱️ Scroll wheel or drag road</span>
+                  </div>
+                </div>
+
+                <!-- Scrollable Highway Arena Container -->
+                <div class="chicken-highway-viewport" id="chickenHighwayViewport">
+                  <!-- Unified Scrolling Arena Track Container -->
+                  <div class="chicken-arena-track" id="chickenArenaTrack">
+                    <!-- Sidewalk Curb Zone (Left) -->
+                    <div class="chicken-sidewalk-zone">
+                      <div class="chicken-grass-strip">
+                        <div class="shrub shrub-1"></div>
+                        <div class="shrub shrub-2"></div>
+                        <div class="shrub shrub-3"></div>
+                        <div class="shrub shrub-4"></div>
+                      </div>
+                      <div class="chicken-paved-sidewalk">
+                        <!-- Street Light -->
+                        <div class="street-lamp">
+                          <div class="lamp-fixture"></div>
+                          <div class="lamp-glow"></div>
+                        </div>
+
+                        <!-- Hazard Roadblock -->
+                        <div class="hazard-barrier">
+                          <div class="barrier-leg barrier-leg-left"></div>
+                          <div class="barrier-leg barrier-leg-right"></div>
+                          <div class="barrier-rail">
+                            <div class="barrier-light barrier-light-left"></div>
+                            <div class="barrier-stripes"></div>
+                            <div class="barrier-light barrier-light-right"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Lanes Track (Contains asphalt lanes, stepping pads, barriers, and traffic) -->
+                    <div class="chicken-lanes-track" id="chickenLanesTrack">
+                      <!-- Dynamically populated lanes -->
+                    </div>
+
+                    <!-- Finish Zone (Right) -->
+                    <div class="chicken-finish-zone">
+                      <div class="chicken-finish-sidewalk">
+                        <div class="chicken-finish-checkered"></div>
+                        <div class="chicken-finish-label">
+                          <span class="finish-trophy">🏆</span>
+                          <span>FINISH</span>
+                        </div>
+                      </div>
+                      <div class="chicken-grass-strip finish-grass">
+                        <div class="shrub shrub-1"></div>
+                        <div class="shrub shrub-2"></div>
+                        <div class="shrub shrub-3"></div>
+                        <div class="shrub shrub-4"></div>
+                      </div>
+                    </div>
+
+                    <!-- Chicken Character (Positioned absolute over arena track / stepping pads) -->
+                    <div class="chicken-character" id="chickenCharacter">
+                      <img src="chicken-icon.png" alt="Chicken" class="chicken-sprite" />
+                      <div class="chicken-mult-tag" id="chickenCurrentMultTag">1.01x</div>
+                    </div>
+
+                    <!-- Splat Game Over Overlay -->
+                    <div class="chicken-splat-overlay" id="chickenSplatOverlay" style="display:none;">
+                      <div class="chicken-splat-card">
+                        <div class="splat-icon">💥</div>
+                        <div class="splat-title">SPLATTED!</div>
+                        <div class="splat-sub">You were hit by oncoming traffic.</div>
+                        <button type="button" class="splat-retry-btn" id="chickenRetryBtn">TRY AGAIN</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Floating Scroll Navigation Arrows -->
+                  <button type="button" class="chicken-scroll-arrow chicken-scroll-left" id="chickenScrollLeftBtn" aria-label="Scroll left" style="display:none;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <button type="button" class="chicken-scroll-arrow chicken-scroll-right" id="chickenScrollRightBtn" aria-label="Scroll right">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 4. MINES STAGE -->
+        <!-- ========================================================= -->
+        <div class="game-stage-view" id="stage-mines">
+          <div class="gp-game-head">
+            <div class="gp-game-head-left">
+              <span class="gp-game-kicker">5 × 5 MINEFIELD</span>
+              <h2 class="gp-game-title">Mines</h2>
+            </div>
+            <span class="gp-game-chip"><span class="gp-chip-dot"></span>FAIR ODDS</span>
+          </div>
+
+          <div class="mines-shell">
+            <div class="mines-board-panel">
+              <div class="mines-board-top">
+                <div>
+                  <span class="mines-meta-label">MINEFIELD</span>
+                  <span class="mines-meta-sub">Reveal gems. Avoid the mines.</span>
+                </div>
+                <div class="mines-legend">
+                  <span><i class="mines-legend-dot gem"></i>Gem</span>
+                  <span><i class="mines-legend-dot bomb"></i>Mine</span>
+                </div>
+              </div>
+              <div class="mines-5x5-grid" id="minesGrid"></div>
+            </div>
+
+            <aside class="mines-panel">
+              <div class="gp-panel-label">ROUND SETUP</div>
+
+              <label class="mines-field-label" for="minesCountSelect">MINES IN FIELD</label>
+              
+              <!-- Custom Non-Blocky Mines Selector -->
+              <div class="custom-dropdown-wrap" id="minesDropdownWrap">
+                <select id="minesCountSelect" style="display:none;" aria-hidden="true">
+                  <option value="1">1 Mine</option>
+                  <option value="3" selected>3 Mines</option>
+                  <option value="5">5 Mines</option>
+                  <option value="10">10 Mines</option>
+                  <option value="24">24 Mines</option>
+                </select>
+
+                <button type="button" class="custom-dropdown-trigger" id="minesDropdownTrigger" aria-haspopup="listbox" aria-expanded="false">
+                  <div class="custom-dropdown-value">
+                    <span class="custom-dropdown-icon">💣</span>
+                    <span id="minesDropdownLabel">3 Mines</span>
+                  </div>
+                  <svg class="custom-dropdown-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+
+                <div class="custom-dropdown-menu" id="minesDropdownMenu" role="listbox">
+                  <div class="custom-dropdown-item" data-value="1" role="option">
+                    <div class="custom-item-left">
+                      <span class="custom-item-icon">💣</span>
+                      <span class="custom-item-text">1 Mine</span>
+                    </div>
+                    <span class="custom-item-odds">1.03x</span>
+                  </div>
+                  <div class="custom-dropdown-item active" data-value="3" role="option">
+                    <div class="custom-item-left">
+                      <span class="custom-item-icon">💣</span>
+                      <span class="custom-item-text">3 Mines</span>
+                    </div>
+                    <span class="custom-item-odds">1.12x</span>
+                  </div>
+                  <div class="custom-dropdown-item" data-value="5" role="option">
+                    <div class="custom-item-left">
+                      <span class="custom-item-icon">💣</span>
+                      <span class="custom-item-text">5 Mines</span>
+                    </div>
+                    <span class="custom-item-odds">1.24x</span>
+                  </div>
+                  <div class="custom-dropdown-item" data-value="10" role="option">
+                    <div class="custom-item-left">
+                      <span class="custom-item-icon">💣</span>
+                      <span class="custom-item-text">10 Mines</span>
+                    </div>
+                    <span class="custom-item-odds">1.65x</span>
+                  </div>
+                  <div class="custom-dropdown-item" data-value="24" role="option">
+                    <div class="custom-item-left">
+                      <span class="custom-item-icon">💣</span>
+                      <span class="custom-item-text">24 Mines</span>
+                    </div>
+                    <span class="custom-item-odds">24.75x</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Segmented Chip Selector -->
+              <div class="mines-quick-chips" id="minesQuickChips">
+                <button type="button" class="mines-chip-btn" data-value="1">1</button>
+                <button type="button" class="mines-chip-btn active" data-value="3">3</button>
+                <button type="button" class="mines-chip-btn" data-value="5">5</button>
+                <button type="button" class="mines-chip-btn" data-value="10">10</button>
+                <button type="button" class="mines-chip-btn" data-value="24">24</button>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span class="gp-panel-label" style="margin-bottom:0;">BET AMOUNT</span>
+                <span id="minesUsdEstimate" style="font-size:11.5px;color:#94a3b8;font-weight:700;">≈ $5.42 USD</span>
+              </div>
+              <div class="gp-bet-input">
+                <img src="solana-coin.png" alt="SOL" />
+                <input id="minesBetInput" type="number" step="0.01" min="0.001" value="0.05" aria-label="Mines bet amount in SOL" />
+                <span class="gp-bet-suffix">SOL</span>
+              </div>
+
+              <div class="gp-quick-bets">
+                <button type="button" id="minesHalfBtn">1/2</button>
+                <button type="button" id="minesDoubleBtn">2x</button>
+                <button type="button" id="minesMaxBtn">MAX</button>
+              </div>
+
+              <div class="mines-actions">
+                <button type="button" id="minesStartBtn" class="gp-primary-btn">START ROUND</button>
+                <button type="button" id="minesCashoutBtn" class="gp-cashout-btn" style="display:none;">CASHOUT</button>
+              </div>
+
+              <ul class="game-mini-rules">
+                <li>Every safe gem raises your multiplier.</li>
+                <li>Cash out any time before you hit a mine.</li>
+                <li>25 tiles · instant payouts · cash out any time.</li>
+              </ul>
+            </aside>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 5. BLACKJACK STAGE (GREENPUMP SOLANA 21) -->
+        <!-- ========================================================= -->
+        <div class="game-stage-view" id="stage-blackjack">
+          <div class="gp-game-head">
+            <div class="gp-game-head-left">
+              <span class="gp-game-kicker">SOLANA 21 TABLE</span>
+              <h2 class="gp-game-title">Blackjack</h2>
+            </div>
+            <span class="gp-game-chip"><span class="gp-chip-dot"></span>3:2 BLACKJACK</span>
+          </div>
+          <div class="bj-arena-stage">
+            <!-- Top Controls Toolbar (Payout Rulebook, Share, Provably Fair) -->
+            <div class="bj-top-toolbar">
+              <button type="button" class="bj-tool-btn" id="bjRulebookBtn">
+                Payout Rulebook
+              </button>
+              <button type="button" class="bj-tool-btn" id="bjShareBtn">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                  <polyline points="16 6 12 2 8 6"/>
+                  <line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
+                Share
+              </button>
+              <button type="button" class="bj-tool-btn bj-tool-icon" id="bjFairnessBtn" title="Provably Fair">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <polyline points="9 12 11 14 15 10"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Semicircular Blackjack Table Felt & Rim -->
+            <div class="bj-table-outer">
+              <div class="bj-table-rim">
+                <div class="bj-table-felt">
+                  <!-- Ambient Table Center Spotlight Glow -->
+                  <div class="bj-felt-ambient-glow"></div>
+
+                  <!-- Curved Felt Markings: Insurance Arch & Center Rules -->
+                  <div class="bj-felt-markings">
+                    <svg class="bj-felt-arc-svg" viewBox="0 0 760 300">
+                      <path id="bjInsurancePath" d="M 100 240 A 280 150 0 0 1 660 240" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1.5" stroke-dasharray="7,5" />
+                      <text class="bj-felt-arc-text">
+                        <textPath href="#bjInsurancePath" startOffset="50%" text-anchor="middle">
+                          • • DEALER STANDS ON ALL 17s • •
+                        </textPath>
+                      </text>
+                    </svg>
+                    <div class="bj-felt-rules-text">
+                      <div class="rules-main">BLACKJACK PAYS 3 TO 2</div>
+                      <div class="rules-sub">Dealer Must Draw to 16 and Stand on all 17s</div>
+                    </div>
+                  </div>
+
+                  <!-- Dealer Station (Top Center) -->
+                  <div class="bj-dealer-station">
+                    <!-- Floating Cybernetic Robot Dealer Drone -->
+                    <div class="bj-drone-wrapper">
+                      <img src="dealer-bot.jpg" alt="Dealer Bot" class="bj-drone-avatar" />
+                      <div class="bj-drone-aura"></div>
+                    </div>
+
+                    <!-- Dealer Chip Tray Rack with 6 Stacks of Green Chips -->
+                    <div class="bj-chip-rack-assembly">
+                      <div class="bj-rack-spot bj-spot-l1">
+                        <img src="solana-coin.png" alt="SOL" class="bj-mini-coin" />
+                      </div>
+                      <div class="bj-rack-spot bj-spot-l2">
+                        <img src="solana-coin.png" alt="SOL" class="bj-mini-coin" />
+                      </div>
+
+                      <div class="bj-chip-rack">
+                        <div class="bj-chip-column"><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span></div>
+                        <div class="bj-chip-column"><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span></div>
+                        <div class="bj-chip-column"><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span></div>
+                        <div class="bj-chip-column"><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span></div>
+                        <div class="bj-chip-column"><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span></div>
+                        <div class="bj-chip-column"><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span><span class="chip-g"></span></div>
+                      </div>
+
+                      <div class="bj-rack-spot bj-spot-r1">
+                        <img src="solana-coin.png" alt="SOL" class="bj-mini-coin" />
+                      </div>
+                      <div class="bj-rack-spot bj-spot-r2">
+                        <img src="solana-coin.png" alt="SOL" class="bj-mini-coin" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Clear Acrylic Card Shoe (Top Right) -->
+                  <div class="bj-shoe-assembly">
+                    <div class="bj-shoe-casing">
+                      <div class="bj-shoe-green-emblem"></div>
+                      <div class="bj-shoe-cards-deck"></div>
+                      <div class="bj-shoe-lip"></div>
+                    </div>
+                  </div>
+
+                  <!-- Cards Dealing Arena -->
+                  <div class="bj-cards-arena">
+                    <!-- Dealer Hand Display -->
+                    <div class="bj-hand-container bj-dealer-hand-box">
+                      <div class="bj-hand-header" id="bjDealerScoreWrap" style="display:none;">
+                        DEALER (<span id="bjDealerScore">0</span>)
+                      </div>
+                      <div class="bj-cards-cluster" id="bjDealerCards"></div>
+                    </div>
+
+                    <!-- Player Hand Display -->
+                    <div class="bj-hand-container bj-player-hand-box">
+                      <div class="bj-cards-cluster" id="bjPlayerCards"></div>
+                      <div class="bj-hand-header" id="bjPlayerScoreWrap" style="display:none;">
+                        PLAYER (<span id="bjPlayerScore">0</span>)
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Interactive Center Betting Console (PLACE YOUR BETS) -->
+                  <div class="bj-betting-console" id="bjBettingConsole">
+                    <div class="bj-console-headline">PLACE YOUR BETS</div>
+
+                    <!-- 3 Bet Capsules: 21+3, Main Bet (Active), Perfect Pair -->
+                    <div class="bj-bet-capsules-grid">
+                      <!-- 21+3 Side Bet -->
+                      <div class="bj-capsule-card" id="bjCapsule213" data-target="213">
+                        <div class="bj-capsule-lbl">21+3</div>
+                        <div class="bj-capsule-input-wrap">
+                          <img src="solana-coin.png" alt="SOL" class="bj-capsule-icon" />
+                          <input type="number" id="bjBet213" value="0" step="0.001" min="0" />
+                        </div>
+                      </div>
+
+                      <!-- Main Bet (Glowing active dot) -->
+                      <div class="bj-capsule-card active-main" id="bjCapsuleMain" data-target="main">
+                        <div class="bj-capsule-lbl">
+                          Main Bet <span class="bj-glow-indicator"></span>
+                        </div>
+                        <div class="bj-capsule-input-wrap">
+                          <img src="solana-coin.png" alt="SOL" class="bj-capsule-icon" />
+                          <input type="number" id="bjBetMain" value="0.001" step="0.001" min="0.0001" />
+                        </div>
+                      </div>
+
+                      <!-- Perfect Pair Side Bet -->
+                      <div class="bj-capsule-card" id="bjCapsulePair" data-target="pair">
+                        <div class="bj-capsule-lbl">Perfect Pair</div>
+                        <div class="bj-capsule-input-wrap">
+                          <img src="solana-coin.png" alt="SOL" class="bj-capsule-icon" />
+                          <input type="number" id="bjBetPair" value="0" step="0.001" min="0" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Bet Multipliers (1/2, 2x, MAX) -->
+                    <div class="bj-multipliers-bar">
+                      <button type="button" class="bj-pill-btn" id="bjHalfBtn">1/2</button>
+                      <button type="button" class="bj-pill-btn" id="bjDoubleBtn">2x</button>
+                      <button type="button" class="bj-pill-btn" id="bjMaxBtn">MAX</button>
+                    </div>
+
+                    <!-- Utility Buttons (Clear Bets, Repeat Last) -->
+                    <div class="bj-utilities-bar">
+                      <button type="button" class="bj-pill-btn bj-clear-btn" id="bjClearBetsBtn">
+                        Clear Bets
+                      </button>
+                      <button type="button" class="bj-pill-btn bj-repeat-btn" id="bjRepeatLastBtn">
+                        <span class="bj-repeat-spin">⟳</span> Repeat Last <span class="bj-repeat-amt" id="bjRepeatDisplay">0.0010</span>
+                      </button>
+                    </div>
+
+                    <!-- Big Emerald "Place Bet" Action Button -->
+                    <button type="button" class="bj-main-place-bet-btn" id="bjPlaceBetActionBtn">
+                      Place Bet <img src="solana-coin.png" alt="SOL" class="bj-btn-coin-img" /> <span id="bjTotalBetDisplay">0.0010</span>
+                    </button>
+                  </div>
+
+                  <!-- In-Game Interactive Buttons (HIT, STAND, DOUBLE DOWN, SPLIT) -->
+                  <div class="bj-ingame-action-bar" id="bjIngameActionBar" style="display:none;">
+                    <button type="button" class="bj-gameplay-btn bj-btn-hit" id="bjHitActionBtn">
+                      HIT
+                    </button>
+                    <button type="button" class="bj-gameplay-btn bj-btn-stand" id="bjStandActionBtn">
+                      STAND
+                    </button>
+                    <button type="button" class="bj-gameplay-btn bj-btn-double" id="bjDoubleActionBtn">
+                      DOUBLE DOWN
+                    </button>
+                    <button type="button" class="bj-gameplay-btn bj-btn-split" id="bjSplitActionBtn" style="display:none;">
+                      SPLIT
+                    </button>
+                  </div>
+
+                  <!-- Round Outcome Banner / Card -->
+                  <div class="bj-outcome-banner" id="bjOutcomeBanner" style="display:none;">
+                    <div class="bj-outcome-title" id="bjOutcomeTitle">DEALER BUST!</div>
+                    <div class="bj-outcome-sub" id="bjOutcomeSub">Player wins +0.0020 SOL</div>
+                    <button type="button" class="bj-new-hand-btn" id="bjNewHandActionBtn">
+                      NEW HAND
+                    </button>
+                  </div>
+
+                  <!-- Player Seat Station (Bottom Center Rim) -->
+                  <div class="bj-player-station">
+                    <div class="bj-seat-avatar-wrap">
+                      <div class="bj-seat-avatar-box">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="#3b82f6">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="bj-seat-name-pill">
+                      <span class="bj-seat-rank">1</span>
+                      <span class="bj-seat-username">beh</span>
+                    </div>
+                    <div class="bj-seat-chip-pill">
+                      <img src="solana-coin.png" alt="SOL" class="bj-chip-pill-icon" />
+                      <span id="bjSeatChipVal">0.0010</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 6. HIGHER / LOWER (HiLo) STAGE -->
+        <!-- ========================================================= -->
+        <div class="game-stage-view" id="stage-hilo">
+          <div class="hilo-shell">
+            <div class="hilo-controls">
+              <div class="hilo-panel">
+                <div class="hilo-panel-head">
+                  <span class="hilo-label">BET AMOUNT (SOL)</span>
+                  <span class="hilo-usd" id="hiloUsdEstimate">≈ $7.50 USD</span>
+                </div>
+                <div class="hilo-bet-row">
+                  <img src="solana-coin.png" alt="SOL" class="hilo-coin" />
+                  <input id="hiloBetInput" type="number" min="0.001" step="0.001" value="0.05" aria-label="HiLo bet amount" />
+                  <span class="hilo-sol-suffix">SOL</span>
+                </div>
+                <div class="hilo-quick-row">
+                  <button type="button" id="hiloHalfBtn">1/2</button>
+                  <button type="button" id="hiloDoubleBtn">2x</button>
+                  <button type="button" id="hiloMaxBtn">MAX</button>
+                </div>
+
+                <div class="hilo-stat-grid">
+                  <div class="hilo-stat">
+                    <span>STREAK</span>
+                    <strong id="hiloStreakDisplay">0</strong>
+                  </div>
+                  <div class="hilo-stat">
+                    <span>MULTIPLIER</span>
+                    <strong id="hiloMultDisplay">1.00x</strong>
+                  </div>
+                </div>
+
+                <div class="hilo-payout-row">
+                  <span>Potential payout</span>
+                  <strong id="hiloPayoutDisplay">0.0500 SOL</strong>
+                </div>
+
+                <div class="hilo-choice-row">
+                  <button type="button" id="hiloHigherBtn" class="hilo-choice hilo-choice-higher">
+                    <span>HIGHER ▲</span>
+                    <small id="hiloHigherProb">--%</small>
+                  </button>
+                  <button type="button" id="hiloLowerBtn" class="hilo-choice hilo-choice-lower">
+                    <span>LOWER ▼</span>
+                    <small id="hiloLowerProb">--%</small>
+                  </button>
+                </div>
+
+                <button type="button" id="hiloCashoutBtn" class="hilo-cashout" style="display:none;">CASHOUT</button>
+                <p class="hilo-note">Aces are high · Max gain capped at +50% (1.50x) on your bet.</p>
+              </div>
+            </div>
+
+            <div class="hilo-stage">
+              <div class="hilo-stage-head">
+                <div>
+                  <span class="hilo-eyebrow">CURRENT CARD</span>
+                  <h2>HIGHER OR LOWER</h2>
+                </div>
+                <div class="hilo-live-badge"><span></span> LIVE</div>
+              </div>
+
+              <div class="hilo-card-wrap">
+                <div class="hilo-card-glow"></div>
+                <div class="hilo-card-face card-black" id="hiloCardFace">
+                  <span class="hilo-corner hilo-corner-top" id="hiloCardTop">7♠</span>
+                  <span class="hilo-suit" id="hiloCardSuitDisplay">♠</span>
+                  <span class="hilo-corner hilo-corner-bottom" id="hiloCardBottom">7♠</span>
+                </div>
+              </div>
+
+              <div class="hilo-status" id="hiloStatus">Place a bet, then pick Higher or Lower.</div>
+
+              <div class="hilo-prob-bar" aria-hidden="true">
+                <div id="hiloHigherBar" class="hilo-prob-fill higher"></div>
+                <div id="hiloLowerBar" class="hilo-prob-fill lower"></div>
+              </div>
+
+              <div class="hilo-history-wrap">
+                <span class="hilo-history-label">CARD HISTORY</span>
+                <div id="hiloHistory" class="hilo-history"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 7. COINFLIP STAGE -->
+        <!-- ========================================================= -->
+        <div class="game-stage-view" id="stage-coinflip">
+          <div class="coinflip-shell">
+            <div class="coinflip-controls">
+              <div class="coinflip-panel">
+                <div class="hilo-panel-head">
+                  <span class="hilo-label">BET AMOUNT (SOL)</span>
+                  <span class="hilo-usd" id="coinflipUsdEstimate">≈ $7.50 USD</span>
+                </div>
+                <div class="hilo-bet-row">
+                  <img src="solana-coin.png" alt="SOL" class="hilo-coin" />
+                  <input id="coinflipBetInput" type="number" min="0.001" step="0.001" value="0.05" aria-label="Coinflip bet amount" />
+                  <span class="hilo-sol-suffix">SOL</span>
+                </div>
+                <div class="hilo-quick-row">
+                  <button type="button" id="coinflipHalfBtn">1/2</button>
+                  <button type="button" id="coinflipDoubleBtn">2x</button>
+                  <button type="button" id="coinflipMaxBtn">MAX</button>
+                </div>
+
+                <div class="coinflip-pick-label">PICK YOUR SIDE</div>
+                <div class="coinflip-pick-row">
+                  <button type="button" id="coinflipHeadsBtn" class="coinflip-pick active" data-side="heads" aria-label="Heads (Solana)">
+                    <div class="coinflip-pick-coin-wrap">
+                      <img src="solana-coin.png" alt="Solana" class="coinflip-pick-coin-img" />
+                    </div>
+                    <div class="coinflip-pick-content">
+                      <span class="coinflip-pick-name">HEADS</span>
+                      <span class="coinflip-pick-token">SOLANA (SOL)</span>
+                    </div>
+                    <span class="coinflip-pick-badge">1.96x</span>
+                  </button>
+                  <button type="button" id="coinflipTailsBtn" class="coinflip-pick" data-side="tails" aria-label="Tails (USDC)">
+                    <div class="coinflip-pick-coin-wrap">
+                      <img src="coinflip-usdc-v2.png" alt="USDC" class="coinflip-pick-coin-img" />
+                    </div>
+                    <div class="coinflip-pick-content">
+                      <span class="coinflip-pick-name">TAILS</span>
+                      <span class="coinflip-pick-token">USD COIN (USDC)</span>
+                    </div>
+                    <span class="coinflip-pick-badge">1.96x</span>
+                  </button>
+                </div>
+
+                <div class="flappy-payout-box">
+                  <span>Potential payout</span>
+                  <strong id="coinflipPayoutDisplay">0.0980 SOL</strong>
+                </div>
+
+                <button type="button" id="coinflipFlipBtn" class="coinflip-flip-btn">FLIP COIN (0.050 SOL)</button>
+                <p class="hilo-note">A correct call pays 1.96x your bet · Instant settlement.</p>
+              </div>
+            </div>
+
+            <div class="coinflip-stage">
+              <div class="coinflip-stage-head">
+                <div>
+                  <span class="hilo-eyebrow">HEADS OR TAILS</span>
+                  <h2>COINFLIP</h2>
+                </div>
+                <div class="hilo-live-badge"><span></span> LIVE</div>
+              </div>
+
+              <div class="coinflip-coin-area">
+                <div class="coinflip-shadow"></div>
+                <div class="coinflip-coin" id="coinflipCoin">
+                  <div class="coinflip-face coinflip-front">
+                    <img src="solana-coin.png" alt="Solana" />
+                    <span>HEADS</span>
+                  </div>
+                  <div class="coinflip-face coinflip-back">
+                    <img src="coinflip-usdc-v2.png" alt="USDC" />
+                    <span>TAILS</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="coinflip-result" id="coinflipResult">Choose heads or tails and flip.</div>
+
+              <div class="coinflip-stats-row">
+                <div class="hilo-stat">
+                  <span>WIN STREAK</span>
+                  <strong id="coinflipStreakDisplay">0</strong>
+                </div>
+                <div class="hilo-stat">
+                  <span>LAST RESULT</span>
+                  <strong id="coinflipLastDisplay">—</strong>
+                </div>
+              </div>
+
+              <div class="hilo-history-wrap">
+                <span class="hilo-history-label">FLIP HISTORY</span>
+                <div id="coinflipHistory" class="hilo-history"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- Mobile Bottom Navigation Bar -->
+      <nav class="mobile-bottom-bar" aria-label="Mobile Game Navigation">
+        <div class="mobile-tabs-grid">
+          <a class="mobile-tab" href="/pump" data-switch-game="pump" aria-label="Pump and Dump">
+            <img src="coinflip-coin-v2.png" alt="" />
+            <span>PUMP</span>
+          </a>
+          <a class="mobile-tab active" href="/crash" data-switch-game="rug" aria-label="Rug crash">
+            <img src="crash-icon.png" alt="" />
+            <span>RUG</span>
+          </a>
+          <a class="mobile-tab" href="/chicken" data-switch-game="chicken" aria-label="Chicken Road">
+            <img src="chicken-icon.png" alt="" />
+            <span>CHICKEN</span>
+          </a>
+          <a class="mobile-tab" href="/blackjack" data-switch-game="blackjack" aria-label="Blackjack">
+            <img src="blackjack-icon.png" alt="" />
+            <span>BJ</span>
+          </a>
+          <a class="mobile-tab" href="/mines" data-switch-game="mines" aria-label="Mines">
+            <img src="mines-icon.png" alt="" />
+            <span>MINES</span>
+          </a>
+          <a class="mobile-tab" href="/hilo" data-switch-game="hilo" aria-label="Higher or Lower">
+            <img src="hilo-icon.png" alt="" />
+            <span>HILO</span>
+          </a>
+          <a class="mobile-tab" href="/coinflip" data-switch-game="coinflip" aria-label="Coinflip">
+            <img src="coinflip-coin-v2.png" alt="" />
+            <span>COIN</span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Footer -->
+      <footer class="gp-footer">
+        <div class="gp-footer-inner">
+          <div class="gp-footer-brand">
+            <a href="/" data-switch-game="pump" aria-label="LuckyWin home" class="nav-brand-link" style="margin-bottom: 12px;">
+              <img src="luckywin-logo.png" alt="LuckyWin" class="nav-brand-logo" style="height:44px;width:auto;" />
+              <span class="nav-brand-text" style="font-size:22px;">LUCKY<span class="nav-brand-win">WIN</span></span>
+            </a>
+            <p>
+              Welcome to <strong>LuckyWin</strong>. High-performance on-chain Solana gaming with real SOL,
+              transparent Casino Main Vault, instant deposits, and fast withdrawals.
+            </p>
+            <div class="gp-footer-badges">
+              <span class="demo" style="background:#10b981;color:#042f1d;font-weight:900;">REAL MONEY SOL</span>
+              <span>NON-CUSTODIAL</span>
+              <span>CASINO VAULT</span>
+            </div>
+          </div>
+
+          <div class="gp-footer-links">
+            <div>
+              <h4>Games</h4>
+              <ul>
+                <li><a href="/pump" data-switch-game="pump">Pump &amp; Dump</a></li>
+                <li><a href="/crash" data-switch-game="rug">Rug (Crash)</a></li>
+                <li><a href="/chicken" data-switch-game="chicken">Chicken Road</a></li>
+                <li><a href="/blackjack" data-switch-game="blackjack">Blackjack</a></li>
+                <li><a href="/mines" data-switch-game="mines">Mines</a></li>
+                <li><a href="/hilo" data-switch-game="hilo">Higher / Lower</a></li>
+                <li><a href="/coinflip" data-switch-game="coinflip">Coinflip</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4>Play</h4>
+              <ul>
+                <li><a href="/case" class="gp-footer-link" data-open-case>Daily Free Case</a></li>
+                <li><a href="/wallet" class="gp-footer-link" id="footerWalletBtn">Casino Vault &amp; Wallet</a></li>
+                <li><a href="/leaderboard" class="gp-footer-link" id="footerLeaderboardBtn">Leaderboard</a></li>
+                <li><a href="/fairness" class="gp-footer-link" data-open-fairness>Provably Fair</a></li>
+                <li><button type="button" class="gp-footer-link" id="footerChatBtn">Public Chat</button></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4>Support</h4>
+              <ul>
+                <li><a href="/howto" class="gp-footer-link" data-info="howto">How to Play</a></li>
+                <li><a href="/responsible" class="gp-footer-link" data-info="responsible">Responsible Play</a></li>
+                <li><a href="/terms" class="gp-footer-link" data-info="terms">Terms of Use</a></li>
+                <li><a href="/privacy" class="gp-footer-link" data-info="privacy">Privacy</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4>Community</h4>
+              <ul>
+                <li><a href="https://discord.gg/greenprinters" target="_blank" rel="noopener noreferrer">Discord</a></li>
+                <li><button type="button" class="gp-footer-link" id="footerShareBtn">Share LuckyWin</button></li>
+                <li><a href="mailto:support@greenpump.xyz">support@greenpump.xyz</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="gp-footer-bottom">
+          <span>© 2026 LuckyWin — Real-Money Solana Casino. 100% Non-Custodial Gaming.</span>
+          <span>Holders of keys control their funds. Must be 18+ to play. Play responsibly.</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODALS -->
+  <!-- ========================================================= -->
+
+  <!-- Leaderboard Modal -->
+  <div class="gp-modal-backdrop" id="leaderboardModal">
+    <div class="gp-modal-dialog">
+      <button class="gp-modal-close" id="closeLeaderboardModalBtn">&times;</button>
+      <div class="gp-modal-title">
+        <img src="nav-leaderboard-trophy.png" width="26" height="26" style="object-fit:contain;"/>
+        <span>Top Winners &amp; High Rollers</span>
+      </div>
+      <p style="font-size:12px;color:#94a3b8;margin:6px 0 16px 0;">Top SOL payouts across all LuckyWin games. Your biggest wins are added automatically.</p>
+      <div id="leaderboardRows"></div>
+    </div>
+  </div>
+
+  <!-- Blackjack Payout Rulebook Modal -->
+  <div class="gp-modal-backdrop" id="bjRulebookModal">
+    <div class="gp-modal-dialog" style="max-width:540px;">
+      <button class="gp-modal-close" id="closeBjRulebookBtn">&times;</button>
+      <div class="gp-modal-title">
+        <span>🃏 BLACKJACK PAYOUT RULEBOOK</span>
+      </div>
+      <div class="bj-rulebook-content" style="margin-top:14px;display:flex;flex-direction:column;gap:14px;font-size:13px;color:#cbd5e1;">
+        <div style="background:#0a1224;border:1px solid rgba(59, 130, 246, 0.16);border-radius:10px;padding:12px 16px;">
+          <div style="font-weight:900;color:#60a5fa;margin-bottom:6px;">MAIN HAND PAYOUTS</div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Natural Blackjack (21 on deal)</span><strong style="color:#ffffff;">3 to 2 (1.5x)</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Standard Hand Win</span><strong style="color:#ffffff;">1 to 1 (1.0x)</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Push (equal hand)</span><strong style="color:#ffffff;">Bet returned</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span>Dealer Stands On</span><strong style="color:#38bdf8;">All 17s</strong>
+          </div>
+        </div>
+
+        <div style="background:#0f1311;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;">
+          <div style="font-weight:900;color:#eab308;margin-bottom:6px;">21+3 SIDE BET PAYOUTS</div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Suited Trips (e.g. Q♠ Q♠ Q♠)</span><strong style="color:#ffffff;">100 to 1</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Straight Flush</span><strong style="color:#ffffff;">40 to 1</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Three of a Kind</span><strong style="color:#ffffff;">30 to 1</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Straight</span><strong style="color:#ffffff;">10 to 1</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span>Flush</span><strong style="color:#ffffff;">5 to 1</strong>
+          </div>
+        </div>
+
+        <div style="background:#0f1311;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;">
+          <div style="font-weight:900;color:#38bdf8;margin-bottom:6px;">PERFECT PAIR SIDE BET</div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Perfect Pair (Same rank & suit)</span><strong style="color:#ffffff;">25 to 1</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span>Colored Pair (Same rank & color)</span><strong style="color:#ffffff;">12 to 1</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span>Mixed Pair (Same rank, different color)</span><strong style="color:#ffffff;">6 to 1</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Free Case Spinner Modal -->
+  <div class="gp-modal-backdrop" id="dailyCaseModal">
+    <div class="gp-modal-dialog" style="max-width:540px;">
+      <button class="gp-modal-close" id="closeCaseModalBtn">&times;</button>
+      <div class="gp-modal-title">
+        <img src="daily-case-v2.png" alt="" width="26" height="26" style="object-fit:contain;"/>
+        <span>Daily Free Case</span>
+      </div>
+      <p style="font-size:13px;color:#94a3b8;margin:8px 0 10px 0;">
+        Spin once every 24 hours to win free on-chain Solana credited directly to your Instant Wallet!
+      </p>
+
+      <!-- Daily Game Play Requirement Notice -->
+      <div id="casePlayRequirementBox" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:9px 12px;margin:0 0 14px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🎮</span>
+          <div style="font-size:11.5px;color:#94a3b8;line-height:1.35;">
+            <span style="color:#ffffff;font-weight:800;">Daily Requirement:</span> Play at least 1 game every day before claiming your Daily Chest!
+          </div>
+        </div>
+        <span id="caseRequirementStatusBadge" style="font-size:10.5px;font-weight:900;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);white-space:nowrap;">LOCKED 🔒</span>
+      </div>
+
+      <div class="case-roulette-container">
+        <div class="case-spinner-needle"></div>
+        <div class="case-spinner-track" id="caseSpinnerTrack" style="transform: translateX(-385px);">
+          <div class="case-prize-card" style="border-bottom: 3px solid #3b82f6;">
+            <div class="case-card-rarity" style="color: #60a5fa;">COMMON</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #3b82f6);" />
+            <span class="case-card-sol">0.0001 SOL</span>
+            <span class="case-card-usd">≈ $0.015 (1.5¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #2563eb;">
+            <div class="case-card-rarity" style="color: #38bdf8;">COMMON</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #2563eb);" />
+            <span class="case-card-sol">0.0002 SOL</span>
+            <span class="case-card-usd">≈ $0.030 (3¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #0284c7;">
+            <div class="case-card-rarity" style="color: #38bdf8;">UNCOMMON</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #38bdf8);" />
+            <span class="case-card-sol">0.0004 SOL</span>
+            <span class="case-card-usd">≈ $0.060 (6¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #a855f7;">
+            <div class="case-card-rarity" style="color: #a855f7;">RARE</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #a855f7);" />
+            <span class="case-card-sol">0.0006 SOL</span>
+            <span class="case-card-usd">≈ $0.090 (9¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #f43f5e;">
+            <div class="case-card-rarity" style="color: #f43f5e;">EPIC</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #f43f5e);" />
+            <span class="case-card-sol">0.0008 SOL</span>
+            <span class="case-card-usd">≈ $0.120 (12¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #fbbf24;">
+            <div class="case-card-rarity" style="color: #fbbf24;">JACKPOT</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #fbbf24);" />
+            <span class="case-card-sol">0.0010 SOL</span>
+            <span class="case-card-usd">≈ $0.150 (MAX)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #3b82f6;">
+            <div class="case-card-rarity" style="color: #60a5fa;">COMMON</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #3b82f6);" />
+            <span class="case-card-sol">0.0001 SOL</span>
+            <span class="case-card-usd">≈ $0.015 (1.5¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #2563eb;">
+            <div class="case-card-rarity" style="color: #38bdf8;">COMMON</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #2563eb);" />
+            <span class="case-card-sol">0.0002 SOL</span>
+            <span class="case-card-usd">≈ $0.030 (3¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #0284c7;">
+            <div class="case-card-rarity" style="color: #38bdf8;">UNCOMMON</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #38bdf8);" />
+            <span class="case-card-sol">0.0004 SOL</span>
+            <span class="case-card-usd">≈ $0.060 (6¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #a855f7;">
+            <div class="case-card-rarity" style="color: #a855f7;">RARE</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #a855f7);" />
+            <span class="case-card-sol">0.0006 SOL</span>
+            <span class="case-card-usd">≈ $0.090 (9¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #f43f5e;">
+            <div class="case-card-rarity" style="color: #f43f5e;">EPIC</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #f43f5e);" />
+            <span class="case-card-sol">0.0008 SOL</span>
+            <span class="case-card-usd">≈ $0.120 (12¢)</span>
+          </div>
+          <div class="case-prize-card" style="border-bottom: 3px solid #fbbf24;">
+            <div class="case-card-rarity" style="color: #fbbf24;">JACKPOT</div>
+            <img src="solana-coin.png" alt="SOL" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px #fbbf24);" />
+            <span class="case-card-sol">0.0010 SOL</span>
+            <span class="case-card-usd">≈ $0.150 (MAX)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="case-rewards-container">
+        <div class="case-rewards-header">
+          <span class="case-rewards-title">POSSIBLE REWARDS</span>
+          <span class="case-rewards-max-badge">MAX 15¢ (0.0010 SOL)</span>
+        </div>
+        <div class="case-rewards-list" id="caseRewardsList">
+          <div class="case-reward-item" style="border-left: 3px solid #3b82f6;">
+            <img class="case-reward-icon" src="solana-coin.png" alt="SOL" style="filter:drop-shadow(0 0 4px #3b82f6);" />
+            <div class="case-reward-info">
+              <span class="case-reward-sol">0.0001 SOL</span>
+              <span class="case-reward-usd" style="color:#60a5fa;background:rgba(37, 99, 235, 0.15);padding:1px 5px;border-radius:4px;">1.5¢</span>
+            </div>
+          </div>
+          <div class="case-reward-item" style="border-left: 3px solid #2563eb;">
+            <img class="case-reward-icon" src="solana-coin.png" alt="SOL" style="filter:drop-shadow(0 0 4px #2563eb);" />
+            <div class="case-reward-info">
+              <span class="case-reward-sol">0.0002 SOL</span>
+              <span class="case-reward-usd" style="color:#38bdf8;background:rgba(56, 189, 248, 0.15);padding:1px 5px;border-radius:4px;">3.0¢</span>
+            </div>
+          </div>
+          <div class="case-reward-item" style="border-left: 3px solid #38bdf8;">
+            <img class="case-reward-icon" src="solana-coin.png" alt="SOL" style="filter:drop-shadow(0 0 4px #38bdf8);" />
+            <div class="case-reward-info">
+              <span class="case-reward-sol">0.0004 SOL</span>
+              <span class="case-reward-usd" style="color:#38bdf8;background:rgba(56, 189, 248, 0.18);padding:1px 5px;border-radius:4px;">6.0¢</span>
+            </div>
+          </div>
+          <div class="case-reward-item" style="border-left: 3px solid #a855f7;">
+            <img class="case-reward-icon" src="solana-coin.png" alt="SOL" style="filter:drop-shadow(0 0 4px #a855f7);" />
+            <div class="case-reward-info">
+              <span class="case-reward-sol">0.0006 SOL</span>
+              <span class="case-reward-usd" style="color:#a855f7;background:rgba(168, 85, 247, 0.18);padding:1px 5px;border-radius:4px;">9.0¢</span>
+            </div>
+          </div>
+          <div class="case-reward-item" style="border-left: 3px solid #f43f5e;">
+            <img class="case-reward-icon" src="solana-coin.png" alt="SOL" style="filter:drop-shadow(0 0 4px #f43f5e);" />
+            <div class="case-reward-info">
+              <span class="case-reward-sol">0.0008 SOL</span>
+              <span class="case-reward-usd" style="color:#f43f5e;background:rgba(244, 63, 94, 0.20);padding:1px 5px;border-radius:4px;">12.0¢</span>
+            </div>
+          </div>
+          <div class="case-reward-item" style="border-left: 3px solid #fbbf24;">
+            <img class="case-reward-icon" src="solana-coin.png" alt="SOL" style="filter:drop-shadow(0 0 4px #fbbf24);" />
+            <div class="case-reward-info">
+              <span class="case-reward-sol">0.0010 SOL</span>
+              <span class="case-reward-usd" style="color:#fbbf24;background:rgba(251, 191, 36, 0.22);padding:1px 5px;border-radius:4px;">15.0¢ 👑</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="spinDailyCaseBtn" style="width:100%;height:42px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:none;border-radius:10px;color:#ffffff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.35);margin-top:6px;">
+        OPEN FREE CASE
+      </button>
+      <div id="caseCooldownText" style="margin-top:6px;text-align:center;font-size:11px;font-weight:700;color:#64748b;">
+        One free case every 24 hours.
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-Money Non-Custodial Solana Casino Vault & Private Wallet Modal -->
+  <dialog id="walletSecurityDialog" aria-labelledby="wallet-security-title" style="margin:auto;width:min(560px, calc(100vw - 28px));max-height:90vh;overflow-y:auto;padding:22px;border:1px solid rgba(59, 130, 246, 0.35);border-radius:20px;background:#0d1424;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,0.92), 0 0 45px rgba(37,99,235,0.25);">
+    <!-- Modal Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #10b981 0%, #059669 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(16,185,129,0.4)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 id="wallet-security-title" style="font-size:17.5px;font-weight:900;margin:0;letter-spacing:-0.01em;">Casino Vault &amp; Private Wallet</h2>
+          <span style="font-size:11px;color:#34d399;font-weight:700;">100% Non-Custodial · Real Solana Mainnet</span>
+        </div>
+      </div>
+      <button type="button" aria-label="Close" style="padding:6px 10px;background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#94a3b8;font-size:14px;cursor:pointer;line-height:1" onclick="this.closest('dialog').close()">✕</button>
+    </div>
+
+    <!-- User Private Wallet Banner -->
+    <div style="background:linear-gradient(135deg, #070e1c 0%, #0a1730 100%);border:1px solid rgba(59, 130, 246, 0.25);border-radius:14px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:11px;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;">Your Playable Balance</span>
+          <span id="walletConnectionBadge" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(59,130,246,0.18);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">Non-Custodial</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span id="walletDialogBalance" style="font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.02em;">0.0000 SOL</span>
+          <span id="walletDialogBalanceUsd" style="font-size:12.5px;color:#38bdf8;font-weight:800;">≈ $0.00 USD</span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:#64748b;font-family:monospace;display:flex;align-items:center;gap:6px;">
+          <span>Wallet:</span>
+          <span id="userPrivateWalletShort" style="color:#94a3b8;font-weight:700;">Connecting...</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <button id="connectPhantomWalletBtn" type="button" style="background:linear-gradient(135deg, #ab9ff2 0%, #7d67ee 100%);border:none;border-radius:10px;padding:8px 14px;color:#ffffff;font-size:12px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 0 14px rgba(125,103,238,0.4);">
+          <span>Connect Phantom</span>
+        </button>
+        <span id="phantomStatusText" style="font-size:10px;color:#94a3b8;">Or use In-Browser Keypair</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="wallet-modal-tabs" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;background:#090f1e;padding:4px;border-radius:12px;border:1px solid rgba(59,130,246,0.18);margin-bottom:16px;">
+      <button id="walletTabDepositBtn" class="wallet-tab-btn is-active" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:#ffffff;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+        <span>📥 DEPOSIT</span>
+      </button>
+      <button id="walletTabWithdrawBtn" class="wallet-tab-btn" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:transparent;color:#94a3b8;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+        <span>📤 WITHDRAW</span>
+      </button>
+      <button id="walletTabKeysBtn" class="wallet-tab-btn" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:transparent;color:#94a3b8;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+        <span>🔑 KEYS</span>
+      </button>
+      <button id="walletTabLedgerBtn" class="wallet-tab-btn" type="button" style="padding:9px 4px;border:none;border-radius:8px;background:transparent;color:#94a3b8;font-size:11.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+        <span>📜 LEDGER</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: DEPOSIT REAL SOL TO CASINO MAIN VAULT -->
+    <div id="walletDepositSection" class="wallet-tab-panel">
+      <!-- Fast Phantom / Solflare Deposit Option -->
+      <div id="phantomDepositCard" style="background:#090f1d;border:1px solid rgba(125,103,238,0.3);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12.5px;font-weight:900;color:#ffffff;display:flex;align-items:center;gap:6px;">
+            Fast Deposit via Web3 Wallet (Phantom)
+          </span>
+          <span style="font-size:10px;color:#a78bfa;background:rgba(125,103,238,0.15);padding:2px 6px;border-radius:4px;font-weight:800;">1-CLICK SIGN</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="phantomDepositAmountInput" type="number" step="0.05" min="0.01" placeholder="Amount (e.g. 0.25 SOL)" style="background:#0d1527;border:1px solid rgba(125,103,238,0.3);border-radius:8px;padding:8px 12px;color:#ffffff;font-size:13px;flex:1;outline:none;font-weight:700;" />
+          <button id="phantomDepositSubmitBtn" type="button" style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);border:none;border-radius:8px;padding:8px 14px;color:#ffffff;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 0 12px rgba(109,40,217,0.4);">
+            Sign &amp; Deposit
+          </button>
+        </div>
+      </div>
+
+      <!-- Automatic On-Chain Deposit Detection -->
+      <div style="background:#090f1d;border:1px solid rgba(16,185,129,0.25);border-radius:14px;padding:16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;text-align:left;">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#10b981;box-shadow:0 0 12px #10b981;margin-top:3px;flex-shrink:0;animation:pulse 2s infinite;"></span>
+        <div>
+          <div style="font-size:13px;font-weight:900;color:#34d399;margin-bottom:4px;">100% Automatic On-Chain Deposit Detection</div>
+          <div style="font-size:11.5px;color:#94a3b8;line-height:1.5;">
+            Use the <strong>1-Click Fast Deposit</strong> above with Phantom, or deposit from any Solana wallet. The automated blockchain scanner continuously verifies incoming transfers on-chain and credits your balance automatically with instant confirmation.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: WITHDRAW REAL SOL FROM CASINO VAULT -->
+    <div id="walletWithdrawSection" class="wallet-tab-panel" hidden>
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:12px;">
+        <!-- Destination Address -->
+        <div>
+          <label for="withdrawAddressInput" style="font-size:11.5px;font-weight:800;color:#94a3b8;display:block;margin-bottom:6px;">DESTINATION SOLANA ADDRESS</label>
+          <input id="withdrawAddressInput" type="text" placeholder="Enter Phantom, Solflare or any Solana address..." style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:10px 14px;color:#ffffff;font-size:12px;font-family:monospace;outline:none;" />
+        </div>
+
+        <!-- Withdraw Amount -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="withdrawAmountInput" style="font-size:11.5px;font-weight:800;color:#94a3b8;">AMOUNT (SOL)</label>
+            <span id="withdrawUsdEstimate" style="font-size:11px;color:#38bdf8;font-weight:700;">≈ $0.00 USD</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:6px 12px;">
+            <input id="withdrawAmountInput" type="number" step="0.01" min="0.01" placeholder="0.00" style="background:transparent;border:none;color:#ffffff;font-size:15px;font-weight:900;outline:none;flex:1;font-family:'Plus Jakarta Sans', sans-serif;" />
+            <button id="withdrawMinBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 8px;color:#93c5fd;font-size:10px;font-weight:800;cursor:pointer;">MIN</button>
+            <button id="withdrawHalfBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 8px;color:#93c5fd;font-size:10px;font-weight:800;cursor:pointer;">50%</button>
+            <button id="withdrawMaxBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 8px;color:#93c5fd;font-size:10px;font-weight:800;cursor:pointer;">MAX</button>
+          </div>
+        </div>
+
+        <!-- Breakdown -->
+        <div style="background:#0b1122;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;font-size:11.5px;display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;color:#94a3b8;">
+            <span>Source:</span>
+            <span style="color:#ffffff;font-weight:800;">Casino Main Vault (Non-Custodial)</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:#94a3b8;">
+            <span>Network Fee:</span>
+            <span style="color:#ffffff;font-weight:800;">0.000005 SOL (~$0.0005)</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:#94a3b8;">
+            <span>Speed:</span>
+            <span style="color:#4ade80;font-weight:800;">Instant On-Chain Finality</span>
+          </div>
+        </div>
+
+        <button id="executeWithdrawBtn" type="button" style="width:100%;height:46px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:none;border-radius:12px;color:#ffffff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 18px rgba(37,99,235,0.4);transition:all 0.15s ease;">
+          CONFIRM INSTANT WITHDRAWAL
+        </button>
+
+        <div id="withdrawStatusMsg" style="margin-top:6px;font-size:12px;text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: NON-CUSTODIAL KEYS & SECURITY -->
+    <div id="walletKeysSection" class="wallet-tab-panel" hidden>
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:16px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:18px;">🛡️</span>
+          <div>
+            <h3 style="font-size:14px;font-weight:900;margin:0;color:#ffffff;">100% Non-Custodial Security</h3>
+            <span style="font-size:11px;color:#94a3b8;">You hold the keys. Nobody else can access your wallet.</span>
+          </div>
+        </div>
+        
+        <p style="font-size:12px;color:#94a3b8;line-height:1.5;margin:0 0 14px 0;">
+          Your private wallet keypair is generated directly inside your browser and stored securely in local storage or your connected Phantom extension. LuckyWin never stores your private keys on our servers.
+        </p>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:#94a3b8;margin-bottom:4px;">YOUR NON-CUSTODIAL PUBLIC ADDRESS</div>
+          <div style="display:flex;gap:6px;background:#0d1527;border:1px solid rgba(59,130,246,0.22);border-radius:8px;padding:8px 10px;">
+            <input id="userNonCustodialFullAddress" readonly type="text" style="background:transparent;border:none;color:#38bdf8;font-size:11px;font-family:monospace;flex:1;outline:none;" />
+            <button id="copyUserPublicKeyBtn" type="button" style="background:#132244;border:1px solid #3b82f6;color:#93c5fd;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:800;cursor:pointer;">COPY</button>
+          </div>
+        </div>
+
+        <!-- Export Private Key Button -->
+        <button id="exportPrivateKeyBtn" type="button" style="width:100%;padding:10px;background:rgba(239, 68, 68, 0.15);border:1px solid rgba(239, 68, 68, 0.4);border-radius:10px;color:#fca5a5;font-size:12.5px;font-weight:900;cursor:pointer;margin-bottom:10px;">
+          ⚠️ Export Private Key (Base58 / JSON)
+        </button>
+
+        <!-- Hidden Export Container -->
+        <div id="exportedKeyContainer" style="display:none;background:#060b17;border:1px solid rgba(239, 68, 68, 0.35);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-size:11px;color:#fca5a5;font-weight:800;margin-bottom:6px;">DO NOT SHARE THIS KEY WITH ANYONE:</div>
+          <textarea id="exportedKeyArea" readonly rows="3" style="width:100%;box-sizing:border-box;background:#000000;border:1px solid #334155;border-radius:6px;color:#4ade80;font-family:monospace;font-size:11px;padding:8px;resize:none;outline:none;"></textarea>
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:4px;">Can be imported directly into Phantom, Backpack, or Solflare.</div>
+        </div>
+
+        <!-- Import Existing Keypair -->
+        <button id="toggleImportKeyBtn" type="button" style="width:100%;padding:9px;background:#132244;border:1px solid rgba(59,130,246,0.25);border-radius:10px;color:#93c5fd;font-size:12px;font-weight:800;cursor:pointer;">
+          📥 Import Existing Solana Private Key
+        </button>
+        <div id="importKeyContainer" style="display:none;margin-top:10px;">
+          <input id="importKeyInput" type="password" placeholder="Paste Base58 or JSON secret key array..." style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:8px 12px;color:#ffffff;font-size:11px;font-family:monospace;margin-bottom:6px;outline:none;" />
+          <button id="executeImportKeyBtn" type="button" style="width:100%;padding:8px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:none;border-radius:8px;color:#ffffff;font-weight:800;font-size:12px;cursor:pointer;">
+            Import &amp; Switch Active Keypair
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: VAULT LEDGER (TRANSPARENT CASINO AUDIT) -->
+    <div id="walletLedgerSection" class="wallet-tab-panel" hidden>
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:14px;padding:14px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12.5px;font-weight:900;color:#ffffff;">Live Casino Vault Ledger</span>
+          <button id="refreshLedgerBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:3px 8px;color:#93c5fd;font-size:10.5px;font-weight:800;cursor:pointer;">🔄 Refresh</button>
+        </div>
+        <div id="vaultLedgerList" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:11.5px;color:#94a3b8;text-align:center;padding:20px;">Loading transparent vault records...</div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 1. Statistics Modal -->
+  <dialog id="statsModal" style="margin:auto;width:min(480px, calc(100vw - 32px));max-height:85vh;overflow-y:auto;padding:22px;border:1px solid rgba(59, 130, 246, 0.25);border-radius:20px;background:#0d1424;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,0.9);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">📊</span>
+        <div>
+          <h2 style="font-size:17px;font-weight:900;margin:0;">Player Statistics</h2>
+          <span style="font-size:11px;color:#94a3b8;font-weight:700;">Lifetime Wagering &amp; Performance</span>
+        </div>
+      </div>
+      <button type="button" style="padding:6px 10px;background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#94a3b8;font-size:14px;cursor:pointer;" onclick="this.closest('dialog').close()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#94a3b8;font-weight:700;">TOTAL WAGERED</div>
+        <div id="statTotalWagered" style="font-size:18px;font-weight:900;color:#ffffff;margin-top:2px;">0.0000 SOL</div>
+        <div id="statTotalWageredUsd" style="font-size:11px;color:#38bdf8;font-weight:700;margin-top:2px;">≈ $0.00 USD</div>
+      </div>
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#94a3b8;font-weight:700;">NET PROFIT / LOSS</div>
+        <div id="statNetProfit" style="font-size:18px;font-weight:900;color:#4ade80;margin-top:2px;">+0.0000 SOL</div>
+        <div id="statNetProfitUsd" style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:2px;">≈ $0.00 USD</div>
+      </div>
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#94a3b8;font-weight:700;">TOTAL ROUNDS</div>
+        <div id="statTotalBets" style="font-size:18px;font-weight:900;color:#ffffff;margin-top:2px;">0</div>
+        <div style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:2px;">Across all 7 games</div>
+      </div>
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:#94a3b8;font-weight:700;">WIN RATE</div>
+        <div id="statWinRate" style="font-size:18px;font-weight:900;color:#38bdf8;margin-top:2px;">0.0%</div>
+        <div id="statWinsCount" style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:2px;">0 wins</div>
+      </div>
+    </div>
+
+    <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:#94a3b8;font-weight:700;">Highest Multiplier Hit</span>
+      <span id="statBestMult" style="font-size:14px;font-weight:900;color:#facc15;">1.00x</span>
+    </div>
+  </dialog>
+
+  <!-- 2. Affiliates Modal -->
+  <dialog id="affiliatesModal" style="margin:auto;width:min(480px, calc(100vw - 32px));max-height:85vh;overflow-y:auto;padding:22px;border:1px solid rgba(59, 130, 246, 0.25);border-radius:20px;background:#0d1424;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,0.9);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">👥</span>
+        <div>
+          <h2 style="font-size:17px;font-weight:900;margin:0;">Affiliate Program</h2>
+          <span style="font-size:11px;color:#94a3b8;font-weight:700;">Earn 0.5% Lifetime Commission</span>
+        </div>
+      </div>
+      <button type="button" style="padding:6px 10px;background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#94a3b8;font-size:14px;cursor:pointer;" onclick="this.closest('dialog').close()">✕</button>
+    </div>
+
+    <p style="font-size:12.5px;color:#94a3b8;margin:0 0 14px 0;line-height:1.5;">Share your unique referral link. Every time someone wagers real SOL, you automatically earn <strong>0.5%</strong> of their total turnover directly to your rewards.</p>
+
+    <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px;margin-bottom:14px;">
+      <div style="font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:6px;">YOUR REFERRAL LINK</div>
+      <div style="display:flex;align-items:center;gap:8px;background:#0d1527;border:1px solid rgba(59,130,246,0.22);border-radius:8px;padding:8px 10px;">
+        <span id="affiliateRefLink" style="font-family:monospace;font-size:12px;color:#38bdf8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://luckywin.sol/ref/beh</span>
+        <button id="copyRefLinkBtn" type="button" style="background:#132244;border:1px solid #3b82f6;color:#93c5fd;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;">COPY</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px;">
+        <div style="font-size:11px;color:#94a3b8;font-weight:700;">ACTIVE REFERRED</div>
+        <div style="font-size:18px;font-weight:900;color:#ffffff;margin-top:2px;">0 players</div>
+      </div>
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px;">
+        <div style="font-size:11px;color:#94a3b8;font-weight:700;">UNCLAIMED COMMISSIONS</div>
+        <div id="affiliateUnclaimedDisplay" style="font-size:18px;font-weight:900;color:#4ade80;margin-top:2px;">0.0000 SOL</div>
+      </div>
+    </div>
+
+    <button id="claimAffiliateCommBtn" type="button" style="width:100%;height:44px;background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);border:none;border-radius:10px;color:#ffffff;font-size:13.5px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,0.35);">
+      CLAIM TO WALLET
+    </button>
+  </dialog>
+
+  <!-- 3. Settings Modal -->
+  <dialog id="settingsModal" style="margin:auto;width:min(460px, calc(100vw - 32px));max-height:85vh;overflow-y:auto;padding:22px;border:1px solid rgba(59, 130, 246, 0.25);border-radius:20px;background:#0d1424;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,0.9);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">⚙️</span>
+        <div>
+          <h2 style="font-size:17px;font-weight:900;margin:0;">Profile Settings</h2>
+          <span style="font-size:11px;color:#94a3b8;font-weight:700;">Preferences &amp; Security</span>
+        </div>
+      </div>
+      <button type="button" style="padding:6px 10px;background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#94a3b8;font-size:14px;cursor:pointer;" onclick="this.closest('dialog').close()">✕</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- Username Setting -->
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px;">
+        <label for="settingsUsernameInput" style="font-size:11.5px;font-weight:800;color:#94a3b8;display:block;margin-bottom:6px;">DISPLAY USERNAME</label>
+        <div style="display:flex;gap:8px;">
+          <input id="settingsUsernameInput" type="text" maxlength="16" value="beh" style="background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:8px 12px;color:#ffffff;font-size:13px;font-weight:800;flex:1;outline:none;" />
+          <button id="saveUsernameBtn" type="button" style="background:#2563eb;color:#ffffff;border:none;border-radius:8px;padding:0 14px;font-size:12px;font-weight:800;cursor:pointer;">SAVE</button>
+        </div>
+      </div>
+
+      <!-- Provably Fair Link -->
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#ffffff;">Provably Fair Seeds</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">SHA-256 verifier &amp; client seed</div>
+        </div>
+        <button id="settingsOpenFairnessBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.25);color:#93c5fd;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;">VERIFY</button>
+      </div>
+
+      <!-- Terms & Conditions Link (18+ real money policy) -->
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#ffffff;">Terms of Use &amp; 18+ Policy</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Platform rules, age restriction &amp; balance rights</div>
+        </div>
+        <button id="settingsOpenTermsBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.25);color:#93c5fd;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;">READ</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 4. Transactions Modal -->
+  <dialog id="transactionsModal" style="margin:auto;width:min(600px, calc(100vw - 28px));max-height:85vh;overflow-y:auto;padding:22px;border:1px solid rgba(59, 130, 246, 0.25);border-radius:20px;background:#0d1424;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,0.9);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">📄</span>
+        <div>
+          <h2 style="font-size:17px;font-weight:900;margin:0;">Transactions Ledger</h2>
+          <span style="font-size:11px;color:#94a3b8;font-weight:700;">Deposits, Withdrawals &amp; Game Payouts</span>
+        </div>
+      </div>
+      <button type="button" style="padding:6px 10px;background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#94a3b8;font-size:14px;cursor:pointer;" onclick="this.closest('dialog').close()">✕</button>
+    </div>
+
+    <div style="max-height:360px;overflow-y:auto;border:1px solid rgba(59,130,246,0.18);border-radius:12px;background:#090f1d;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:left;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);background:#0c1424;color:#94a3b8;font-weight:800;">
+            <th style="padding:10px 12px;">Type</th>
+            <th style="padding:10px 12px;">Amount</th>
+            <th style="padding:10px 12px;">Tx Hash</th>
+            <th style="padding:10px 12px;">Status</th>
+            <th style="padding:10px 12px;">Time</th>
+          </tr>
+        </thead>
+        <tbody id="transactionsTableBody">
+          <!-- Populated dynamically via JS -->
+          <tr>
+            <td colspan="5" style="padding:24px;text-align:center;color:#64748b;">No transactions recorded yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </dialog>
+
+  <!-- 5. Rewards Modal -->
+  <dialog id="rewardsModal" style="margin:auto;width:min(460px, calc(100vw - 32px));max-height:85vh;overflow-y:auto;padding:22px;border:1px solid rgba(59, 130, 246, 0.25);border-radius:20px;background:#0d1424;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,0.9);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🎁</span>
+        <div>
+          <h2 style="font-size:17px;font-weight:900;margin:0;">VIP Rewards &amp; Rakeback</h2>
+          <span id="vipRankBenefitsSubtext" style="font-size:11px;color:#94a3b8;font-weight:700;">Level 1 Rank Benefits (0.5% Rakeback)</span>
+        </div>
+      </div>
+      <button type="button" style="padding:6px 10px;background:#132244;border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#94a3b8;font-size:14px;cursor:pointer;" onclick="this.closest('dialog').close()">✕</button>
+    </div>
+
+    <!-- VIP Progress Bar (Scales every 0.5 SOL wagered) -->
+    <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span id="vipTierTitle" style="font-size:13px;font-weight:800;color:#ffffff;">VIP Tier 1</span>
+        <span id="vipTierProgressText" style="font-size:12px;font-weight:800;color:#38bdf8;">0.0% / 100% to Tier 2</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+        <div id="vipTierProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg, #2563eb, #38bdf8);border-radius:3px;transition:width 0.3s ease;"></div>
+      </div>
+      <div id="vipTierWagerDesc" style="font-size:10.5px;color:#64748b;margin-top:6px;">Wager 0.5000 SOL more to unlock VIP Tier 2 with higher rakeback.</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <!-- Weekly Reload (0.05 cents worth of SOL) -->
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:12.5px;font-weight:800;color:#ffffff;">Weekly Reload</div>
+          <div id="weeklyReloadSubtext" style="font-size:11px;color:#4ade80;font-weight:700;">+0.05¢ USD worth of SOL Available</div>
+        </div>
+        <button id="claimDailyReloadBtn" type="button" style="background:#2563eb;color:#ffffff;border:none;border-radius:8px;padding:6px 14px;font-size:11px;font-weight:800;cursor:pointer;transition:all 0.15s ease;">CLAIM</button>
+      </div>
+
+      <!-- VIP Rakeback (Every 12 Hours) -->
+      <div style="background:#090f1d;border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div id="vipRakebackLabel" style="font-size:12.5px;font-weight:800;color:#ffffff;">0.5% Rakeback (Every 12h)</div>
+          <div id="rakebackAmountDisplay" style="font-size:11px;color:#94a3b8;font-weight:700;">0.00000 SOL accrued · Claim every 12h</div>
+        </div>
+        <button id="claimRakebackBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.25);color:#93c5fd;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;transition:all 0.15s ease;">CLAIM</button>
+      </div>
+    </div>
+  </dialog>
+
+  <footer class="gp-statement-footer" aria-label="LuckyWin information">
+    <p>Choose a game. Make your move.</p>
+    <div>
+      <span>LUCKYWIN</span>
+      <span>Real Money Solana Casino · 100% Non-Custodial Vault</span>
+    </div>
+  </footer>
+
+  <!-- Provably Fair Verifier Modal -->
+  <div class="gp-modal-backdrop" id="fairnessModal">
+    <div class="gp-modal-dialog">
+      <button class="gp-modal-close" id="closeFairnessModalBtn" aria-label="Close fairness modal">&times;</button>
+      <div class="gp-modal-title">
+        <span>🛡️ PROVABLY FAIR</span>
+      </div>
+      <p class="gp-modal-copy">Verify a round commitment with SHA-256. Cryptographic seed verification ensures every game round outcome is verifiable and tamper-proof.</p>
+
+      <div class="fair-field">
+        <label for="fairServerSeed">Server seed (commitment)</label>
+        <input id="fairServerSeed" type="text" spellcheck="false" autocomplete="off" />
+      </div>
+      <div class="fair-field">
+        <label for="fairClientSeed">Client seed (editable)</label>
+        <input id="fairClientSeed" type="text" spellcheck="false" autocomplete="off" />
+      </div>
+      <div class="fair-field">
+        <label for="fairNonce">Nonce</label>
+        <input id="fairNonce" type="number" min="0" step="1" value="1" />
+      </div>
+
+      <div class="fair-hash-box">
+        <span>Server seed SHA-256</span>
+        <code id="fairServerHash">—</code>
+      </div>
+      <div class="fair-hash-box">
+        <span>Combined round hash</span>
+        <code id="fairResult">—</code>
+      </div>
+
+      <div class="fair-actions">
+        <button type="button" id="fairRegenerateBtn" class="fair-btn secondary">New server seed</button>
+        <button type="button" id="fairVerifyBtn" class="fair-btn primary">Verify round</button>
+      </div>
+      <p class="gp-modal-fine">Provably Fair cryptographic verification. Outcomes are mathematically determined before bets are resolved.</p>
+    </div>
+  </div>
+
+  <!-- Airdrop Confirmation Modal -->
+  <div class="gp-modal-backdrop" id="airdropConfirmModal">
+    <div class="gp-modal-dialog" style="max-width:440px;text-align:center;">
+      <button class="gp-modal-close" id="closeAirdropConfirmBtn" aria-label="Close airdrop modal">&times;</button>
+      
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg, rgba(37,99,235,0.3) 0%, rgba(56,189,248,0.2) 100%);border:1.5px solid rgba(56,189,248,0.5);margin:0 auto 12px auto;box-shadow:0 0 24px rgba(37,99,235,0.4);">
+        <img src="airdrop-logo-selected.png" alt="Airdrop" style="width:40px;height:auto;object-fit:contain;"/>
+      </div>
+      
+      <div class="gp-modal-title" style="font-size:20px;margin-bottom:6px;">CONFIRM AIRDROP</div>
+      <p class="gp-modal-copy" style="margin-bottom:16px;">
+        You are about to airdrop Solana from your wallet to all active players.
+      </p>
+
+      <div style="background:#0a1224;border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:14px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px;text-align:left;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:12px;color:#94a3b8;font-weight:700;">Airdrop Amount</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <img src="solana-coin.png" alt="SOL" style="width:16px;height:16px;object-fit:contain;"/>
+            <span id="confirmAirdropAmountDisplay" style="font-size:17px;font-weight:900;color:#ffffff;">0.5000 SOL</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:12px;color:#94a3b8;font-weight:700;">Online Players</span>
+          <span id="confirmAirdropRecipientsDisplay" style="font-size:13px;font-weight:800;color:#38bdf8;">84 players</span>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:12px;color:#94a3b8;font-weight:700;">Each Player Receives</span>
+          <span id="confirmAirdropEachDisplay" style="font-size:13px;font-weight:900;color:#4ade80;">+0.0059 SOL</span>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;color:#94a3b8;font-weight:700;">Your Wallet Balance</span>
+          <span id="confirmAirdropWalletBalance" style="font-size:13px;font-weight:800;color:#e2e8f0;">0.00 SOL</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button type="button" id="cancelAirdropBtn" style="flex:1;height:44px;background:#132244;border:1px solid rgba(59,130,246,0.25);border-radius:10px;color:#93c5fd;font-weight:800;font-size:13px;cursor:pointer;">
+          Cancel
+        </button>
+        <button type="button" id="executeAirdropBtn" style="flex:1.6;height:44px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:none;border-radius:10px;color:#ffffff;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.4);">
+          Confirm &amp; Airdrop
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Script Engine -->
+  <script src="js/solana-web3.min.js"></script>
+  <script src="js/greenpump-engine.js?v=20261021-fresh"></script>
+</body>
+</html>
