@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "server.js": {
-      "includeFiles": "**/*"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/chat",
@@ -15,11 +10,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "/server.js"
-    },
-    {
-      "source": "/((?!api/|.*\\..*).*)",
-      "destination": "/index.html"
+      "destination": "/api/index.js"
     }
   ]
 }

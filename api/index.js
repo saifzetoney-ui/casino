@@ -1,0 +1,250 @@
+const https = require('https');
+const urlModule = require('url');
+const casinoVault = require('../casino-vault');
+
+const LIVE_ORIGIN = 'https://greenpump.xyz';
+
+function send(res, status, body, type = 'application/json; charset=utf-8') {
+  if (!res || res.headersSent) return;
+  try {
+    res.writeHead(status, {
+      'Content-Type': type,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+    res.end(body);
+  } catch (e) {
+    console.error('[API] send error:', e.message);
+  }
+}
+
+function parseJsonBody(req, callback) {
+  let raw = '';
+  req.on('data', chunk => {
+    raw += chunk;
+    if (raw.length > 1e6) {
+      req.destroy();
+    }
+  });
+  req.on('end', () => {
+    if (!raw.trim()) return callback(null, {});
+    try {
+      const data = JSON.parse(raw);
+      callback(null, data);
+    } catch (e) {
+      callback(e);
+    }
+  });
+  req.on('error', err => callback(err));
+}
+
+let cachedSolPrice = null;
+let lastSolPriceFetch = 0;
+
+function fetchSolPrice(callback) {
+  const now = Date.now();
+  if (cachedSolPrice && (now - lastSolPriceFetch < 2000)) {
+    return callback(null, cachedSolPrice);
+  }
+
+  const req = https.get('https://api.binance.com/api/v3/ticker/24hr?symbol=SOLUSDT', {
+    headers: { 'User-Agent': 'LuckyWin/1.0', 'Accept': 'application/json' },
+    timeout: 4000
+  }, res => {
+    let body = '';
+    res.on('data', chunk => body += chunk);
+    res.on('end', () => {
+      try {
+        const json = JSON.parse(body);
+        const price = Number(json.lastPrice || 0);
+        if (price > 0) {
+          cachedSolPrice = {
+            symbol: 'SOL',
+            price,
+            change24h: Number(json.priceChangePercent || 0),
+            high24h: Number(json.highPrice || 0),
+            low24h: Number(json.lowPrice || 0),
+            volume24h: Number(json.volume || 0),
+            updatedAt: Date.now()
+          };
+          lastSolPriceFetch = now;
+          return callback(null, cachedSolPrice);
+        }
+      } catch (e) {}
+      callback(new Error('Failed to parse price data'));
+    });
+  });
+
+  req.on('error', err => callback(err));
+  req.on('timeout', () => {
+    req.destroy();
+    callback(new Error('Price fetch timed out'));
+  });
+}
+
+function fetchSolKlines(callback) {
+  const req = https.get('https://api.binance.com/api/v3/klines?symbol=SOLUSDT&interval=1m&limit=40', {
+    headers: { 'User-Agent': 'LuckyWin/1.0', 'Accept': 'application/json' },
+    timeout: 4000
+  }, res => {
+    let body = '';
+    res.on('data', chunk => body += chunk);
+    res.on('end', () => {
+      try {
+        const json = JSON.parse(body);
+        if (Array.isArray(json)) {
+          const klines = json.map(k => ({
+            time: Math.floor(k[0] / 1000),
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+            volume: parseFloat(k[5])
+          }));
+          return callback(null, { symbol: 'SOL', interval: '1m', klines });
+        }
+      } catch (e) {}
+      callback(new Error('Failed to parse klines data'));
+    });
+  });
+
+  req.on('error', err => callback(err));
+  req.on('timeout', () => {
+    req.destroy();
+    callback(new Error('Klines fetch timed out'));
+  });
+}
+
+module.exports = (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+    res.end();
+    return;
+  }
+
+  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const pathname = parsedUrl.pathname;
+
+  if (pathname === '/api/casino-vault') {
+    casinoVault.getVaultStats((err, stats) => {
+      if (err) {
+        send(res, 500, JSON.stringify({ error: err.message }));
+      } else {
+        send(res, 200, JSON.stringify(stats));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/vault-ledger') {
+    const ledger = casinoVault.getLedger();
+    send(res, 200, JSON.stringify({ transactions: ledger.slice(0, 50) }));
+    return;
+  }
+
+  if (pathname === '/api/user-balance') {
+    if (req.method === 'GET') {
+      const address = parsedUrl.searchParams.get('address');
+      const balance = casinoVault.getUserBalance(address);
+      send(res, 200, JSON.stringify({ address, balance }));
+      return;
+    }
+    if (req.method === 'POST') {
+      parseJsonBody(req, (err, body) => {
+        if (err || !body || !body.address) {
+          send(res, 400, JSON.stringify({ error: 'Address and delta required' }));
+          return;
+        }
+        const delta = Number(body.delta) || 0;
+        const newBal = casinoVault.updateUserBalance(body.address, delta, body.reason);
+        send(res, 200, JSON.stringify({ address: body.address, balance: newBal }));
+      });
+      return;
+    }
+  }
+
+  if (pathname === '/api/check-deposits') {
+    const address = parsedUrl.searchParams.get('address') || 'any';
+    casinoVault.scanVaultForNewDeposits(address, (err, result) => {
+      if (err) {
+        send(res, 500, JSON.stringify({ error: err.message }));
+      } else {
+        send(res, 200, JSON.stringify(result || { newDeposits: [] }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/verify-deposit') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      casinoVault.verifyDeposit(body, (err, result) => {
+        if (err) {
+          send(res, 400, JSON.stringify({ error: err.message }));
+        } else {
+          send(res, 200, JSON.stringify(result));
+        }
+      });
+    });
+    return;
+  }
+
+  if (pathname === '/api/request-withdrawal') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      casinoVault.requestWithdrawal(body, (err, result) => {
+        if (err) {
+          send(res, 400, JSON.stringify({ error: err.message }));
+        } else {
+          send(res, 200, JSON.stringify(result));
+        }
+      });
+    });
+    return;
+  }
+
+  if (pathname === '/api/sol-price') {
+    fetchSolPrice((err, data) => {
+      if (err) {
+        send(res, 502, JSON.stringify({ error: err.message }));
+      } else {
+        send(res, 200, JSON.stringify(data));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/sol-klines') {
+    fetchSolKlines((err, data) => {
+      if (err) {
+        send(res, 502, JSON.stringify({ error: err.message }));
+      } else {
+        send(res, 200, JSON.stringify(data));
+      }
+    });
+    return;
+  }
+
+  send(res, 404, JSON.stringify({ error: 'Not found' }));
+};
