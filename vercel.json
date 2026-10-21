@@ -7,10 +7,6 @@
     {
       "source": "/api/avatar/:path*",
       "destination": "https://greenpump.xyz/api/avatar/:path*"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/index.js"
     }
   ]
 }
