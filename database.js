@@ -248,6 +248,16 @@ function safeLoadJson(filePath, defaultValue) {
         return JSON.parse(content);
       }
     }
+    // Fallback to repo ROOT/data if running in serverless (/tmp) and file is not yet copied
+    const repoFilePath = path.join(ROOT, 'data', path.basename(filePath));
+    if (filePath !== repoFilePath && fs.existsSync(repoFilePath)) {
+      const repoContent = fs.readFileSync(repoFilePath, 'utf8');
+      if (repoContent && repoContent.trim()) {
+        const parsed = JSON.parse(repoContent);
+        try { safeWriteJson(filePath, parsed); } catch (e) {}
+        return parsed;
+      }
+    }
   } catch (err) {
     console.warn(`[Database] Failed reading ${path.basename(filePath)}:`, err.message);
   }
@@ -269,8 +279,47 @@ function safeWriteJson(filePath, data) {
   }
 }
 
+const DEFAULT_SEED_USERS = {
+  "usr_ahmad_player": {
+    "id": "usr_ahmad_player",
+    "email": "ahmad@gmail.com",
+    "username": "ahmad",
+    "passwordHash": "",
+    "salt": "",
+    "authProvider": "player",
+    "balance": 0.50,
+    "vipRank": 1,
+    "userLevel": 1,
+    "stats": { "totalWagered": 0, "totalProfit": 0, "totalBets": 0, "wins": 0, "bestMult": 1 },
+    "createdAt": 1792686800000,
+    "lastLoginAt": 1792686800000
+  },
+  "usr_saif_admin": {
+    "id": "usr_saif_admin",
+    "email": "saifzetoney@gmail.com",
+    "username": "saif",
+    "passwordHash": "",
+    "salt": "",
+    "authProvider": "email",
+    "balance": 1.00,
+    "vipRank": 2,
+    "userLevel": 5,
+    "stats": { "totalWagered": 0.1, "totalProfit": 0.05, "totalBets": 2, "wins": 1, "bestMult": 2.0 },
+    "createdAt": 1792686800000,
+    "lastLoginAt": 1792686800000
+  }
+};
+
 function initLocalDatabase() {
-  users = safeLoadJson(USERS_FILE, {});
+  users = safeLoadJson(USERS_FILE, DEFAULT_SEED_USERS);
+  if (!users || typeof users !== 'object' || Object.keys(users).length === 0) {
+    users = { ...DEFAULT_SEED_USERS };
+  }
+  for (const k in DEFAULT_SEED_USERS) {
+    if (!users[k]) {
+      users[k] = DEFAULT_SEED_USERS[k];
+    }
+  }
   sessions = safeLoadJson(SESSIONS_FILE, {});
   bets = safeLoadJson(BETS_FILE, []);
   userWallets = safeLoadJson(WALLETS_FILE, {});
@@ -1168,6 +1217,7 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
   }
 
   // Local fallback
+  initLocalDatabase();
   let list = Object.values(users);
   if (term) {
     list = list.filter(u =>
@@ -1176,8 +1226,162 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
       (u.id && u.id.toLowerCase().includes(term))
     );
   }
-  list.sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0));
+  list.sort((a, b) => Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0));
   return list.slice(safeOffset, safeOffset + safeLimit).map(u => sanitizeUser(u));
+}
+
+async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bronze', userLevel = 1 }) {
+  const cleanUsername = (username || '').trim().slice(0, 32) || 'player_' + Math.random().toString(36).substring(2, 7);
+  const cleanEmail = (email || '').trim().toLowerCase() || `${cleanUsername.toLowerCase()}@player.gp`;
+  const cleanBalance = parseFloat(Math.max(0, Number(balance) || 0).toFixed(4));
+  const now = Date.now();
+  const userId = 'usr_' + crypto.randomBytes(8).toString('hex');
+
+  const hasPg = await ensureDatabaseSchema();
+  if (hasPg && pgPool) {
+    const client = await pgPool.connect();
+    try {
+      const existing = await client.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2)', [cleanEmail, cleanUsername]);
+      if (existing.rows.length > 0) {
+        const row = existing.rows[0];
+        const updateRes = await client.query(`
+          UPDATE users SET balance = $1, vip_rank = $2, user_level = $3, updated_at = $4
+          WHERE id = $5 RETURNING *
+        `, [cleanBalance, typeof vipRank === 'number' ? vipRank : 1, userLevel, now, row.id]);
+        return formatUserRow(updateRes.rows[0]);
+      }
+
+      const defaultStats = { totalWagered: 0, totalProfit: 0, totalBets: 0, wins: 0, bestMult: 1 };
+      const insertRes = await client.query(`
+        INSERT INTO users (id, email, username, password_hash, salt, auth_provider, balance, vip_rank, user_level, stats, created_at, last_login_at)
+        VALUES ($1, $2, $3, '', '', 'admin_created', $4, $5, $6, $7, $8, $8)
+        RETURNING *
+      `, [userId, cleanEmail, cleanUsername, cleanBalance, typeof vipRank === 'number' ? vipRank : 1, userLevel, JSON.stringify(defaultStats), now]);
+      return formatUserRow(insertRes.rows[0]);
+    } finally {
+      client.release();
+    }
+  }
+
+  // Local fallback
+  initLocalDatabase();
+  const existingId = Object.keys(users).find(id => 
+    (users[id].email && users[id].email.toLowerCase() === cleanEmail) ||
+    (users[id].username && users[id].username.toLowerCase() === cleanUsername)
+  );
+
+  if (existingId) {
+    users[existingId].balance = cleanBalance;
+    users[existingId].vipRank = vipRank;
+    users[existingId].userLevel = userLevel;
+    users[existingId].updatedAt = now;
+    saveUsers();
+    return sanitizeUser(users[existingId]);
+  }
+
+  const newUser = {
+    id: userId,
+    email: cleanEmail,
+    username: cleanUsername,
+    passwordHash: '',
+    salt: '',
+    authProvider: 'admin_created',
+    balance: cleanBalance,
+    vipRank,
+    userLevel,
+    stats: { totalWagered: 0, totalProfit: 0, totalBets: 0, wins: 0, bestMult: 1 },
+    createdAt: now,
+    lastLoginAt: now
+  };
+  users[userId] = newUser;
+  saveUsers();
+  return sanitizeUser(newUser);
+}
+
+async function syncUserProfile({ id, username, email, balance, vipRank, userLevel }) {
+  const cleanUsername = (username || '').trim().slice(0, 32);
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanBalance = balance !== undefined ? parseFloat(Math.max(0, Number(balance) || 0).toFixed(4)) : undefined;
+  const now = Date.now();
+
+  const hasPg = await ensureDatabaseSchema();
+  if (hasPg && pgPool) {
+    const client = await pgPool.connect();
+    try {
+      let userRow;
+      if (id) {
+        const res = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+        if (res.rows.length > 0) userRow = res.rows[0];
+      }
+      if (!userRow && cleanEmail) {
+        const res = await client.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [cleanEmail]);
+        if (res.rows.length > 0) userRow = res.rows[0];
+      }
+      if (!userRow && cleanUsername) {
+        const res = await client.query('SELECT * FROM users WHERE LOWER(username) = LOWER($1)', [cleanUsername]);
+        if (res.rows.length > 0) userRow = res.rows[0];
+      }
+
+      if (userRow) {
+        const updateRes = await client.query(`
+          UPDATE users
+          SET username = COALESCE(NULLIF($1, ''), username),
+              balance = COALESCE($2, balance),
+              last_login_at = $3
+          WHERE id = $4
+          RETURNING *
+        `, [cleanUsername || '', cleanBalance, now, userRow.id]);
+        return formatUserRow(updateRes.rows[0]);
+      } else {
+        const newId = id || 'usr_' + crypto.randomBytes(8).toString('hex');
+        const finalEmail = cleanEmail || `${(cleanUsername || 'player').toLowerCase()}@player.gp`;
+        const finalName = cleanUsername || 'Player';
+        const defaultStats = { totalWagered: 0, totalProfit: 0, totalBets: 0, wins: 0, bestMult: 1 };
+        const insertRes = await client.query(`
+          INSERT INTO users (id, email, username, password_hash, salt, auth_provider, balance, vip_rank, user_level, stats, created_at, last_login_at)
+          VALUES ($1, $2, $3, '', '', 'player', $4, 1, 1, $5, $6, $6)
+          RETURNING *
+        `, [newId, finalEmail, finalName, cleanBalance !== undefined ? cleanBalance : 0.05, JSON.stringify(defaultStats), now]);
+        return formatUserRow(insertRes.rows[0]);
+      }
+    } finally {
+      client.release();
+    }
+  }
+
+  // Local fallback
+  initLocalDatabase();
+  let existing = null;
+  if (id && users[id]) existing = users[id];
+  if (!existing && cleanEmail) existing = Object.values(users).find(u => u.email && u.email.toLowerCase() === cleanEmail);
+  if (!existing && cleanUsername) existing = Object.values(users).find(u => u.username && u.username.toLowerCase() === cleanUsername);
+
+  if (existing) {
+    if (cleanUsername) existing.username = cleanUsername;
+    if (cleanBalance !== undefined) existing.balance = cleanBalance;
+    existing.lastLoginAt = now;
+    saveUsers();
+    return sanitizeUser(existing);
+  }
+
+  const newId = id || 'usr_' + crypto.randomBytes(8).toString('hex');
+  const newUser = {
+    id: newId,
+    email: cleanEmail || `${(cleanUsername || 'player').toLowerCase()}@player.gp`,
+    username: cleanUsername || 'Player',
+    passwordHash: '',
+    salt: '',
+    authProvider: 'player',
+    balance: cleanBalance !== undefined ? cleanBalance : 0.05,
+    vipRank: vipRank || 1,
+    userLevel: userLevel || 1,
+    stats: { totalWagered: 0, totalProfit: 0, totalBets: 0, wins: 0, bestMult: 1 },
+    createdAt: now,
+    lastLoginAt: now
+  };
+  users[newId] = newUser;
+  saveUsers();
+  return sanitizeUser(newUser);
 }
 
 async function adminUpdateUser(userId, updates = {}) {
@@ -1226,6 +1430,7 @@ async function adminGetRecentBets(limit = 50) {
   }
 
   // Local fallback
+  initLocalDatabase();
   return bets.slice(-safeLimit).reverse().map(b => ({
     ...b,
     email: users[b.userId]?.email || 'anonymous'
@@ -1241,6 +1446,7 @@ module.exports = {
   getRawUserByToken,
   destroySession,
   updateUser,
+  syncUserProfile,
   recordBet,
   getUserBets,
   sanitizeUser,
@@ -1250,6 +1456,7 @@ module.exports = {
   verifyAdminToken,
   adminGetPlatformStats,
   adminGetUsers,
+  adminCreateUser,
   adminUpdateUser,
   adminGetRecentBets
 };

@@ -657,6 +657,52 @@ async function requestHandler(req, res) {
     return;
   }
 
+  if (url.pathname === '/api/admin/user/create') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
+      return;
+    }
+    const adminToken = extractAdminToken(req, url);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }), 'application/json; charset=utf-8');
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
+        return;
+      }
+      try {
+        const newUser = await db.adminCreateUser(body);
+        send(res, 200, JSON.stringify({ ok: true, user: newUser }), 'application/json; charset=utf-8');
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/user/sync-profile') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
+        return;
+      }
+      try {
+        const user = await db.syncUserProfile(body);
+        send(res, 200, JSON.stringify({ ok: true, user }), 'application/json; charset=utf-8');
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
   if (url.pathname === '/api/admin/bets') {
     const adminToken = extractAdminToken(req, url);
     const admin = db.verifyAdminToken(adminToken);

@@ -1,7 +1,7 @@
 .vercel
-data/
 *.key
 casino_vault.json
+data/casino_vault.json
 node_modules/
 .DS_Store
 .env

@@ -14,7 +14,7 @@ function send(res, status, body, type = 'application/json; charset=utf-8') {
       'X-Content-Type-Options': 'nosniff',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token'
     });
     res.end(body);
   } catch (e) {
@@ -124,7 +124,7 @@ module.exports = async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token'
     });
     res.end();
     return;
@@ -442,6 +442,52 @@ module.exports = async (req, res) => {
       try {
         const updated = await db.adminUpdateUser(body.userId, body);
         send(res, 200, JSON.stringify({ ok: true, user: updated }));
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/admin/user/create') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    const adminToken = extractAdminToken(req, parsedUrl);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }));
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      try {
+        const newUser = await db.adminCreateUser(body);
+        send(res, 200, JSON.stringify({ ok: true, user: newUser }));
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/user/sync-profile') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      try {
+        const user = await db.syncUserProfile(body);
+        send(res, 200, JSON.stringify({ ok: true, user }));
       } catch (e) {
         send(res, 500, JSON.stringify({ error: e.message }));
       }

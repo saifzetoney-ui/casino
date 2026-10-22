@@ -298,6 +298,7 @@ class GreenpumpApp {
     this.initWallet();
     this.initProfileMenu();
     this.initAdminConsole();
+    this.syncCurrentPlayerProfile();
     this.initAuth();
     this.initPublicChat();
     this.initAirdrop();
@@ -1222,6 +1223,24 @@ class GreenpumpApp {
         if (usernameDisplay) usernameDisplay.textContent = newName;
         this.showToast(`Display name updated to "${newName}"!`);
         gpAudio.playClick();
+
+        // Sync to server database immediately so player is searchable in Admin Console
+        fetch('/api/user/sync-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: this.userId || localStorage.getItem('gp_user_id'),
+            username: newName,
+            email: this.userEmail || '',
+            balance: this.balance
+          })
+        }).then(r => r.json()).then(data => {
+          if (data && data.user && data.user.id) {
+            this.userId = data.user.id;
+            localStorage.setItem('gp_user_id', data.user.id);
+          }
+        }).catch(() => {});
+
         if (settingsModal && typeof settingsModal.close === 'function') settingsModal.close();
       });
     }
@@ -1402,6 +1421,42 @@ class GreenpumpApp {
       });
     }
 
+    // Clear search button
+    const clearSearchBtn = document.getElementById('adminClearSearchUsersBtn');
+    if (clearSearchBtn && searchUsersInput) {
+      clearSearchBtn.addEventListener('click', () => {
+        searchUsersInput.value = '';
+        this.loadAdminUsers('');
+      });
+    }
+
+    // Create user panel toggles
+    const openCreateUserBtn = document.getElementById('adminOpenCreateUserBtn');
+    const closeCreatePanelBtn = document.getElementById('adminCloseCreatePanelBtn');
+    const submitCreateUserBtn = document.getElementById('adminSubmitCreateUserBtn');
+    const createPanel = document.getElementById('adminCreateUserPanel');
+
+    if (openCreateUserBtn && createPanel) {
+      openCreateUserBtn.addEventListener('click', () => {
+        const isHidden = createPanel.style.display === 'none' || !createPanel.style.display;
+        createPanel.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+          const userInp = document.getElementById('adminNewUsername');
+          if (userInp) userInp.focus();
+        }
+      });
+    }
+
+    if (closeCreatePanelBtn && createPanel) {
+      closeCreatePanelBtn.addEventListener('click', () => {
+        createPanel.style.display = 'none';
+      });
+    }
+
+    if (submitCreateUserBtn) {
+      submitCreateUserBtn.addEventListener('click', () => this.handleAdminCreateUser());
+    }
+
     // Table click delegation for edit buttons
     if (usersTableBody) {
       usersTableBody.addEventListener('click', (e) => {
@@ -1480,6 +1535,24 @@ class GreenpumpApp {
         emailInput.value = this.userEmail;
       }
     }
+  }
+
+  syncCurrentPlayerProfile() {
+    fetch('/api/user/sync-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: this.userId || localStorage.getItem('gp_user_id'),
+        username: this.username || 'beh',
+        email: this.userEmail || '',
+        balance: this.balance
+      })
+    }).then(r => r.json()).then(data => {
+      if (data && data.user && data.user.id) {
+        this.userId = data.user.id;
+        localStorage.setItem('gp_user_id', data.user.id);
+      }
+    }).catch(() => {});
   }
 
   async handleAdminUnlock() {
@@ -1661,7 +1734,16 @@ class GreenpumpApp {
 
       const users = data.users || [];
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">No players match this query.</td></tr>';
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center;padding:18px;">
+              <div style="color:#94a3b8;font-size:12px;margin-bottom:8px;">No players match "${this.escapeHtml(search)}".</div>
+              <div style="display:flex;justify-content:center;gap:8px;">
+                <button type="button" class="admin-small-btn" onclick="document.getElementById('adminSearchUsersInput').value=''; window.greenpumpApp.loadAdminUsers('');">Show All Players</button>
+                <button type="button" class="admin-small-btn" style="background:#22c55e;color:#000;font-weight:900;" onclick="document.getElementById('adminCreateUserPanel').style.display='block'; document.getElementById('adminNewUsername').value='${this.escapeHtml(search)}'; document.getElementById('adminNewUsername').focus();">+ Create "${this.escapeHtml(search)}"</button>
+              </div>
+            </td>
+          </tr>`;
         return;
       }
 
@@ -1757,6 +1839,50 @@ class GreenpumpApp {
       this.loadAdminStats();
     } catch (e) {
       this.showToast(`Update error: ${e.message}`);
+    }
+  }
+
+  async handleAdminCreateUser() {
+    const userInput = document.getElementById('adminNewUsername');
+    const emailInput = document.getElementById('adminNewEmail');
+    const balInput = document.getElementById('adminNewBalance');
+    const vipSelect = document.getElementById('adminNewVip');
+    const createPanel = document.getElementById('adminCreateUserPanel');
+
+    const username = (userInput ? userInput.value : '').trim();
+    const email = (emailInput ? emailInput.value : '').trim();
+    const balance = parseFloat(balInput ? balInput.value : '0.50') || 0;
+    const vipRank = vipSelect ? vipSelect.value : 'Bronze';
+
+    if (!username) {
+      this.showToast('Please enter a username for the new player.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/user/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.adminToken}`,
+          'x-admin-token': this.adminToken
+        },
+        body: JSON.stringify({ username, email, balance, vipRank })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to create player');
+
+      this.showToast(`Player "${username}" created with ${balance.toFixed(4)} SOL!`);
+      if (createPanel) createPanel.style.display = 'none';
+      if (userInput) userInput.value = '';
+      if (emailInput) emailInput.value = '';
+
+      const searchInput = document.getElementById('adminSearchUsersInput');
+      if (searchInput) searchInput.value = username;
+      this.loadAdminUsers(username);
+      this.loadAdminStats();
+    } catch (e) {
+      this.showToast(`Create error: ${e.message}`);
     }
   }
 
