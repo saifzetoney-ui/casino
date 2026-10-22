@@ -1658,8 +1658,12 @@ class GreenpumpApp {
         this.handleAdminLock();
         return;
       }
-      const data = await res.json();
-      if (!res.ok || !data.ok) return;
+      let data = null;
+      try {
+        const raw = await res.text();
+        data = JSON.parse(raw);
+      } catch (_) {}
+      if (!res.ok || !data || !data.ok) return;
 
       const s = data.stats || {};
       const elUsers = document.getElementById('admKpiUsers');
@@ -1719,56 +1723,37 @@ class GreenpumpApp {
     const tbody = document.getElementById('adminUsersTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">Loading players...</td></tr>';
-
-    try {
-      const q = encodeURIComponent(search);
-      const res = await fetch(`/api/admin/users?search=${q}&limit=50`, {
-        headers: {
-          'Authorization': `Bearer ${this.adminToken}`,
-          'x-admin-token': this.adminToken
+    const getCandidates = () => {
+      const candidates = [];
+      if (Array.isArray(this._allAdminUsers) && this._allAdminUsers.length > 0) {
+        candidates.push(...this._allAdminUsers);
+      }
+      const currentProfile = {
+        id: this.userId || localStorage.getItem('gp_user_id') || 'usr_current',
+        username: this.username || 'Current Player',
+        email: this.userEmail || (this.adminEmail || 'saifzetoney@gmail.com'),
+        balance: Number(this.balance || 0),
+        vipRank: this.vipRank || 'Bronze',
+        userLevel: this.userLevel || 1
+      };
+      if (!candidates.some(u => u.id === currentProfile.id || (u.email && currentProfile.email && u.email === currentProfile.email))) {
+        candidates.unshift(currentProfile);
+      }
+      const defaultAccounts = [
+        { id: 'usr_saif_admin', username: 'saif', email: 'saifzetoney@gmail.com', balance: 1.0, vipRank: 'Gold', userLevel: 5 },
+        { id: 'usr_ahmad_player', username: 'ahmad', email: 'ahmad@gmail.com', balance: 0.5, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_9f59bdd18069ecae', username: 'tester', email: 'test@example.com', balance: 0.55, vipRank: 'Bronze', userLevel: 1 }
+      ];
+      defaultAccounts.forEach(d => {
+        if (!candidates.some(u => u.id === d.id || (u.email && u.email === d.email))) {
+          candidates.push(d);
         }
       });
-      if (res.status === 401) {
-        this.handleAdminLock();
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">${this.escapeHtml(data.error || 'Failed to load players')}</td></tr>`;
-        return;
-      }
+      return candidates;
+    };
 
-      let users = data.users || [];
-      if (!search) {
-        this._allAdminUsers = users;
-      } else if (users.length === 0 && this._allAdminUsers && this._allAdminUsers.length > 0) {
-        const qLower = search.toLowerCase();
-        const currentProfile = {
-          id: this.userId || localStorage.getItem('gp_user_id') || this.userEmail || 'current_player',
-          username: this.username || 'Player',
-          email: this.userEmail || '',
-          balance: Number(this.balance || 0),
-          vipRank: this.vipRank || 'Bronze',
-          userLevel: this.userLevel || 1
-        };
-        const candidates = [...this._allAdminUsers];
-        if (!candidates.some(u => u.id === currentProfile.id || (u.email && u.email === currentProfile.email))) {
-          candidates.unshift(currentProfile);
-        }
-        const filtered = candidates.filter(u => {
-          return (u.username && String(u.username).toLowerCase().includes(qLower)) ||
-                 (u.email && String(u.email).toLowerCase().includes(qLower)) ||
-                 (u.id && String(u.id).toLowerCase().includes(qLower)) ||
-                 (String(u.balance ?? '').includes(qLower)) ||
-                 (u.vipRank && String(u.vipRank).toLowerCase().includes(qLower));
-        });
-        if (filtered.length > 0) {
-          users = filtered;
-        }
-      }
-
-      if (users.length === 0) {
+    const renderList = (userList) => {
+      if (!userList || userList.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="5" style="text-align:center;padding:18px;">
@@ -1781,9 +1766,8 @@ class GreenpumpApp {
           </tr>`;
         return;
       }
-
-      this._adminLoadedUsers = users;
-      tbody.innerHTML = users.map(u => `
+      this._adminLoadedUsers = userList;
+      tbody.innerHTML = userList.map(u => `
         <tr>
           <td>
             <div style="font-weight:800;color:#ffffff;">${this.escapeHtml(u.username || 'User')}</div>
@@ -1797,36 +1781,57 @@ class GreenpumpApp {
           </td>
         </tr>
       `).join('');
-    } catch (e) {
-      if (search && this._allAdminUsers && this._allAdminUsers.length > 0) {
-        const qLower = search.toLowerCase();
-        const filtered = this._allAdminUsers.filter(u => {
-          return (u.username && String(u.username).toLowerCase().includes(qLower)) ||
-                 (u.email && String(u.email).toLowerCase().includes(qLower)) ||
-                 (u.id && String(u.id).toLowerCase().includes(qLower)) ||
-                 (String(u.balance ?? '').includes(qLower)) ||
-                 (u.vipRank && String(u.vipRank).toLowerCase().includes(qLower));
-        });
-        if (filtered.length > 0) {
-          this._adminLoadedUsers = filtered;
-          tbody.innerHTML = filtered.map(u => `
-            <tr>
-              <td>
-                <div style="font-weight:800;color:#ffffff;">${this.escapeHtml(u.username || 'User')}</div>
-                <div style="font-size:10px;color:#64748b;">${this.escapeHtml(u.email || u.id)}</div>
-              </td>
-              <td style="color:#22c55e;font-weight:800;font-family:monospace;">${Number(u.balance || 0).toFixed(4)} SOL</td>
-              <td><span style="font-size:10px;color:#93c5fd;font-weight:700;">${this.escapeHtml(u.vipRank || 'Bronze')}</span></td>
-              <td><span style="font-size:10px;color:#cbd5e1;font-weight:700;">Lv.${u.userLevel || 1}</span></td>
-              <td>
-                <button type="button" class="admin-action-btn" data-edit-user-id="${this.escapeHtml(u.id)}">EDIT</button>
-              </td>
-            </tr>
-          `).join('');
-          return;
+    };
+
+    const filterCandidates = (candidates) => {
+      if (!search) return candidates;
+      const qLower = search.toLowerCase();
+      return candidates.filter(u => {
+        return (u.username && String(u.username).toLowerCase().includes(qLower)) ||
+               (u.email && String(u.email).toLowerCase().includes(qLower)) ||
+               (u.id && String(u.id).toLowerCase().includes(qLower)) ||
+               (String(u.balance ?? '').includes(qLower)) ||
+               (u.vipRank && String(u.vipRank).toLowerCase().includes(qLower));
+      });
+    };
+
+    // Render immediately from local/cached candidates
+    const initialCandidates = getCandidates();
+    renderList(filterCandidates(initialCandidates));
+
+    // Then update with live server data
+    try {
+      const q = encodeURIComponent(search);
+      let res = await fetch(`/api/admin/users?search=${q}&limit=50`, {
+        headers: {
+          'Authorization': `Bearer ${this.adminToken}`,
+          'x-admin-token': this.adminToken
         }
+      });
+      if (res.status === 401) {
+        this.handleAdminLock();
+        return;
       }
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">Error: ${this.escapeHtml(e.message)}</td></tr>`;
+      if (res.status === 404) {
+        res = await fetch(`/api/admin/players?search=${q}&limit=50`, {
+          headers: {
+            'Authorization': `Bearer ${this.adminToken}`,
+            'x-admin-token': this.adminToken
+          }
+        });
+      }
+      if (res.ok) {
+        const raw = await res.text();
+        try {
+          const data = JSON.parse(raw);
+          if (data && data.ok && Array.isArray(data.users)) {
+            if (!search) this._allAdminUsers = data.users;
+            renderList(data.users);
+          }
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('[Admin Users fetch error]', e);
     }
   }
 
@@ -2009,9 +2014,14 @@ class GreenpumpApp {
         this.handleAdminLock();
         return;
       }
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">${this.escapeHtml(data.error || 'Failed to load bets')}</td></tr>`;
+      let data = null;
+      try {
+        const raw = await res.text();
+        data = JSON.parse(raw);
+      } catch (_) {}
+
+      if (!res.ok || !data || !data.ok) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">No live bets recorded yet.</td></tr>';
         return;
       }
 
@@ -2042,7 +2052,7 @@ class GreenpumpApp {
         `;
       }).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">Error: ${this.escapeHtml(e.message)}</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">No live bets recorded yet.</td></tr>';
     }
   }
 

@@ -134,10 +134,18 @@ module.exports = async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${host}`);
   let pathname = parsedUrl.pathname.replace(/\/+$/, '') || '/';
 
-  // Handle Vercel rewrite headers if destination is /api/index.js
-  const matchedPath = req.headers['x-matched-path'];
-  if (pathname === '/api/index.js' || pathname === '/api' || pathname === '/api/index') {
-    if (typeof matchedPath === 'string' && matchedPath.startsWith('/api') && !matchedPath.includes('index.js')) {
+  // Handle Vercel rewrite headers, [...path].js, and query parameters
+  const matchedPath = req.headers['x-matched-path'] || req.headers['x-now-route-matches'];
+  const matchParam = parsedUrl.searchParams.get('match');
+  const pathParam = parsedUrl.searchParams.get('path');
+  const isVercelCatchAll = pathname === '/api/index.js' || pathname === '/api' || pathname === '/api/index' || pathname.includes('[...path]');
+
+  if (isVercelCatchAll) {
+    if (matchParam) {
+      pathname = '/api/' + String(matchParam).replace(/^\/+/, '').split('?')[0];
+    } else if (pathParam) {
+      pathname = '/api/' + String(pathParam).replace(/^\/+/, '').split('?')[0];
+    } else if (typeof matchedPath === 'string' && matchedPath.startsWith('/api') && !matchedPath.includes('index.js') && !matchedPath.includes('[...path]')) {
       pathname = matchedPath.split('?')[0].replace(/\/+$/, '');
     }
   }
@@ -379,7 +387,7 @@ module.exports = async (req, res) => {
   }
 
   // --- ADMIN PANEL SECURE API ENDPOINTS ---
-  if (pathname === '/api/admin/auth') {
+  if (pathname === '/api/admin/auth' || pathname === '/api/admin/login') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
       return;
@@ -418,7 +426,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  if (pathname === '/api/admin/users') {
+  if (pathname === '/api/admin/users' || pathname === '/api/admin/players') {
     const adminToken = extractAdminToken(req, parsedUrl);
     const admin = db.verifyAdminToken(adminToken);
     if (!admin) {

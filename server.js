@@ -83,16 +83,26 @@ function proxyLive(req, res, url) {
 }
 
 function serveStatic(req, res, url) {
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    send(res, 405, 'Method not allowed');
-    return;
-  }
-
   let pathname;
   try {
     pathname = decodeURIComponent(url.pathname);
   } catch {
     send(res, 400, 'Bad request');
+    return;
+  }
+
+  // Intercept any unhandled /api calls to prevent leaking plain text or HTML
+  if (pathname === '/api' || pathname.startsWith('/api/')) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      send(res, 405, JSON.stringify({ ok: false, error: 'Method not allowed' }), 'application/json; charset=utf-8');
+      return;
+    }
+    send(res, 404, JSON.stringify({ ok: false, error: 'Endpoint not found: ' + pathname }), 'application/json; charset=utf-8');
+    return;
+  }
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    send(res, 405, 'Method not allowed');
     return;
   }
 
@@ -340,6 +350,7 @@ function parseJsonBody(req, callback) {
 
 async function requestHandler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const pathname = url.pathname.replace(/\/+$/, '') || '/';
 
   function extractToken(req, parsedUrl) {
     const authHeader = req.headers['authorization'] || '';
@@ -573,7 +584,7 @@ async function requestHandler(req, res) {
   }
 
   // --- ADMIN PANEL SECURE API ENDPOINTS ---
-  if (url.pathname === '/api/admin/auth') {
+  if (pathname === '/api/admin/auth' || pathname === '/api/admin/login' || url.pathname === '/api/admin/auth' || url.pathname === '/api/admin/login') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -612,7 +623,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/admin/users') {
+  if (pathname === '/api/admin/users' || pathname === '/api/admin/players' || url.pathname === '/api/admin/users' || url.pathname === '/api/admin/players') {
     const adminToken = extractAdminToken(req, url);
     const admin = db.verifyAdminToken(adminToken);
     if (!admin) {
