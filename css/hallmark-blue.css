@@ -3261,9 +3261,15 @@ button, a, select, input {
 
 /* Navbar Auth Zone */
 .nav-auth-zone {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-auth-zone.is-hidden,
+.nav-auth-zone[hidden],
+.nav-auth-zone[style*="display: none"] {
+  display: none !important;
 }
 
 .btn-nav-login {

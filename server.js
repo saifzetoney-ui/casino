@@ -338,7 +338,7 @@ function parseJsonBody(req, callback) {
   });
 }
 
-function requestHandler(req, res) {
+async function requestHandler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
   function extractToken(req, parsedUrl) {
@@ -350,18 +350,28 @@ function requestHandler(req, res) {
   }
 
   // --- AUTH & DATABASE PERSISTENCE ENDPOINTS ---
+  if (url.pathname === '/api/db-status') {
+    try {
+      const status = await db.getDbStatus();
+      send(res, 200, JSON.stringify(status), 'application/json; charset=utf-8');
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+    }
+    return;
+  }
+
   if (url.pathname === '/api/auth/register') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
         return;
       }
       try {
-        const result = db.registerUser(body);
+        const result = await db.registerUser(body);
         send(res, 200, JSON.stringify(result), 'application/json; charset=utf-8');
       } catch (e) {
         send(res, 400, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
@@ -375,13 +385,13 @@ function requestHandler(req, res) {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
         return;
       }
       try {
-        const result = db.loginUser(body);
+        const result = await db.loginUser(body);
         send(res, 200, JSON.stringify(result), 'application/json; charset=utf-8');
       } catch (e) {
         send(res, 400, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
@@ -439,7 +449,7 @@ function requestHandler(req, res) {
           throw new Error('Missing Google authentication token or credential');
         }
 
-        const result = db.googleAuthUser({ email, name, picture });
+        const result = await db.googleAuthUser({ email, name, picture });
         send(res, 200, JSON.stringify(result), 'application/json; charset=utf-8');
       } catch (e) {
         send(res, 400, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
@@ -450,20 +460,28 @@ function requestHandler(req, res) {
 
   if (url.pathname === '/api/auth/me') {
     const token = extractToken(req, url);
-    const user = db.getUserByToken(token);
-    if (!user) {
-      send(res, 401, JSON.stringify({ error: 'Unauthorized or session expired' }), 'application/json; charset=utf-8');
-      return;
+    try {
+      const user = await db.getUserByToken(token);
+      if (!user) {
+        send(res, 401, JSON.stringify({ error: 'Unauthorized or session expired' }), 'application/json; charset=utf-8');
+        return;
+      }
+      send(res, 200, JSON.stringify({ user }), 'application/json; charset=utf-8');
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
     }
-    send(res, 200, JSON.stringify({ user }), 'application/json; charset=utf-8');
     return;
   }
 
   if (url.pathname === '/api/auth/logout') {
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       const token = (body && body.token) || extractToken(req, url);
-      db.destroySession(token);
-      send(res, 200, JSON.stringify({ ok: true }), 'application/json; charset=utf-8');
+      try {
+        await db.destroySession(token);
+        send(res, 200, JSON.stringify({ ok: true }), 'application/json; charset=utf-8');
+      } catch (e) {
+        send(res, 200, JSON.stringify({ ok: true }), 'application/json; charset=utf-8');
+      }
     });
     return;
   }
@@ -473,19 +491,23 @@ function requestHandler(req, res) {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
         return;
       }
       const token = body.token || extractToken(req, url);
-      const user = db.getRawUserByToken(token);
-      if (!user) {
-        send(res, 401, JSON.stringify({ error: 'Unauthorized' }), 'application/json; charset=utf-8');
-        return;
+      try {
+        const user = await db.getRawUserByToken(token);
+        if (!user) {
+          send(res, 401, JSON.stringify({ error: 'Unauthorized' }), 'application/json; charset=utf-8');
+          return;
+        }
+        const updated = await db.updateUser(user.id, body);
+        send(res, 200, JSON.stringify({ ok: true, user: updated }), 'application/json; charset=utf-8');
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
       }
-      const updated = db.updateUser(user.id, body);
-      send(res, 200, JSON.stringify({ ok: true, user: updated }), 'application/json; charset=utf-8');
     });
     return;
   }
@@ -495,40 +517,48 @@ function requestHandler(req, res) {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
         return;
       }
       const token = body.token || extractToken(req, url);
-      const user = db.getRawUserByToken(token);
-      const betData = {
-        userId: user ? user.id : (body.userId || 'guest'),
-        username: user ? user.username : (body.username || 'Player'),
-        game: body.game,
-        betAmount: body.betAmount,
-        multiplier: body.multiplier,
-        payout: body.payout,
-        profit: body.profit,
-        won: body.won
-      };
-      const bet = db.recordBet(betData);
-      const freshUser = user ? db.getUserByToken(token) : null;
-      send(res, 200, JSON.stringify({ ok: true, bet, user: freshUser }), 'application/json; charset=utf-8');
+      try {
+        const user = await db.getRawUserByToken(token);
+        const betData = {
+          userId: user ? user.id : (body.userId || 'guest'),
+          username: user ? user.username : (body.username || 'Player'),
+          game: body.game,
+          betAmount: body.betAmount,
+          multiplier: body.multiplier,
+          payout: body.payout,
+          profit: body.profit,
+          won: body.won
+        };
+        const bet = await db.recordBet(betData);
+        const freshUser = user ? await db.getUserByToken(token) : null;
+        send(res, 200, JSON.stringify({ ok: true, bet, user: freshUser }), 'application/json; charset=utf-8');
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+      }
     });
     return;
   }
 
   if (url.pathname === '/api/user/bets') {
     const token = extractToken(req, url);
-    const user = db.getUserByToken(token);
-    if (!user) {
-      send(res, 401, JSON.stringify({ error: 'Unauthorized' }), 'application/json; charset=utf-8');
-      return;
+    try {
+      const user = await db.getUserByToken(token);
+      if (!user) {
+        send(res, 401, JSON.stringify({ error: 'Unauthorized' }), 'application/json; charset=utf-8');
+        return;
+      }
+      const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const userBets = await db.getUserBets(user.id, limit);
+      send(res, 200, JSON.stringify({ bets: userBets }), 'application/json; charset=utf-8');
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
     }
-    const limit = parseInt(url.searchParams.get('limit') || '50', 10);
-    const userBets = db.getUserBets(user.id, limit);
-    send(res, 200, JSON.stringify({ bets: userBets }), 'application/json; charset=utf-8');
     return;
   }
 

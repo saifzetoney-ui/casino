@@ -119,7 +119,7 @@ function fetchSolKlines(callback) {
   });
 }
 
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
@@ -142,18 +142,28 @@ module.exports = (req, res) => {
   }
 
   // --- AUTH & DATABASE PERSISTENCE ENDPOINTS ---
+  if (pathname === '/api/db-status') {
+    try {
+      const status = await db.getDbStatus();
+      send(res, 200, JSON.stringify(status));
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
   if (pathname === '/api/auth/register') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
         return;
       }
       try {
-        const result = db.registerUser(body);
+        const result = await db.registerUser(body);
         send(res, 200, JSON.stringify(result));
       } catch (e) {
         send(res, 400, JSON.stringify({ error: e.message }));
@@ -167,13 +177,13 @@ module.exports = (req, res) => {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
         return;
       }
       try {
-        const result = db.loginUser(body);
+        const result = await db.loginUser(body);
         send(res, 200, JSON.stringify(result));
       } catch (e) {
         send(res, 400, JSON.stringify({ error: e.message }));
@@ -231,7 +241,7 @@ module.exports = (req, res) => {
           throw new Error('Missing Google authentication token or credential');
         }
 
-        const result = db.googleAuthUser({ email, name, picture });
+        const result = await db.googleAuthUser({ email, name, picture });
         send(res, 200, JSON.stringify(result));
       } catch (e) {
         send(res, 400, JSON.stringify({ error: e.message }));
@@ -242,20 +252,28 @@ module.exports = (req, res) => {
 
   if (pathname === '/api/auth/me') {
     const token = extractToken(req, parsedUrl);
-    const user = db.getUserByToken(token);
-    if (!user) {
-      send(res, 401, JSON.stringify({ error: 'Unauthorized or session expired' }));
-      return;
+    try {
+      const user = await db.getUserByToken(token);
+      if (!user) {
+        send(res, 401, JSON.stringify({ error: 'Unauthorized or session expired' }));
+        return;
+      }
+      send(res, 200, JSON.stringify({ user }));
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }));
     }
-    send(res, 200, JSON.stringify({ user }));
     return;
   }
 
   if (pathname === '/api/auth/logout') {
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       const token = (body && body.token) || extractToken(req, parsedUrl);
-      db.destroySession(token);
-      send(res, 200, JSON.stringify({ ok: true }));
+      try {
+        await db.destroySession(token);
+        send(res, 200, JSON.stringify({ ok: true }));
+      } catch (e) {
+        send(res, 200, JSON.stringify({ ok: true }));
+      }
     });
     return;
   }
@@ -265,19 +283,23 @@ module.exports = (req, res) => {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
         return;
       }
       const token = body.token || extractToken(req, parsedUrl);
-      const user = db.getRawUserByToken(token);
-      if (!user) {
-        send(res, 401, JSON.stringify({ error: 'Unauthorized' }));
-        return;
+      try {
+        const user = await db.getRawUserByToken(token);
+        if (!user) {
+          send(res, 401, JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+        const updated = await db.updateUser(user.id, body);
+        send(res, 200, JSON.stringify({ ok: true, user: updated }));
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }));
       }
-      const updated = db.updateUser(user.id, body);
-      send(res, 200, JSON.stringify({ ok: true, user: updated }));
     });
     return;
   }
@@ -287,40 +309,48 @@ module.exports = (req, res) => {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
         return;
       }
       const token = body.token || extractToken(req, parsedUrl);
-      const user = db.getRawUserByToken(token);
-      const betData = {
-        userId: user ? user.id : (body.userId || 'guest'),
-        username: user ? user.username : (body.username || 'Player'),
-        game: body.game,
-        betAmount: body.betAmount,
-        multiplier: body.multiplier,
-        payout: body.payout,
-        profit: body.profit,
-        won: body.won
-      };
-      const bet = db.recordBet(betData);
-      const freshUser = user ? db.getUserByToken(token) : null;
-      send(res, 200, JSON.stringify({ ok: true, bet, user: freshUser }));
+      try {
+        const user = await db.getRawUserByToken(token);
+        const betData = {
+          userId: user ? user.id : (body.userId || 'guest'),
+          username: user ? user.username : (body.username || 'Player'),
+          game: body.game,
+          betAmount: body.betAmount,
+          multiplier: body.multiplier,
+          payout: body.payout,
+          profit: body.profit,
+          won: body.won
+        };
+        const bet = await db.recordBet(betData);
+        const freshUser = user ? await db.getUserByToken(token) : null;
+        send(res, 200, JSON.stringify({ ok: true, bet, user: freshUser }));
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }));
+      }
     });
     return;
   }
 
   if (pathname === '/api/user/bets') {
     const token = extractToken(req, parsedUrl);
-    const user = db.getUserByToken(token);
-    if (!user) {
-      send(res, 401, JSON.stringify({ error: 'Unauthorized' }));
-      return;
+    try {
+      const user = await db.getUserByToken(token);
+      if (!user) {
+        send(res, 401, JSON.stringify({ error: 'Unauthorized' }));
+        return;
+      }
+      const limit = parseInt(parsedUrl.searchParams.get('limit') || '50', 10);
+      const userBets = await db.getUserBets(user.id, limit);
+      send(res, 200, JSON.stringify({ bets: userBets }));
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }));
     }
-    const limit = parseInt(parsedUrl.searchParams.get('limit') || '50', 10);
-    const userBets = db.getUserBets(user.id, limit);
-    send(res, 200, JSON.stringify({ bets: userBets }));
     return;
   }
 

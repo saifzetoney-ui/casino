@@ -643,6 +643,146 @@
                     </label>
                   </div>
 
+                  <!-- Advanced Strategy Panel (Toggled by Advanced Switch) -->
+                  <div class="crash-advanced-panel" id="rugAdvancedPanel" style="display: none;">
+                    <!-- Auto-Bet Rounds -->
+                    <div class="adv-field-group">
+                      <div class="adv-field-header">
+                        <span class="adv-field-title">NUMBER OF BETS</span>
+                        <span class="adv-field-sub" id="rugRoundsRemainingDisplay">∞</span>
+                      </div>
+                      <div class="adv-input-row">
+                        <input type="number" id="rugAutoBetCount" class="crash-num-input adv-num-input" placeholder="∞ (Unlimited)" min="1" step="1" />
+                        <div class="adv-pill-group">
+                          <button type="button" class="adv-preset-pill" data-rounds="10">10</button>
+                          <button type="button" class="adv-preset-pill" data-rounds="25">25</button>
+                          <button type="button" class="adv-preset-pill" data-rounds="50">50</button>
+                          <button type="button" class="adv-preset-pill active" data-rounds="0">∞</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- On Win Rule -->
+                    <div class="adv-field-group">
+                      <div class="adv-field-header">
+                        <span class="adv-field-title">ON WIN</span>
+                      </div>
+                      <div class="adv-strategy-row">
+                        <div class="adv-segmented-control">
+                          <button type="button" class="adv-segment-btn active" id="rugOnWinResetBtn">Reset</button>
+                          <button type="button" class="adv-segment-btn" id="rugOnWinIncreaseBtn">Increase by</button>
+                        </div>
+                        <div class="adv-pct-input-wrap" id="rugOnWinPctWrap" style="display: none;">
+                          <input type="number" id="rugOnWinPctInput" class="crash-num-input adv-pct-input" value="100" min="1" max="1000" step="10" />
+                          <span class="adv-pct-symbol">%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- On Loss Rule (Martingale) -->
+                    <div class="adv-field-group">
+                      <div class="adv-field-header">
+                        <span class="adv-field-title">ON LOSS (MARTINGALE)</span>
+                      </div>
+                      <div class="adv-strategy-row">
+                        <div class="adv-segmented-control">
+                          <button type="button" class="adv-segment-btn active" id="rugOnLossResetBtn">Reset</button>
+                          <button type="button" class="adv-segment-btn" id="rugOnLossIncreaseBtn">Increase by</button>
+                        </div>
+                        <div class="adv-pct-input-wrap" id="rugOnLossPctWrap" style="display: none;">
+                          <input type="number" id="rugOnLossPctInput" class="crash-num-input adv-pct-input" value="100" min="1" max="1000" step="10" />
+                          <span class="adv-pct-symbol">%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Sell / Cashout Portion (10%, 25%, 50%, 100%, Custom) -->
+                    <div class="adv-field-group">
+                      <div class="adv-field-header">
+                        <span class="adv-field-title">SELL / CASHOUT PORTION</span>
+                        <span class="adv-field-sub" id="rugSellPortionDisplay">100%</span>
+                      </div>
+                      <div class="adv-sell-pills-row">
+                        <button type="button" class="adv-sell-pill" data-pct="10">10%</button>
+                        <button type="button" class="adv-sell-pill" data-pct="25">25%</button>
+                        <button type="button" class="adv-sell-pill" data-pct="50">50%</button>
+                        <button type="button" class="adv-sell-pill active" data-pct="100">100%</button>
+                        <button type="button" class="adv-sell-pill" data-pct="custom">Custom</button>
+                      </div>
+                      <div class="adv-custom-sell-wrap" id="rugCustomSellWrap" style="display: none;">
+                        <div class="adv-pct-input-wrap" style="flex: 1.1;">
+                          <input type="number" id="rugCustomSellPctInput" class="crash-num-input adv-pct-input" placeholder="Custom % (e.g. 33)" min="1" max="100" step="1" />
+                          <span class="adv-pct-symbol">%</span>
+                        </div>
+                        <span class="adv-sell-or-divider">OR</span>
+                        <div class="adv-limit-input-wrap" style="flex: 1.4;">
+                          <img src="solana-coin.png" alt="SOL" style="width:13px;height:13px;" />
+                          <input type="number" id="rugCustomSellSolInput" class="crash-num-input adv-limit-input" placeholder="SOL Amount" min="0.001" step="0.005" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Stop on Profit & Stop on Loss -->
+                    <div class="adv-limits-grid">
+                      <div class="adv-field-group">
+                        <span class="adv-field-title">STOP ON PROFIT (SOL)</span>
+                        <div class="adv-limit-input-wrap">
+                          <img src="solana-coin.png" alt="SOL" style="width:13px;height:13px;" />
+                          <input type="number" id="rugStopProfitInput" class="crash-num-input adv-limit-input" placeholder="No limit" step="0.05" min="0" />
+                        </div>
+                      </div>
+                      <div class="adv-field-group">
+                        <span class="adv-field-title">STOP ON LOSS (SOL)</span>
+                        <div class="adv-limit-input-wrap">
+                          <img src="solana-coin.png" alt="SOL" style="width:13px;height:13px;" />
+                          <input type="number" id="rugStopLossInput" class="crash-num-input adv-limit-input" placeholder="No limit" step="0.05" min="0" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Advanced Live Stats (Active during auto-bet) -->
+                    <div class="adv-live-stats" id="rugAutoStatsWrap" style="display: none;">
+                      <div class="adv-stat-item">
+                        <span class="adv-stat-label">AUTO BETS</span>
+                        <span class="adv-stat-val" id="rugAutoBetsCountDisplay">0</span>
+                      </div>
+                      <div class="adv-stat-item">
+                        <span class="adv-stat-label">WIN/LOSS</span>
+                        <span class="adv-stat-val" id="rugAutoWinLossDisplay">0W / 0L</span>
+                      </div>
+                      <div class="adv-stat-item">
+                        <span class="adv-stat-label">NET PROFIT</span>
+                        <span class="adv-stat-val" id="rugAutoNetProfitDisplay">+0.0000 SOL</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- In-Flight Quick Partial Sell Bar (Active during running round) -->
+                  <div class="crash-quick-sell-bar" id="rugQuickSellBar" style="display: none;">
+                    <div class="quick-sell-header">
+                      <span class="quick-sell-title">QUICK SELL / CASHOUT</span>
+                      <span class="quick-sell-active-bet" id="rugQuickRemainingDisplay">0.010 SOL in trade</span>
+                    </div>
+                    <div class="quick-sell-grid">
+                      <button type="button" class="quick-sell-btn" id="qsBtn10" data-quick="10">
+                        <span class="qs-pct">10%</span>
+                        <span class="qs-val" id="qsVal10">...</span>
+                      </button>
+                      <button type="button" class="quick-sell-btn" id="qsBtn25" data-quick="25">
+                        <span class="qs-pct">25%</span>
+                        <span class="qs-val" id="qsVal25">...</span>
+                      </button>
+                      <button type="button" class="quick-sell-btn" id="qsBtn50" data-quick="50">
+                        <span class="qs-pct">50%</span>
+                        <span class="qs-val" id="qsVal50">...</span>
+                      </button>
+                      <button type="button" class="quick-sell-btn qs-btn-full" id="qsBtn100" data-quick="100">
+                        <span class="qs-pct">100%</span>
+                        <span class="qs-val" id="qsVal100">...</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <!-- Row 7: Action Button -->
                   <button type="button" class="crash-action-btn" id="rugMainActionBtn">
                     SCHEDULE BET FOR NEXT ROUND

@@ -174,6 +174,29 @@ class GreenpumpApp {
     this.rugCountdownInterval = null;
     this.rugAnimId = null;
     this.rugCanvas = null;
+
+    // Advanced Auto-Bet Strategy Properties
+    this.rugAdvancedEnabled = false;
+    this.rugAutoBetActive = false;
+    this.rugBaseBet = 0.01;
+    this.rugAutoBetTotalRounds = 0; // 0 = unlimited
+    this.rugAutoBetRoundsLeft = 0;
+    this.rugOnWinAction = 'reset'; // 'reset' or 'increase'
+    this.rugOnWinPct = 100;
+    this.rugOnLossAction = 'reset'; // 'reset' or 'increase'
+    this.rugOnLossPct = 100;
+    this.rugStopProfit = null;
+    this.rugStopLoss = null;
+    this.rugAutoBetsPlayed = 0;
+    this.rugAutoWins = 0;
+    this.rugAutoNetProfit = 0;
+
+    // Partial Sell & Cashout Properties (10%, 25%, 50%, 100%, Custom)
+    this.rugRemainingBet = 0.01;
+    this.rugSoldPortions = [];
+    this.rugSelectedSellPct = 100; // 10, 25, 50, 100, or 'custom'
+    this.rugCustomSellPct = null;
+    this.rugCustomSellSol = null;
     this.rugCtx = null;
     this.rugStartTime = 0;
     this.rugLastCandleTime = 0;
@@ -2946,21 +2969,247 @@ class GreenpumpApp {
 
     const advToggle = document.getElementById('rugAdvancedToggle');
     const advBadge = document.getElementById('rugAdvancedBadge');
+    const advPanel = document.getElementById('rugAdvancedPanel');
+
     if (advToggle && advBadge) {
       advToggle.addEventListener('change', () => {
+        this.rugAdvancedEnabled = advToggle.checked;
         advBadge.textContent = advToggle.checked ? 'ON' : 'OFF';
         advBadge.style.color = advToggle.checked ? '#22c55e' : '#64748b';
+        if (advPanel) {
+          advPanel.style.display = advToggle.checked ? 'flex' : 'none';
+        }
+        if (!advToggle.checked && this.rugAutoBetActive) {
+          this.stopRugAutoBet('Auto-bet disabled');
+        }
+        this.updateRugActionBtn();
         gpAudio.playClick();
       });
     }
+
+    // Advanced Rounds Input & Presets
+    const roundsInput = document.getElementById('rugAutoBetCount');
+    const roundsDisplay = document.getElementById('rugRoundsRemainingDisplay');
+    const roundPills = document.querySelectorAll('.adv-preset-pill');
+
+    if (roundsInput) {
+      roundsInput.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        this.rugAutoBetTotalRounds = (!isNaN(val) && val > 0) ? val : 0;
+        roundPills.forEach(p => p.classList.remove('active'));
+        if (roundsDisplay) {
+          roundsDisplay.textContent = this.rugAutoBetTotalRounds > 0 ? `${this.rugAutoBetTotalRounds}` : '∞';
+        }
+      });
+    }
+
+    roundPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const rounds = parseInt(pill.dataset.rounds, 10) || 0;
+        this.rugAutoBetTotalRounds = rounds;
+        if (roundsInput) roundsInput.value = rounds > 0 ? rounds : '';
+        roundPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        if (roundsDisplay) roundsDisplay.textContent = rounds > 0 ? `${rounds}` : '∞';
+        gpAudio.playClick();
+      });
+    });
+
+    // Advanced On Win Strategy
+    const onWinResetBtn = document.getElementById('rugOnWinResetBtn');
+    const onWinIncreaseBtn = document.getElementById('rugOnWinIncreaseBtn');
+    const onWinPctWrap = document.getElementById('rugOnWinPctWrap');
+    const onWinPctInput = document.getElementById('rugOnWinPctInput');
+
+    if (onWinResetBtn && onWinIncreaseBtn) {
+      onWinResetBtn.addEventListener('click', () => {
+        this.rugOnWinAction = 'reset';
+        onWinResetBtn.classList.add('active');
+        onWinIncreaseBtn.classList.remove('active');
+        if (onWinPctWrap) onWinPctWrap.style.display = 'none';
+        gpAudio.playClick();
+      });
+
+      onWinIncreaseBtn.addEventListener('click', () => {
+        this.rugOnWinAction = 'increase';
+        onWinIncreaseBtn.classList.add('active');
+        onWinResetBtn.classList.remove('active');
+        if (onWinPctWrap) onWinPctWrap.style.display = 'flex';
+        gpAudio.playClick();
+      });
+    }
+
+    if (onWinPctInput) {
+      onWinPctInput.addEventListener('input', (e) => {
+        this.rugOnWinPct = Math.max(1, parseFloat(e.target.value) || 100);
+      });
+    }
+
+    // Advanced On Loss Strategy (Martingale)
+    const onLossResetBtn = document.getElementById('rugOnLossResetBtn');
+    const onLossIncreaseBtn = document.getElementById('rugOnLossIncreaseBtn');
+    const onLossPctWrap = document.getElementById('rugOnLossPctWrap');
+    const onLossPctInput = document.getElementById('rugOnLossPctInput');
+
+    if (onLossResetBtn && onLossIncreaseBtn) {
+      onLossResetBtn.addEventListener('click', () => {
+        this.rugOnLossAction = 'reset';
+        onLossResetBtn.classList.add('active');
+        onLossIncreaseBtn.classList.remove('active');
+        if (onLossPctWrap) onLossPctWrap.style.display = 'none';
+        gpAudio.playClick();
+      });
+
+      onLossIncreaseBtn.addEventListener('click', () => {
+        this.rugOnLossAction = 'increase';
+        onLossIncreaseBtn.classList.add('active');
+        onLossResetBtn.classList.remove('active');
+        if (onLossPctWrap) onLossPctWrap.style.display = 'flex';
+        gpAudio.playClick();
+      });
+    }
+
+    if (onLossPctInput) {
+      onLossPctInput.addEventListener('input', (e) => {
+        this.rugOnLossPct = Math.max(1, parseFloat(e.target.value) || 100);
+      });
+    }
+
+    // Stop Limits Inputs
+    const stopProfitInput = document.getElementById('rugStopProfitInput');
+    const stopLossInput = document.getElementById('rugStopLossInput');
+    if (stopProfitInput) {
+      stopProfitInput.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        this.rugStopProfit = (!isNaN(val) && val > 0) ? val : null;
+      });
+    }
+    if (stopLossInput) {
+      stopLossInput.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        this.rugStopLoss = (!isNaN(val) && val > 0) ? val : null;
+      });
+    }
+
+    // Advanced Sell Portion Controls (10%, 25%, 50%, 100%, Custom)
+    const sellPills = document.querySelectorAll('.adv-sell-pill');
+    const sellPortionDisplay = document.getElementById('rugSellPortionDisplay');
+    const customSellWrap = document.getElementById('rugCustomSellWrap');
+    const customSellPctInput = document.getElementById('rugCustomSellPctInput');
+    const customSellSolInput = document.getElementById('rugCustomSellSolInput');
+
+    sellPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const pct = pill.dataset.pct;
+        sellPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+
+        if (pct === 'custom') {
+          this.rugSelectedSellPct = 'custom';
+          if (customSellWrap) customSellWrap.style.display = 'flex';
+          if (sellPortionDisplay) {
+            if (this.rugCustomSellSol) {
+              sellPortionDisplay.textContent = `${this.rugCustomSellSol} SOL`;
+            } else {
+              sellPortionDisplay.textContent = `${this.rugCustomSellPct || 50}%`;
+            }
+          }
+        } else {
+          this.rugSelectedSellPct = parseInt(pct, 10);
+          this.rugCustomSellPct = null;
+          this.rugCustomSellSol = null;
+          if (customSellWrap) customSellWrap.style.display = 'none';
+          if (sellPortionDisplay) sellPortionDisplay.textContent = `${this.rugSelectedSellPct}%`;
+        }
+        this.updateRugActionBtn();
+        gpAudio.playClick();
+      });
+    });
+
+    if (customSellPctInput) {
+      customSellPctInput.addEventListener('input', (e) => {
+        const val = Math.min(100, Math.max(1, parseFloat(e.target.value) || 0));
+        this.rugCustomSellPct = val > 0 ? val : null;
+        this.rugCustomSellSol = null;
+        if (customSellSolInput) customSellSolInput.value = '';
+        if (sellPortionDisplay) sellPortionDisplay.textContent = val > 0 ? `${val}%` : 'Custom %';
+        this.updateRugActionBtn();
+      });
+    }
+
+    if (customSellSolInput) {
+      customSellSolInput.addEventListener('input', (e) => {
+        const val = Math.max(0.0001, parseFloat(e.target.value) || 0);
+        this.rugCustomSellSol = val > 0 ? val : null;
+        this.rugCustomSellPct = null;
+        if (customSellPctInput) customSellPctInput.value = '';
+        if (sellPortionDisplay) sellPortionDisplay.textContent = val > 0 ? `${val} SOL` : 'Custom SOL';
+        this.updateRugActionBtn();
+      });
+    }
+
+    // In-Flight Quick Partial Sell Bar Buttons (10%, 25%, 50%, 100%)
+    ['10', '25', '50', '100'].forEach(quickPct => {
+      const qsBtn = document.getElementById(`qsBtn${quickPct}`);
+      if (qsBtn) {
+        qsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.cashoutRugPartial(parseInt(quickPct, 10), false);
+        });
+      }
+    });
 
     const mainBtn = document.getElementById('rugMainActionBtn');
     if (mainBtn) {
       mainBtn.addEventListener('click', () => {
         if (!this.requireAuth()) return;
+
+        // In running state, if user has an active bet, cash out (either configured portion or 100%)
+        if (this.rugState === 'RUNNING' && this.rugHasBetThisRound && !this.rugCashedOut && (this.rugRemainingBet || 0) > 0.0001) {
+          if (this.rugAdvancedEnabled && this.rugSelectedSellPct !== 100) {
+            if (this.rugSelectedSellPct === 'custom') {
+              if (this.rugCustomSellSol) {
+                this.cashoutRugPartial(this.rugCustomSellSol, true);
+              } else {
+                this.cashoutRugPartial(this.rugCustomSellPct || 50, false);
+              }
+            } else {
+              this.cashoutRugPartial(this.rugSelectedSellPct, false);
+            }
+          } else {
+            this.cashoutRugPartial(100, false);
+          }
+          return;
+        }
+
+        // If Advanced is enabled, toggle auto-betting mode or cancel waiting bet
+        if (this.rugAdvancedEnabled) {
+          if (this.rugState === 'WAITING' && this.rugHasBetThisRound && !this.rugAutoBetActive) {
+            this.rugHasBetThisRound = false;
+            this.rugRemainingBet = 0;
+            this.rugSoldPortions = [];
+            this.balance += this.rugBet;
+            this.saveBalance();
+            this.syncRugUserRow();
+            this.renderRugPlayersList();
+            this.updateRugActionBtn();
+            this.showToast('Bet cancelled.');
+            return;
+          }
+          if (this.rugAutoBetActive) {
+            this.stopRugAutoBet('Auto-bet stopped by player');
+          } else {
+            this.startRugAutoBet();
+          }
+          return;
+        }
+
+        // Standard Manual Betting Mode
         if (this.rugState === 'WAITING') {
           if (this.rugHasBetThisRound) {
             this.rugHasBetThisRound = false;
+            this.rugRemainingBet = 0;
+            this.rugSoldPortions = [];
             this.balance += this.rugBet;
             this.saveBalance();
             this.showToast('Bet cancelled.');
@@ -2970,6 +3219,8 @@ class GreenpumpApp {
               return;
             }
             this.rugHasBetThisRound = true;
+            this.rugRemainingBet = this.rugBet;
+            this.rugSoldPortions = [];
             this.balance = parseFloat((this.balance - this.rugBet).toFixed(4));
             this.saveBalance();
             this.bumpTotalBets(1);
@@ -2979,18 +3230,11 @@ class GreenpumpApp {
           this.syncRugUserRow();
           this.renderRugPlayersList();
           this.updateRugActionBtn();
-        } else if (this.rugState === 'RUNNING') {
-          if (this.rugHasBetThisRound && !this.rugCashedOut) {
-            this.cashoutRug();
-          } else {
-            this.rugScheduledNextRound = !this.rugScheduledNextRound;
-            gpAudio.playClick();
-            this.updateRugActionBtn();
-          }
-        } else if (this.rugState === 'CRASHED') {
+        } else if (this.rugState === 'RUNNING' || this.rugState === 'CRASHED') {
           this.rugScheduledNextRound = !this.rugScheduledNextRound;
           gpAudio.playClick();
           this.updateRugActionBtn();
+          this.showToast(this.rugScheduledNextRound ? 'Bet scheduled for next round!' : 'Scheduled bet cancelled.');
         }
       });
     }
@@ -3105,6 +3349,93 @@ class GreenpumpApp {
     });
   }
 
+  startRugAutoBet() {
+    if (!this.requireAuth()) return;
+    if (this.balance < this.rugBet) {
+      this.showInsufficientBalancePrompt();
+      return;
+    }
+
+    const countInput = document.getElementById('rugAutoBetCount');
+    const countVal = countInput ? parseInt(countInput.value, 10) : 0;
+    this.rugAutoBetTotalRounds = (!isNaN(countVal) && countVal > 0) ? countVal : 0;
+    this.rugAutoBetRoundsLeft = this.rugAutoBetTotalRounds;
+
+    const profitInput = document.getElementById('rugStopProfitInput');
+    const pVal = profitInput ? parseFloat(profitInput.value) : 0;
+    this.rugStopProfit = (!isNaN(pVal) && pVal > 0) ? pVal : null;
+
+    const lossInput = document.getElementById('rugStopLossInput');
+    const lVal = lossInput ? parseFloat(lossInput.value) : 0;
+    this.rugStopLoss = (!isNaN(lVal) && lVal > 0) ? lVal : null;
+
+    this.rugBaseBet = this.rugBet;
+    this.rugAutoBetActive = true;
+    this.rugAutoBetsPlayed = 0;
+    this.rugAutoWins = 0;
+    this.rugAutoLosses = 0;
+    this.rugAutoNetProfit = 0;
+
+    const statsWrap = document.getElementById('rugAutoStatsWrap');
+    if (statsWrap) statsWrap.style.display = 'grid';
+    this.updateRugAutoStats();
+
+    this.showToast(`Auto-Bet started! (${this.rugAutoBetTotalRounds ? this.rugAutoBetTotalRounds + ' rounds' : 'Unlimited rounds'})`);
+    gpAudio.playTrade();
+
+    if (this.rugState === 'WAITING' && !this.rugHasBetThisRound) {
+      this.rugHasBetThisRound = true;
+      this.balance = parseFloat((this.balance - this.rugBet).toFixed(4));
+      this.saveBalance();
+      this.bumpTotalBets(1);
+      this.rugAutoBetsPlayed = 1;
+      this.syncRugUserRow();
+      this.renderRugPlayersList();
+      this.updateRugAutoStats();
+    } else if (this.rugState !== 'WAITING') {
+      this.rugScheduledNextRound = true;
+    }
+
+    this.updateRugActionBtn();
+  }
+
+  stopRugAutoBet(reason = '') {
+    if (!this.rugAutoBetActive) return;
+    this.rugAutoBetActive = false;
+    this.rugScheduledNextRound = false;
+    this.rugBet = this.rugBaseBet || 0.01;
+    const betInput = document.getElementById('rugBetInput');
+    if (betInput) betInput.value = this.rugBet;
+    const usdEl = document.getElementById('crashUsdEstimate');
+    if (usdEl) usdEl.textContent = `≈ $${(this.rugBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
+
+    if (reason) this.showToast(reason);
+    this.updateRugActionBtn();
+  }
+
+  updateRugAutoStats() {
+    const betsEl = document.getElementById('rugAutoBetsCountDisplay');
+    const winLossEl = document.getElementById('rugAutoWinLossDisplay');
+    const profitEl = document.getElementById('rugAutoNetProfitDisplay');
+    const roundsEl = document.getElementById('rugRoundsRemainingDisplay');
+
+    if (betsEl) betsEl.textContent = `${this.rugAutoBetsPlayed}${this.rugAutoBetTotalRounds ? ' / ' + this.rugAutoBetTotalRounds : ''}`;
+    if (winLossEl) winLossEl.textContent = `${this.rugAutoWins}W / ${this.rugAutoLosses}L`;
+    if (profitEl) {
+      const p = this.rugAutoNetProfit;
+      profitEl.textContent = `${p >= 0 ? '+' : ''}${p.toFixed(4)} SOL`;
+      profitEl.style.color = p >= 0 ? '#4ade80' : '#f87171';
+    }
+    if (roundsEl) {
+      if (this.rugAutoBetTotalRounds > 0) {
+        const left = Math.max(0, this.rugAutoBetTotalRounds - this.rugAutoBetsPlayed);
+        roundsEl.textContent = `${left} Left`;
+      } else {
+        roundsEl.textContent = '∞';
+      }
+    }
+  }
+
   startRugCountdown() {
     this.rugState = 'WAITING';
     if (this.rugAnimId) {
@@ -3117,12 +3448,36 @@ class GreenpumpApp {
 
     this.rugMultiplier = 1.00;
     this.rugCashedOut = false;
+    const quickSellBar = document.getElementById('rugQuickSellBar');
+    if (quickSellBar) quickSellBar.style.display = 'none';
 
-    // Check if user had scheduled a bet
-    if (this.rugScheduledNextRound) {
+    // Check Auto-Bet execution or manual scheduled bet
+    if (this.rugAutoBetActive) {
+      if (this.rugAutoBetTotalRounds > 0 && this.rugAutoBetsPlayed >= this.rugAutoBetTotalRounds) {
+        this.stopRugAutoBet(`Completed all ${this.rugAutoBetTotalRounds} auto-bet rounds!`);
+      } else if (this.rugStopProfit && this.rugAutoNetProfit >= this.rugStopProfit) {
+        this.stopRugAutoBet(`Take profit reached: +${this.rugAutoNetProfit.toFixed(4)} SOL!`);
+      } else if (this.rugStopLoss && -this.rugAutoNetProfit >= this.rugStopLoss) {
+        this.stopRugAutoBet(`Stop loss triggered: -${Math.abs(this.rugAutoNetProfit).toFixed(4)} SOL!`);
+      } else if (this.balance < this.rugBet) {
+        this.stopRugAutoBet('Insufficient balance for next auto-bet!');
+      } else {
+        this.rugHasBetThisRound = true;
+        this.rugRemainingBet = this.rugBet;
+        this.rugSoldPortions = [];
+        this.balance = parseFloat((this.balance - this.rugBet).toFixed(4));
+        this.saveBalance();
+        this.bumpTotalBets(1);
+        this.rugAutoBetsPlayed++;
+        this.updateRugAutoStats();
+        this.showToast(`Auto-Bet placed: ${this.rugBet.toFixed(3)} SOL`);
+      }
+    } else if (this.rugScheduledNextRound) {
       this.rugScheduledNextRound = false;
       if (this.balance >= this.rugBet) {
         this.rugHasBetThisRound = true;
+        this.rugRemainingBet = this.rugBet;
+        this.rugSoldPortions = [];
         this.balance = parseFloat((this.balance - this.rugBet).toFixed(4));
         this.saveBalance();
         this.bumpTotalBets(1);
@@ -3180,6 +3535,15 @@ class GreenpumpApp {
     this.rugState = 'RUNNING';
     this.rugMultiplier = 1.00;
     this.rugCashedOut = false;
+    if (this.rugHasBetThisRound) {
+      this.rugRemainingBet = this.rugBet;
+      this.rugSoldPortions = [];
+      const quickSellBar = document.getElementById('rugQuickSellBar');
+      if (quickSellBar) quickSellBar.style.display = 'block';
+    } else {
+      const quickSellBar = document.getElementById('rugQuickSellBar');
+      if (quickSellBar) quickSellBar.style.display = 'none';
+    }
 
     // Crash algorithm: 4% instant rug, otherwise Pareto climb
     const r = Math.random();
@@ -3247,9 +3611,41 @@ class GreenpumpApp {
       }
     });
 
+    // In-flight Quick Sell Bar & Live Payout Estimates
+    const quickSellBar = document.getElementById('rugQuickSellBar');
+    if (this.rugHasBetThisRound && !this.rugCashedOut && (this.rugRemainingBet || 0) > 0.0001) {
+      if (quickSellBar) quickSellBar.style.display = 'block';
+      const remDisplay = document.getElementById('rugQuickRemainingDisplay');
+      if (remDisplay) {
+        remDisplay.textContent = `${this.rugRemainingBet.toFixed(4)} SOL in trade`;
+      }
+      const qs10 = document.getElementById('qsVal10');
+      const qs25 = document.getElementById('qsVal25');
+      const qs50 = document.getElementById('qsVal50');
+      const qs100 = document.getElementById('qsVal100');
+      if (qs10) qs10.textContent = `+${(this.rugRemainingBet * 0.10 * this.rugMultiplier).toFixed(4)}`;
+      if (qs25) qs25.textContent = `+${(this.rugRemainingBet * 0.25 * this.rugMultiplier).toFixed(4)}`;
+      if (qs50) qs50.textContent = `+${(this.rugRemainingBet * 0.50 * this.rugMultiplier).toFixed(4)}`;
+      if (qs100) qs100.textContent = `+${(this.rugRemainingBet * 1.00 * this.rugMultiplier).toFixed(4)}`;
+    } else {
+      if (quickSellBar) quickSellBar.style.display = 'none';
+    }
+
     // Check user Auto Cashout
-    if (this.rugHasBetThisRound && !this.rugCashedOut && this.rugAutoTarget && this.rugMultiplier >= this.rugAutoTarget) {
-      this.cashoutRug();
+    if (this.rugHasBetThisRound && !this.rugCashedOut && (this.rugRemainingBet || 0) > 0.0001 && this.rugAutoTarget && this.rugMultiplier >= this.rugAutoTarget) {
+      if (this.rugAdvancedEnabled && this.rugSelectedSellPct !== 100) {
+        if (this.rugSelectedSellPct === 'custom') {
+          if (this.rugCustomSellSol) {
+            this.cashoutRugPartial(this.rugCustomSellSol, true);
+          } else {
+            this.cashoutRugPartial(this.rugCustomSellPct || 50, false);
+          }
+        } else {
+          this.cashoutRugPartial(this.rugSelectedSellPct, false);
+        }
+      } else {
+        this.cashoutRugPartial(100, false);
+      }
     }
 
     // Update Action Button
@@ -3397,29 +3793,110 @@ class GreenpumpApp {
     }
   }
 
-  cashoutRug() {
-    if (this.rugState !== 'RUNNING' || this.rugCashedOut || !this.rugHasBetThisRound) return;
-    this.rugCashedOut = true;
-    const win = this.rugBet * this.rugMultiplier;
-    const profit = win - this.rugBet;
-    this.balance = parseFloat((this.balance + win).toFixed(4));
+  cashoutRugPartial(percentageOrAmount, isCustomSol = false) {
+    if (this.rugState !== 'RUNNING' || this.rugCashedOut || !this.rugHasBetThisRound || (this.rugRemainingBet || 0) <= 0.0001) return;
+
+    let sellAmount = 0;
+    let isFullSell = false;
+    let label = '';
+
+    if (isCustomSol) {
+      const requestedSol = parseFloat(percentageOrAmount) || 0;
+      if (requestedSol <= 0) return;
+      if (requestedSol >= this.rugRemainingBet - 0.0001) {
+        sellAmount = this.rugRemainingBet;
+        isFullSell = true;
+        label = '100%';
+      } else {
+        sellAmount = parseFloat(requestedSol.toFixed(4));
+        label = `${sellAmount.toFixed(4)} SOL`;
+      }
+    } else {
+      const pct = Math.min(100, Math.max(1, parseFloat(percentageOrAmount) || 100));
+      if (pct >= 99.9) {
+        sellAmount = this.rugRemainingBet;
+        isFullSell = true;
+        label = '100%';
+      } else {
+        sellAmount = parseFloat((this.rugRemainingBet * (pct / 100)).toFixed(4));
+        if (sellAmount >= this.rugRemainingBet - 0.0001) {
+          sellAmount = this.rugRemainingBet;
+          isFullSell = true;
+          label = '100%';
+        } else {
+          label = `${pct}%`;
+        }
+      }
+    }
+
+    if (sellAmount <= 0.00005) return;
+
+    const payout = parseFloat((sellAmount * this.rugMultiplier).toFixed(4));
+    const profit = parseFloat((payout - sellAmount).toFixed(4));
+
+    this.balance = parseFloat((this.balance + payout).toFixed(4));
     this.saveBalance();
     this.recordWin('rug', profit, this.rugMultiplier);
-    this.pushNotification('Rug cashout', `You cashed out at ${this.rugMultiplier.toFixed(2)}x for +${this.formatSol(profit)} SOL.`, 'win');
 
     if (this.activeGame === 'rug' && !document.hidden) {
       gpAudio.playWin();
     }
-    this.showToast(`🚀 CASHED OUT @ ${this.rugMultiplier.toFixed(2)}x! +${win.toFixed(4)} SOL`);
 
-    // Mark user in players list
+    if (!this.rugSoldPortions) this.rugSoldPortions = [];
+    this.rugSoldPortions.push({
+      sellAmount,
+      mult: this.rugMultiplier,
+      payout,
+      profit
+    });
+
+    if (isFullSell) {
+      this.rugCashedOut = true;
+      this.rugRemainingBet = 0;
+      this.pushNotification('Rug cashout', `You cashed out 100% at ${this.rugMultiplier.toFixed(2)}x for +${this.formatSol(profit)} SOL.`, 'win');
+      this.showToast(`🚀 CASHED OUT 100% @ ${this.rugMultiplier.toFixed(2)}x! +${payout.toFixed(4)} SOL`);
+      const quickSellBar = document.getElementById('rugQuickSellBar');
+      if (quickSellBar) quickSellBar.style.display = 'none';
+    } else {
+      this.rugRemainingBet = parseFloat((this.rugRemainingBet - sellAmount).toFixed(4));
+      this.pushNotification('Rug partial sell', `Sold ${label} at ${this.rugMultiplier.toFixed(2)}x (+${this.formatSol(profit)} SOL). ${this.rugRemainingBet.toFixed(4)} SOL still riding.`, 'win');
+      this.showToast(`💰 SOLD ${label} @ ${this.rugMultiplier.toFixed(2)}x! (+${payout.toFixed(4)} SOL) — ${this.rugRemainingBet.toFixed(4)} SOL riding`);
+    }
+
+    // Auto-bet telemetry
+    if (this.rugAutoBetActive) {
+      this.rugAutoNetProfit += profit;
+      if (isFullSell) {
+        this.rugAutoWins++;
+        if (this.rugOnWinAction === 'reset') {
+          this.rugBet = this.rugBaseBet;
+        } else if (this.rugOnWinAction === 'increase') {
+          this.rugBet = parseFloat((this.rugBet * (1 + (this.rugOnWinPct || 100) / 100)).toFixed(4));
+        }
+        const betInput = document.getElementById('rugBetInput');
+        if (betInput) betInput.value = this.rugBet;
+        const usdEl = document.getElementById('crashUsdEstimate');
+        if (usdEl) usdEl.textContent = `≈ $${(this.rugBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
+      }
+      this.updateRugAutoStats();
+    }
+
+    // Mark/update user in players list
     const userRow = this.rugPlayers.find(p => p.isUser);
     if (userRow) {
-      userRow.cashed = true;
-      userRow.cashoutMult = this.rugMultiplier;
+      if (isFullSell) {
+        userRow.cashed = true;
+        userRow.cashoutMult = this.rugMultiplier;
+      } else {
+        userRow.bet = this.rugRemainingBet;
+      }
     }
     this.renderRugPlayersList();
     this.updateRugActionBtn();
+  }
+
+  cashoutRug() {
+    this.cashoutRugPartial(100, false);
   }
 
   triggerRugCrash() {
@@ -3428,6 +3905,9 @@ class GreenpumpApp {
       cancelAnimationFrame(this.rugAnimId);
       this.rugAnimId = null;
     }
+
+    const quickSellBar = document.getElementById('rugQuickSellBar');
+    if (quickSellBar) quickSellBar.style.display = 'none';
 
     this.rugMultiplier = this.rugCrashPoint;
     if (this.activeGame === 'rug' && !document.hidden) {
@@ -3454,10 +3934,36 @@ class GreenpumpApp {
     this.drawRugCanvas();
 
     if (this.rugHasBetThisRound && !this.rugCashedOut) {
-      this.showToast(`💥 CRASHED @ ${this.rugCrashPoint.toFixed(2)}x! Lost ${this.rugBet} SOL`);
+      const securedPortions = this.rugSoldPortions || [];
+      const totalSecured = securedPortions.reduce((s, p) => s + (p.payout || 0), 0);
+      const remainingLost = (this.rugRemainingBet && this.rugRemainingBet > 0) ? this.rugRemainingBet : this.rugBet;
+
+      if (securedPortions.length > 0) {
+        this.showToast(`💥 RUGGED @ ${this.rugCrashPoint.toFixed(2)}x! Lost remaining ${remainingLost.toFixed(4)} SOL (Secured +${totalSecured.toFixed(4)} SOL earlier)`);
+      } else {
+        this.showToast(`💥 CRASHED @ ${this.rugCrashPoint.toFixed(2)}x! Lost ${this.rugBet} SOL`);
+      }
+
+      if (this.rugAutoBetActive) {
+        this.rugAutoLosses++;
+        this.rugAutoNetProfit -= remainingLost;
+        this.updateRugAutoStats();
+
+        if (this.rugOnLossAction === 'reset') {
+          this.rugBet = this.rugBaseBet;
+        } else if (this.rugOnLossAction === 'increase') {
+          this.rugBet = parseFloat((this.rugBet * (1 + (this.rugOnLossPct || 100) / 100)).toFixed(4));
+        }
+        const betInput = document.getElementById('rugBetInput');
+        if (betInput) betInput.value = this.rugBet;
+        const usdEl = document.getElementById('crashUsdEstimate');
+        if (usdEl) usdEl.textContent = `≈ $${(this.rugBet * (this.solPrice || 108.35)).toFixed(2)} USD`;
+      }
     }
 
     this.rugHasBetThisRound = false;
+    this.rugRemainingBet = 0;
+    this.rugSoldPortions = [];
     this.updateRugActionBtn();
     this.renderRugPlayersList();
 
@@ -3471,6 +3977,65 @@ class GreenpumpApp {
     const btn = document.getElementById('rugMainActionBtn');
     if (!btn) return;
 
+    if (this.rugAutoBetActive) {
+      btn.className = 'crash-action-btn autobet-active';
+      if (this.rugState === 'RUNNING' && this.rugHasBetThisRound && !this.rugCashedOut && (this.rugRemainingBet || 0) > 0.0001) {
+        const estWin = ((this.rugRemainingBet || this.rugBet) * this.rugMultiplier).toFixed(3);
+        btn.textContent = `CASHOUT ${estWin} SOL (OR STOP)`;
+      } else {
+        const roundsText = this.rugAutoBetTotalRounds ? ` (${this.rugAutoBetsPlayed}/${this.rugAutoBetTotalRounds})` : ` (#${this.rugAutoBetsPlayed})`;
+        btn.textContent = `STOP AUTO-BET${roundsText}`;
+      }
+      return;
+    }
+
+    if (this.rugAdvancedEnabled) {
+      if (this.rugState === 'WAITING') {
+        if (this.rugHasBetThisRound) {
+          btn.textContent = `BET PLACED (${this.rugBet.toFixed(3)} SOL) - CLICK TO CANCEL`;
+          btn.className = 'crash-action-btn cashout-state';
+        } else {
+          btn.textContent = `START AUTO-BET (${this.rugBet.toFixed(3)} SOL)`;
+          btn.className = 'crash-action-btn';
+        }
+      } else if (this.rugState === 'RUNNING') {
+        if (this.rugHasBetThisRound && !this.rugCashedOut && (this.rugRemainingBet || 0) > 0.0001) {
+          btn.className = 'crash-action-btn cashout-state';
+          const rem = this.rugRemainingBet || this.rugBet;
+          if (this.rugSelectedSellPct === 'custom') {
+            if (this.rugCustomSellSol) {
+              const sellAmt = Math.min(rem, this.rugCustomSellSol);
+              const est = (sellAmt * this.rugMultiplier).toFixed(3);
+              btn.textContent = `SELL ${sellAmt.toFixed(3)} SOL (+${est} SOL)`;
+            } else {
+              const pct = this.rugCustomSellPct || 50;
+              const sellAmt = rem * (pct / 100);
+              const est = (sellAmt * this.rugMultiplier).toFixed(3);
+              btn.textContent = `SELL ${pct}% (+${est} SOL)`;
+            }
+          } else if (this.rugSelectedSellPct && this.rugSelectedSellPct !== 100) {
+            const pct = this.rugSelectedSellPct;
+            const sellAmt = rem * (pct / 100);
+            const est = (sellAmt * this.rugMultiplier).toFixed(3);
+            btn.textContent = `SELL ${pct}% (+${est} SOL)`;
+          } else {
+            const currentWin = (rem * this.rugMultiplier).toFixed(3);
+            btn.textContent = `CASHOUT ${currentWin} SOL`;
+          }
+        } else if (this.rugHasBetThisRound && (this.rugCashedOut || (this.rugRemainingBet || 0) <= 0.0001)) {
+          btn.textContent = `CASHED OUT (${this.rugMultiplier.toFixed(2)}x)`;
+          btn.className = 'crash-action-btn';
+        } else {
+          btn.textContent = `START AUTO-BET NEXT ROUND`;
+          btn.className = 'crash-action-btn';
+        }
+      } else if (this.rugState === 'CRASHED') {
+        btn.textContent = `START AUTO-BET NEXT ROUND`;
+        btn.className = 'crash-action-btn';
+      }
+      return;
+    }
+
     if (this.rugState === 'WAITING') {
       if (this.rugHasBetThisRound) {
         btn.textContent = `BET PLACED (${this.rugBet.toFixed(3)} SOL) - CLICK TO CANCEL`;
@@ -3480,11 +4045,12 @@ class GreenpumpApp {
         btn.className = 'crash-action-btn';
       }
     } else if (this.rugState === 'RUNNING') {
-      if (this.rugHasBetThisRound && !this.rugCashedOut) {
-        const currentWin = this.rugBet * this.rugMultiplier;
-        btn.textContent = `CASHOUT ${currentWin.toFixed(3)} SOL`;
+      if (this.rugHasBetThisRound && !this.rugCashedOut && (this.rugRemainingBet || 0) > 0.0001) {
+        const rem = this.rugRemainingBet || this.rugBet;
+        const currentWin = (rem * this.rugMultiplier).toFixed(3);
+        btn.textContent = `CASHOUT ${currentWin} SOL`;
         btn.className = 'crash-action-btn cashout-state';
-      } else if (this.rugHasBetThisRound && this.rugCashedOut) {
+      } else if (this.rugHasBetThisRound && (this.rugCashedOut || (this.rugRemainingBet || 0) <= 0.0001)) {
         btn.textContent = `CASHED OUT (${this.rugMultiplier.toFixed(2)}x)`;
         btn.className = 'crash-action-btn';
       } else {
