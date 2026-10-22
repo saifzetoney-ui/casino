@@ -134,19 +134,19 @@ module.exports = async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${host}`);
   let pathname = parsedUrl.pathname.replace(/\/+$/, '') || '/';
 
-  // Handle Vercel rewrite headers, [...path].js, and query parameters
+  // Handle Vercel rewrite headers, [...path].js, and multi-segment query parameters
   const matchedPath = req.headers['x-matched-path'] || req.headers['x-now-route-matches'];
-  const matchParam = parsedUrl.searchParams.get('match');
-  const pathParam = parsedUrl.searchParams.get('path');
   const isVercelCatchAll = pathname === '/api/index.js' || pathname === '/api' || pathname === '/api/index' || pathname.includes('[...path]');
 
-  if (isVercelCatchAll) {
-    if (matchParam) {
-      pathname = '/api/' + String(matchParam).replace(/^\/+/, '').split('?')[0];
-    } else if (pathParam) {
-      pathname = '/api/' + String(pathParam).replace(/^\/+/, '').split('?')[0];
-    } else if (typeof matchedPath === 'string' && matchedPath.startsWith('/api') && !matchedPath.includes('index.js') && !matchedPath.includes('[...path]')) {
-      pathname = matchedPath.split('?')[0].replace(/\/+$/, '');
+  if (typeof matchedPath === 'string' && matchedPath.startsWith('/api') && !matchedPath.includes('index.js') && !matchedPath.includes('[...path]')) {
+    pathname = matchedPath.split('?')[0].replace(/\/+$/, '');
+  } else if (isVercelCatchAll) {
+    const matchAll = parsedUrl.searchParams.getAll('match');
+    const pathAll = parsedUrl.searchParams.getAll('path');
+    if (matchAll.length > 0) {
+      pathname = '/api/' + matchAll.join('/').replace(/^\/+/, '').split('?')[0];
+    } else if (pathAll.length > 0) {
+      pathname = '/api/' + pathAll.join('/').replace(/^\/+/, '').split('?')[0];
     }
   }
 

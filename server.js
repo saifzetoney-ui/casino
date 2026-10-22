@@ -34,7 +34,10 @@ function send(res, status, body, type = 'text/plain; charset=utf-8') {
     res.writeHead(status, {
       'Content-Type': type,
       'Cache-Control': 'no-store',
-      'X-Content-Type-Options': 'nosniff'
+      'X-Content-Type-Options': 'nosniff',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token'
     });
     res.end(body);
   } catch (e) {
@@ -349,6 +352,16 @@ function parseJsonBody(req, callback) {
 }
 
 async function requestHandler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token'
+    });
+    res.end();
+    return;
+  }
+
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
 
@@ -642,7 +655,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/admin/user/update') {
+  if (pathname === '/api/admin/user/update' || url.pathname === '/api/admin/user/update') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -668,7 +681,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/admin/user/create') {
+  if (pathname === '/api/admin/user/create' || url.pathname === '/api/admin/user/create') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -694,7 +707,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/user/sync-profile') {
+  if (pathname === '/api/user/sync-profile' || url.pathname === '/api/user/sync-profile') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -714,7 +727,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/admin/bets') {
+  if (pathname === '/api/admin/bets' || url.pathname === '/api/admin/bets') {
     const adminToken = extractAdminToken(req, url);
     const admin = db.verifyAdminToken(adminToken);
     if (!admin) {

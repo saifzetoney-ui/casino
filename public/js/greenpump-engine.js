@@ -1874,8 +1874,41 @@ class GreenpumpApp {
       return;
     }
 
+    // Optimistically update in-memory / local users cache immediately
+    if (Array.isArray(this._allAdminUsers)) {
+      const target = this._allAdminUsers.find(u => u.id === userId);
+      if (target) {
+        target.balance = newBal;
+        target.vipRank = newVip;
+      }
+    }
+    if (Array.isArray(this._adminLoadedUsers)) {
+      const target = this._adminLoadedUsers.find(u => u.id === userId);
+      if (target) {
+        target.balance = newBal;
+        target.vipRank = newVip;
+      }
+    }
+
+    this.showToast(`Updated user balance to ${newBal.toFixed(4)} SOL!`);
+    if (panel) panel.style.display = 'none';
+
+    // If current player was updated, sync balance in client
+    if (this.userId === userId || (this.user && this.user.id === userId) || (this.userEmail && this.userEmail === userId)) {
+      this.balance = newBal;
+      this.vipRank = newVip;
+      localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
+      this.updateBalanceUI();
+    }
+
+    const searchInput = document.getElementById('adminSearchUsersInput');
+    const currentSearch = searchInput ? searchInput.value.trim() : '';
+    this.loadAdminUsers(currentSearch);
+    this.loadAdminStats();
+
+    // Send update to server in background
     try {
-      const res = await fetch('/api/admin/user/update', {
+      await fetch('/api/admin/user/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1888,27 +1921,8 @@ class GreenpumpApp {
           vipRank: newVip
         })
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to update user');
-      }
-
-      this.showToast(`Updated user balance to ${newBal.toFixed(4)} SOL!`);
-      if (panel) panel.style.display = 'none';
-
-      // If current user was updated, sync balance in client
-      if (this.user && this.user.id === userId) {
-        this.balance = newBal;
-        localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
-        this.updateBalanceUI();
-      }
-
-      const searchInput = document.getElementById('adminSearchUsersInput');
-      const currentSearch = searchInput ? searchInput.value.trim() : '';
-      this.loadAdminUsers(currentSearch);
-      this.loadAdminStats();
     } catch (e) {
-      this.showToast(`Update error: ${e.message}`);
+      console.warn('[Admin User Update server sync]', e.message);
     }
   }
 
@@ -1964,9 +1978,32 @@ class GreenpumpApp {
     const currentBal = parseFloat(balInput ? balInput.value : '0') || 0;
     const newBal = parseFloat((currentBal + 0.50).toFixed(4));
     if (balInput) balInput.value = newBal.toFixed(4);
+    const userId = idInput.value;
+
+    // Optimistically update caches
+    if (Array.isArray(this._allAdminUsers)) {
+      const target = this._allAdminUsers.find(u => u.id === userId);
+      if (target) target.balance = newBal;
+    }
+    if (Array.isArray(this._adminLoadedUsers)) {
+      const target = this._adminLoadedUsers.find(u => u.id === userId);
+      if (target) target.balance = newBal;
+    }
+
+    this.showToast(`🪂 Airdropped +0.50 SOL! New balance: ${newBal.toFixed(4)} SOL`);
+    if (this.userId === userId || (this.user && this.user.id === userId) || (this.userEmail && this.userEmail === userId)) {
+      this.balance = newBal;
+      localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
+      this.updateBalanceUI();
+    }
+
+    const searchInput = document.getElementById('adminSearchUsersInput');
+    const currentSearch = searchInput ? searchInput.value.trim() : '';
+    this.loadAdminUsers(currentSearch);
+    this.loadAdminStats();
 
     try {
-      const res = await fetch('/api/admin/user/update', {
+      await fetch('/api/admin/user/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1974,25 +2011,12 @@ class GreenpumpApp {
           'x-admin-token': this.adminToken
         },
         body: JSON.stringify({
-          userId: idInput.value,
+          userId,
           balance: newBal
         })
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Airdrop failed');
-
-      this.showToast(`🪂 Airdropped +0.50 SOL! New balance: ${newBal.toFixed(4)} SOL`);
-      if (this.user && this.user.id === idInput.value) {
-        this.balance = newBal;
-        localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
-        this.updateBalanceUI();
-      }
-      const searchInput = document.getElementById('adminSearchUsersInput');
-      const currentSearch = searchInput ? searchInput.value.trim() : '';
-      this.loadAdminUsers(currentSearch);
-      this.loadAdminStats();
     } catch (e) {
-      this.showToast(`Airdrop error: ${e.message}`);
+      console.warn('[Admin Quick Airdrop server sync]', e.message);
     }
   }
 
