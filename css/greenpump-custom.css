@@ -611,41 +611,96 @@ body {
   background: #4ade80;
 }
 
-/* Floating Navigation Scroll Chevrons */
+/* Navigation chevrons (moved to toolbar; hide any floating in highway) */
 .chicken-scroll-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 38px;
-  height: 64px;
-  background: rgba(18, 18, 24, 0.88);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  border-radius: 10px;
+  display: none !important;
+}
+
+.highway-lane.next-target-lane {
+  cursor: pointer;
+}
+
+.highway-lane.next-target-lane .stepping-pad-inner {
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.7);
+}
+
+/* Outside Game Over Panel (OUTSIDE of the Chicken Highway Screen) */
+.chicken-game-over-panel {
+  margin-top: 8px;
+  animation: fadeInStage 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chicken-go-card {
+  background: #141418;
+  border: 1.5px solid rgba(239, 68, 68, 0.5);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.chicken-go-header {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+}
+
+.chicken-go-icon {
+  font-size: 20px;
+}
+
+.chicken-go-title {
+  font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ef4444;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.chicken-go-sub {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.chicken-go-retry-btn {
+  width: 100%;
+  margin-top: 6px;
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: #ffffff;
   cursor: pointer;
-  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+  font-size: 13.5px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
 }
 
-.chicken-scroll-arrow:hover {
-  background: rgba(34, 197, 94, 0.28);
-  border-color: #22c55e;
-  color: #4ade80;
-  transform: translateY(-50%) scale(1.08);
-  box-shadow: 0 0 18px rgba(34, 197, 94, 0.45);
+.chicken-go-retry-btn:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.55);
 }
 
-.chicken-scroll-left {
-  left: 12px;
-}
-
-.chicken-scroll-right {
-  right: 12px;
+.go-retry-sub {
+  font-size: 10.5px;
+  font-weight: 800;
+  opacity: 0.9;
 }
 
 /* Right Sidewalk & Finish Line */
@@ -1144,17 +1199,9 @@ body {
   to { top: -90px; }
 }
 
-/* Splat Overlay */
+/* Splat Overlay (Superseded by outside Game Over panel) */
 .chicken-splat-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(9, 10, 14, 0.82);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 60;
-  animation: fadeInStage 0.25s ease;
+  display: none !important;
 }
 
 .chicken-splat-card {

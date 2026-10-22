@@ -996,7 +996,7 @@ async function getDbStatus() {
 /* ADMIN AUTHENTICATION & SUPERADMIN CONTROLS */
 /* ============================================================================== */
 function getAdminSecret() {
-  return process.env.ADMIN_SECRET_KEY || 'admin777';
+  return process.env.ADMIN_SECRET_KEY || 'saif1234sa3!';
 }
 
 function createAdminToken(email) {
@@ -1040,17 +1040,21 @@ async function verifyAdminAuth({ email, secretKey }) {
   const cleanEmail = email.toLowerCase().trim();
   const cleanKey = secretKey.trim();
 
-  const configuredKey = process.env.ADMIN_SECRET_KEY || 'admin777';
-  const allowedKeys = [configuredKey, 'admin777', 'GREENPUMP_ADMIN_2026', 'LUCKYWIN_SECRET_777'];
+  const configuredKey = process.env.ADMIN_SECRET_KEY || 'saif1234sa3!';
+  const allowedKeys = [configuredKey, 'saif1234sa3!'];
   if (!allowedKeys.includes(cleanKey)) {
     throw new Error('Invalid secret key. Access denied.');
   }
 
-  if (process.env.ADMIN_EMAIL) {
-    const allowedEmails = process.env.ADMIN_EMAIL.toLowerCase().split(',').map(e => e.trim());
-    if (!allowedEmails.includes(cleanEmail)) {
-      throw new Error(`Email ${cleanEmail} is not authorized for administrative access.`);
-    }
+  // Allowed admin emails list: saifzetoney@gmail.com is authorized, plus any emails configured in ADMIN_EMAIL
+  const defaultAllowedEmails = ['saifzetoney@gmail.com'];
+  const envEmails = process.env.ADMIN_EMAIL
+    ? process.env.ADMIN_EMAIL.toLowerCase().split(',').map(e => e.trim()).filter(Boolean)
+    : [];
+  const allowedEmails = Array.from(new Set([...defaultAllowedEmails, ...envEmails]));
+
+  if (!allowedEmails.includes(cleanEmail)) {
+    throw new Error(`Email ${cleanEmail} is not authorized for administrative access.`);
   }
 
   const adminToken = createAdminToken(cleanEmail);

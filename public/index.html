@@ -928,6 +928,21 @@
                         CASHOUT
                       </button>
                     </div>
+
+                    <!-- Outside Game Over Display (OUTSIDE of Chicken Highway Screen) -->
+                    <div class="chicken-game-over-panel" id="chickenGameOverPanel" style="display:none;">
+                      <div class="chicken-go-card">
+                        <div class="chicken-go-header">
+                          <span class="chicken-go-icon">💥</span>
+                          <span class="chicken-go-title">GAME OVER</span>
+                        </div>
+                        <div class="chicken-go-sub" id="chickenGameOverSub">Hit by oncoming traffic!</div>
+                        <button type="button" class="chicken-go-retry-btn" id="chickenGameOverRetryBtn">
+                          <span>TRY AGAIN</span>
+                          <span class="go-retry-sub" id="chickenGameOverRetrySub">Start @ 1.12x</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -942,7 +957,9 @@
                   </div>
                   <div class="chicken-highway-view-tools">
                     <button type="button" class="chicken-view-pill-btn" id="chickenScrollStartBtn" title="Scroll to start">⏮ Start</button>
+                    <button type="button" class="chicken-view-pill-btn" id="chickenScrollLeftBtn" title="Scroll left">◀</button>
                     <button type="button" class="chicken-view-pill-btn" id="chickenCenterBtn" title="Center on chicken">🎯 Chicken</button>
+                    <button type="button" class="chicken-view-pill-btn" id="chickenScrollRightBtn" title="Scroll right">▶</button>
                     <button type="button" class="chicken-view-pill-btn" id="chickenScrollEndBtn" title="View finish line">Finish ⏭</button>
                     <span class="chicken-drag-hint">🖱️ Scroll wheel or drag road</span>
                   </div>
@@ -1007,25 +1024,7 @@
                       <img src="chicken-icon.png" alt="Chicken" class="chicken-sprite" />
                       <div class="chicken-mult-tag" id="chickenCurrentMultTag">1.01x</div>
                     </div>
-
-                    <!-- Splat Game Over Overlay -->
-                    <div class="chicken-splat-overlay" id="chickenSplatOverlay" style="display:none;">
-                      <div class="chicken-splat-card">
-                        <div class="splat-icon">💥</div>
-                        <div class="splat-title">SPLATTED!</div>
-                        <div class="splat-sub">You were hit by oncoming traffic.</div>
-                        <button type="button" class="splat-retry-btn" id="chickenRetryBtn">TRY AGAIN</button>
-                      </div>
-                    </div>
                   </div>
-
-                  <!-- Floating Scroll Navigation Arrows -->
-                  <button type="button" class="chicken-scroll-arrow chicken-scroll-left" id="chickenScrollLeftBtn" aria-label="Scroll left" style="display:none;">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                  </button>
-                  <button type="button" class="chicken-scroll-arrow chicken-scroll-right" id="chickenScrollRightBtn" aria-label="Scroll right">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                  </button>
                 </div>
               </div>
             </div>
@@ -2340,7 +2339,7 @@
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div>
               <label for="adminAuthEmail" style="font-size:11px;font-weight:800;color:#94a3b8;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Admin Email</label>
-              <input id="adminAuthEmail" type="email" placeholder="admin@example.com" autocomplete="email" style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:9px 12px;color:#ffffff;font-size:12.5px;font-weight:700;outline:none;" />
+              <input id="adminAuthEmail" type="email" placeholder="saifzetoney@gmail.com" autocomplete="email" style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:9px 12px;color:#ffffff;font-size:12.5px;font-weight:700;outline:none;" />
             </div>
 
             <div>
@@ -2357,7 +2356,7 @@
               <span>🔓</span> <span>UNLOCK ADMIN PANEL</span>
             </button>
             <div style="font-size:10.5px;color:#64748b;text-align:center;">
-              Default key is <code style="color:#93c5fd;background:rgba(59,130,246,0.15);padding:1px 5px;border-radius:4px;">admin777</code> &bull; Configurable via <code style="color:#93c5fd;background:rgba(59,130,246,0.15);padding:1px 5px;border-radius:4px;">ADMIN_SECRET_KEY</code>
+              Restricted to authorized administrator credentials &bull; Configurable via <code style="color:#93c5fd;background:rgba(59,130,246,0.15);padding:1px 5px;border-radius:4px;">ADMIN_SECRET_KEY</code>
             </div>
           </div>
         </div>

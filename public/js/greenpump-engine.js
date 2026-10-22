@@ -4853,17 +4853,15 @@ class GreenpumpApp {
     const hopBtn = document.getElementById('chickenHopActionBtn');
     const cashoutBtn = document.getElementById('chickenCashoutActionBtn');
     const retryBtn = document.getElementById('chickenRetryBtn');
+    const goRetryBtn = document.getElementById('chickenGameOverRetryBtn');
 
     if (mainBtn) mainBtn.addEventListener('click', () => this.startChickenGame());
     if (hopBtn) hopBtn.addEventListener('click', () => this.hopChickenNextLane());
     if (cashoutBtn) cashoutBtn.addEventListener('click', () => this.cashoutChicken());
-    if (retryBtn) retryBtn.addEventListener('click', () => {
-      const overlay = document.getElementById('chickenSplatOverlay');
-      if (overlay) overlay.style.display = 'none';
-      this.resetChickenUI();
-    });
+    if (retryBtn) retryBtn.addEventListener('click', () => this.resetChickenUI());
+    if (goRetryBtn) goRetryBtn.addEventListener('click', () => this.resetChickenUI());
 
-    // Horizontal highway scrolling: mouse wheel, pointer drag, navigation chevrons, and toolbar controls
+    // Horizontal highway scrolling: mouse wheel, pointer drag, and toolbar controls
     const viewport = document.getElementById('chickenHighwayViewport');
     if (viewport) {
       let isDragging = false;
@@ -4885,7 +4883,7 @@ class GreenpumpApp {
       // Pointer drag (works reliably on mouse, trackpad, and touch)
       viewport.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
-        if (e.target.closest('button, .stepping-pad.next-target')) return;
+        if (e.target.closest('button, .stepping-pad.next-target, .highway-lane.next-target-lane')) return;
         isDragging = true;
         startX = e.clientX;
         startScroll = viewport.scrollLeft;
@@ -4917,13 +4915,13 @@ class GreenpumpApp {
       const rightArrow = document.getElementById('chickenScrollRightBtn');
       if (leftArrow) {
         leftArrow.addEventListener('click', () => {
-          viewport.scrollBy({ left: -360, behavior: 'smooth' });
+          viewport.scrollBy({ left: -220, behavior: 'smooth' });
           gpAudio.playClick();
         });
       }
       if (rightArrow) {
         rightArrow.addEventListener('click', () => {
-          viewport.scrollBy({ left: 360, behavior: 'smooth' });
+          viewport.scrollBy({ left: 220, behavior: 'smooth' });
           gpAudio.playClick();
         });
       }
@@ -4992,6 +4990,9 @@ class GreenpumpApp {
       if (isCleared) {
         laneDiv.classList.add('lane-cleared', 'barrier-active');
       }
+      if (isNext) {
+        laneDiv.classList.add('next-target-lane');
+      }
 
       // Top Hazard Barrier (Stops traffic coming from top - only visible when lane is cleared & safe)
       const barrierTop = document.createElement('div');
@@ -5016,11 +5017,15 @@ class GreenpumpApp {
         </div>
       `;
 
-      pad.addEventListener('click', () => {
+      const hopAction = (e) => {
+        if (e) e.stopPropagation();
         if (this.chickenPlaying && i === this.chickenLane + 1) {
           this.hopChickenNextLane();
         }
-      });
+      };
+
+      pad.addEventListener('click', hopAction);
+      laneDiv.addEventListener('click', hopAction);
 
       // Bottom Hazard Barrier (Stops traffic coming from bottom - only visible when lane is cleared & safe)
       const barrierBottom = document.createElement('div');
@@ -5129,8 +5134,8 @@ class GreenpumpApp {
     if (!viewport) return;
 
     const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
-    if (leftArrow) leftArrow.style.display = viewport.scrollLeft > 25 ? 'flex' : 'none';
-    if (rightArrow) rightArrow.style.display = (maxScroll - viewport.scrollLeft > 25) ? 'flex' : 'none';
+    if (leftArrow) leftArrow.style.opacity = viewport.scrollLeft > 10 ? '1' : '0.4';
+    if (rightArrow) rightArrow.style.opacity = (maxScroll - viewport.scrollLeft > 10) ? '1' : '0.4';
   }
 
   getCarSvgMarkup(type) {
@@ -5197,6 +5202,9 @@ class GreenpumpApp {
     if (!this.canAffordBet(this.chickenBet)) {
       return;
     }
+
+    const goPanel = document.getElementById('chickenGameOverPanel');
+    if (goPanel) goPanel.style.display = 'none';
 
     this.balance = parseFloat((this.balance - this.chickenBet).toFixed(4));
     this.saveBalance();
@@ -5302,6 +5310,7 @@ class GreenpumpApp {
       if (this.chickenPlaying && lane <= this.chickenLane && this.chickenLane > 0) {
         // SAFE & CLEARED TILE: Show barriers & stop cars in this lane!
         l.classList.add('lane-cleared', 'barrier-active');
+        l.classList.remove('next-target-lane');
         if (pad) {
           pad.classList.add('cleared');
           pad.classList.remove('next-target');
@@ -5310,6 +5319,7 @@ class GreenpumpApp {
       } else if (this.chickenPlaying && lane === this.chickenLane + 1) {
         // NEXT TARGET TILE: Highlight pad, BUT DO NOT show barriers and DO NOT stop cars!
         l.classList.remove('lane-cleared', 'barrier-active');
+        l.classList.add('next-target-lane');
         if (pad) {
           pad.classList.add('next-target');
           pad.classList.remove('cleared');
@@ -5317,7 +5327,7 @@ class GreenpumpApp {
         trafficCars.forEach(car => car.classList.remove('stopped-top', 'stopped-bottom'));
       } else {
         // ALL OTHER TILES AHEAD: NO barriers, cars driving freely!
-        l.classList.remove('lane-cleared', 'barrier-active');
+        l.classList.remove('lane-cleared', 'barrier-active', 'next-target-lane');
         if (pad) pad.classList.remove('cleared', 'next-target');
         trafficCars.forEach(car => car.classList.remove('stopped-top', 'stopped-bottom'));
       }
@@ -5353,15 +5363,38 @@ class GreenpumpApp {
     const char = document.getElementById('chickenCharacter');
     if (char) char.classList.add('splatted');
 
+    // DO NOT show overlay inside highway - highway and splatted chicken remain fully visible!
     const overlay = document.getElementById('chickenSplatOverlay');
-    if (overlay) overlay.style.display = 'flex';
+    if (overlay) overlay.style.display = 'none';
 
-    this.showToast(`🚗 SPLAT in Lane ${this.chickenLane}! Lost ${this.chickenBet} SOL`);
+    // Show GAME OVER OUTSIDE of the screen of the chicken run (in the controls panel)
+    const mainBtn = document.getElementById('chickenMainActionBtn');
+    const ingameBtns = document.getElementById('chickenIngameBtns');
+    const goPanel = document.getElementById('chickenGameOverPanel');
+    const goSub = document.getElementById('chickenGameOverSub');
+    const goRetrySub = document.getElementById('chickenGameOverRetrySub');
+
+    if (mainBtn) mainBtn.style.display = 'none';
+    if (ingameBtns) ingameBtns.style.display = 'none';
+
+    if (goSub) goSub.textContent = `Hit by oncoming traffic in Lane ${this.chickenLane}! Lost ${this.chickenBet} SOL`;
+    if (goRetrySub) goRetrySub.textContent = `Start @ ${this.getChickenMult(1).toFixed(2)}x`;
+    if (goPanel) goPanel.style.display = 'block';
+
+    const progressEl = document.getElementById('chickenProgressDisplay');
+    if (progressEl) progressEl.textContent = `💥 GAME OVER (LANE ${this.chickenLane})`;
+
+    this.showToast(`💥 GAME OVER! Splatted in Lane ${this.chickenLane}! Lost ${this.chickenBet} SOL`);
   }
 
   resetChickenUI() {
     const mainBtn = document.getElementById('chickenMainActionBtn');
     const ingameBtns = document.getElementById('chickenIngameBtns');
+    const goPanel = document.getElementById('chickenGameOverPanel');
+    const overlay = document.getElementById('chickenSplatOverlay');
+
+    if (overlay) overlay.style.display = 'none';
+    if (goPanel) goPanel.style.display = 'none';
     if (mainBtn) mainBtn.style.display = 'flex';
     if (ingameBtns) ingameBtns.style.display = 'none';
 
@@ -8929,22 +8962,21 @@ class GreenpumpApp {
   }
 
   initAirdrop() {
-    let seconds = 142;
+    this.airdropActive = false;
+    this.airdropInterval = null;
+    this.airdropSecondsRemaining = 0;
+    this.airdropTotalDuration = 300; // 5 minutes
+
     const timerEl = document.getElementById('airdropTimerDisplay');
     const fillEl = document.getElementById('airdropProgressBar');
-    setInterval(() => {
-      if (seconds <= 0) {
-        seconds = 180;
-        this.balance = parseFloat((this.balance + 0.05).toFixed(4));
-        this.saveBalance();
-        this.showToast('🪂 Community Airdrop round complete! +0.05 SOL.');
-      }
-      seconds--;
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      if (timerEl) timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      if (fillEl) fillEl.style.width = `${((180 - seconds) / 180) * 100}%`;
-    }, 1000);
+
+    if (timerEl) {
+      timerEl.textContent = '--:--';
+      timerEl.style.color = '#94a3b8';
+    }
+    if (fillEl) {
+      fillEl.style.width = '0%';
+    }
 
     // Custom user airdrop controls
     const dropBtn = document.getElementById('airdropDropBtn');
@@ -8992,6 +9024,69 @@ class GreenpumpApp {
     }
   }
 
+  startPaidAirdrop(amount, durationSeconds = 300) {
+    if (this.airdropInterval) {
+      clearInterval(this.airdropInterval);
+      this.airdropInterval = null;
+    }
+
+    this.airdropActive = true;
+    this.airdropTotalDuration = durationSeconds; // 5 minutes = 300 seconds
+    this.airdropSecondsRemaining = durationSeconds;
+    this.airdropTotalFunded = amount;
+
+    const timerEl = document.getElementById('airdropTimerDisplay');
+    const fillEl = document.getElementById('airdropProgressBar');
+    if (timerEl) {
+      timerEl.style.color = '#38bdf8';
+    }
+
+    const updateTimerUI = () => {
+      const m = Math.floor(this.airdropSecondsRemaining / 60);
+      const s = this.airdropSecondsRemaining % 60;
+      if (timerEl) {
+        timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+      if (fillEl) {
+        const pct = Math.max(0, Math.min(100, (this.airdropSecondsRemaining / this.airdropTotalDuration) * 100));
+        fillEl.style.width = `${pct}%`;
+      }
+    };
+
+    updateTimerUI();
+
+    this.airdropInterval = setInterval(() => {
+      this.airdropSecondsRemaining--;
+      if (this.airdropSecondsRemaining <= 0) {
+        this.stopPaidAirdrop();
+      } else {
+        updateTimerUI();
+      }
+    }, 1000);
+  }
+
+  stopPaidAirdrop() {
+    if (this.airdropInterval) {
+      clearInterval(this.airdropInterval);
+      this.airdropInterval = null;
+    }
+    this.airdropActive = false;
+    this.airdropSecondsRemaining = 0;
+
+    const timerEl = document.getElementById('airdropTimerDisplay');
+    const fillEl = document.getElementById('airdropProgressBar');
+
+    if (timerEl) {
+      timerEl.textContent = '00:00';
+      timerEl.style.color = '#64748b';
+    }
+    if (fillEl) {
+      fillEl.style.width = '0%';
+    }
+
+    this.showToast('⏱️ Paid Airdrop 5-minute timer has ended. Airdrops stopped until paid again.');
+  }
+
   showAirdropConfirmModal(amount) {
     this.pendingAirdropAmount = amount;
     const online = parseInt(document.getElementById('airdropOnlineCount')?.textContent, 10) || 84;
@@ -9031,11 +9126,14 @@ class GreenpumpApp {
     this.closeModal('airdropConfirmModal');
     gpAudio.playWin();
 
+    // Start 5-minute (300 seconds) paid airdrop countdown
+    this.startPaidAirdrop(amount, 300);
+
     // Broadcast into public chat
     this.addChatAirdropAnnouncement(amount, online, shareEach);
 
-    this.showToast(`🎉 You airdropped ${this.formatSol(amount)} SOL to ${online} players (+${shareEach} SOL each)!`);
-    this.pushNotification('Airdrop Sent', `You airdropped ${this.formatSol(amount)} SOL equally among ${online} online players.`, 'win');
+    this.showToast(`🎉 You paid & launched a 5-minute Airdrop of ${this.formatSol(amount)} SOL!`);
+    this.pushNotification('Paid Airdrop Launched', `You funded a 5-minute airdrop of ${this.formatSol(amount)} SOL to ${online} players.`, 'win');
   }
 
   addChatAirdropAnnouncement(amount, playersCount, sharePerPlayer) {
