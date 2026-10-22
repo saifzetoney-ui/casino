@@ -138,6 +138,7 @@ class GreenpumpApp {
     }
     const savedBal = parseFloat(localStorage.getItem('gp_sol_balance'));
     this.balance = (!isNaN(savedBal) && savedBal >= 0) ? savedBal : 0.0000;
+    this.solFeeReserve = 0.002; // Network gas fee buffer: user covers their own fees and cannot bet all SOL
     this.totalBets = parseInt(localStorage.getItem('gp_total_bets'), 10) || 51423;
     this.activeGame = 'rug'; // 'rug', 'pump', 'chicken', 'mines', 'blackjack', 'hilo', 'flappy', 'coinflip'
     this.notifications = [];
@@ -1015,6 +1016,43 @@ class GreenpumpApp {
     this.showToast('❌ Insufficient SOL Balance! Deposit SOL to the Casino Vault or connect Phantom.');
     const walletDialog = document.getElementById('walletSecurityDialog');
     if (walletDialog && typeof walletDialog.showModal === 'function') {
+      try { walletDialog.showModal(); } catch (e) {}
+    }
+  }
+
+  getMaxPlayableBet() {
+    return Math.max(0, parseFloat((this.balance - this.solFeeReserve).toFixed(4)));
+  }
+
+  canAffordBet(betAmount) {
+    const amt = parseFloat(Number(betAmount).toFixed(4)) || 0;
+    if (amt <= 0) return false;
+
+    // Check if user has zero balance or strictly less balance than the bet
+    if (this.balance < amt) {
+      this.showInsufficientBalancePrompt();
+      return false;
+    }
+
+    // Fee reserve check: you cover your own SOL fees, so you can never bet all your SOL
+    const maxPlayable = this.getMaxPlayableBet();
+    if (amt > maxPlayable + 0.00005 || (this.balance - amt) < this.solFeeReserve - 0.00005) {
+      this.showFeeReservePrompt(amt);
+      return false;
+    }
+
+    return true;
+  }
+
+  showFeeReservePrompt(requestedBet) {
+    const maxPlayable = this.getMaxPlayableBet();
+    if (maxPlayable <= 0) {
+      this.showToast(`⚠️ You cover your own network fees! You must keep at least ${this.solFeeReserve} SOL reserved for fees.`);
+    } else {
+      this.showToast(`⚠️ You cover your own fees! ${this.solFeeReserve} SOL reserved for fees. Max bet allowed is ${maxPlayable.toFixed(4)} SOL.`);
+    }
+    const walletDialog = document.getElementById('walletSecurityDialog');
+    if (walletDialog && typeof walletDialog.showModal === 'function' && maxPlayable <= 0) {
       try { walletDialog.showModal(); } catch (e) {}
     }
   }
@@ -2188,6 +2226,14 @@ class GreenpumpApp {
       const p = this.solPrice || 108.35;
       dialogUsd.textContent = `≈ $${(this.balance * p).toFixed(2)} USD`;
     }
+    const feeNote = document.getElementById('walletFeeReserveNote');
+    if (feeNote) {
+      const maxPlayable = this.getMaxPlayableBet ? this.getMaxPlayableBet() : Math.max(0, this.balance - 0.002);
+      feeNote.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        Fee reserve: ${(this.solFeeReserve || 0.002).toFixed(4)} SOL (Available: ${maxPlayable.toFixed(4)} SOL)
+      `;
+    }
   }
 
   bumpTotalBets(amount = 1, wagerAmount = 0) {
@@ -2637,14 +2683,21 @@ class GreenpumpApp {
       updatePumpUsd();
     });
     if (doubleBtn) doubleBtn.addEventListener('click', () => {
-      this.pumpBet = Math.min(this.balance, parseFloat((this.pumpBet * 2).toFixed(4)));
+      const maxPlayable = this.getMaxPlayableBet();
+      this.pumpBet = Math.max(0.001, Math.min(maxPlayable, parseFloat((this.pumpBet * 2).toFixed(4))));
       if (betInput) betInput.value = this.pumpBet.toString();
       updatePumpUsd();
     });
     if (maxBtn) maxBtn.addEventListener('click', () => {
-      this.pumpBet = Math.max(0.001, parseFloat(this.balance.toFixed(4)));
+      const maxPlayable = this.getMaxPlayableBet();
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      this.pumpBet = Math.max(0.001, parseFloat(maxPlayable.toFixed(4)));
       if (betInput) betInput.value = this.pumpBet.toString();
       updatePumpUsd();
+      this.showToast(`MAX set to ${this.pumpBet} SOL (${this.solFeeReserve} SOL reserved for fees)`);
     });
 
     updatePumpUsd();
@@ -2657,8 +2710,7 @@ class GreenpumpApp {
   executePumpTrade() {
     if (!this.requireAuth()) return;
     if (this.isPumpTrading) return;
-    if (this.balance < this.pumpBet) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(this.pumpBet)) {
       return;
     }
 
@@ -2954,18 +3006,25 @@ class GreenpumpApp {
       gpAudio.playClick();
     });
     if (doubleBtn) doubleBtn.addEventListener('click', () => {
-      this.rugBet = Math.min(this.balance, parseFloat((this.rugBet * 2).toFixed(3)));
+      const maxPlayable = this.getMaxPlayableBet();
+      this.rugBet = Math.max(0.001, Math.min(maxPlayable, parseFloat((this.rugBet * 2).toFixed(3))));
       if (betInput) betInput.value = this.rugBet;
       updateUsd();
       this.updateRugActionBtn();
       gpAudio.playClick();
     });
     if (maxBtn) maxBtn.addEventListener('click', () => {
-      this.rugBet = Math.max(0.001, parseFloat(this.balance.toFixed(3)));
+      const maxPlayable = this.getMaxPlayableBet();
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      this.rugBet = Math.max(0.001, parseFloat(maxPlayable.toFixed(3)));
       if (betInput) betInput.value = this.rugBet;
       updateUsd();
       this.updateRugActionBtn();
       gpAudio.playClick();
+      this.showToast(`MAX set to ${this.rugBet} SOL (${this.solFeeReserve} SOL reserved for fees)`);
     });
 
     const autoInput = document.getElementById('rugAutoCashoutInput');
@@ -3235,8 +3294,7 @@ class GreenpumpApp {
             this.saveBalance();
             this.showToast('Bet cancelled.');
           } else {
-            if (this.balance < this.rugBet) {
-              this.showInsufficientBalancePrompt();
+            if (!this.canAffordBet(this.rugBet)) {
               return;
             }
             this.rugHasBetThisRound = true;
@@ -3372,8 +3430,7 @@ class GreenpumpApp {
 
   startRugAutoBet() {
     if (!this.requireAuth()) return;
-    if (this.balance < this.rugBet) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(this.rugBet)) {
       return;
     }
 
@@ -3480,8 +3537,8 @@ class GreenpumpApp {
         this.stopRugAutoBet(`Take profit reached: +${this.rugAutoNetProfit.toFixed(4)} SOL!`);
       } else if (this.rugStopLoss && -this.rugAutoNetProfit >= this.rugStopLoss) {
         this.stopRugAutoBet(`Stop loss triggered: -${Math.abs(this.rugAutoNetProfit).toFixed(4)} SOL!`);
-      } else if (this.balance < this.rugBet) {
-        this.stopRugAutoBet('Insufficient balance for next auto-bet!');
+      } else if (!this.canAffordBet(this.rugBet)) {
+        this.stopRugAutoBet(`Auto-bet stopped: Remaining balance needed to cover network transaction fees (${this.solFeeReserve} SOL reserve).`);
       } else {
         this.rugHasBetThisRound = true;
         this.rugRemainingBet = this.rugBet;
@@ -3495,7 +3552,7 @@ class GreenpumpApp {
       }
     } else if (this.rugScheduledNextRound) {
       this.rugScheduledNextRound = false;
-      if (this.balance >= this.rugBet) {
+      if (this.canAffordBet(this.rugBet)) {
         this.rugHasBetThisRound = true;
         this.rugRemainingBet = this.rugBet;
         this.rugSoldPortions = [];
@@ -3504,7 +3561,7 @@ class GreenpumpApp {
         this.bumpTotalBets(1);
         this.showToast(`Scheduled bet placed: ${this.rugBet} SOL`);
       } else {
-        this.showToast('Insufficient SOL for scheduled bet!');
+        this.showToast(`Scheduled bet cancelled: You must keep at least ${this.solFeeReserve} SOL to cover network fees.`);
       }
     }
 
@@ -4180,17 +4237,24 @@ class GreenpumpApp {
     });
 
     if (doubleBtn) doubleBtn.addEventListener('click', () => {
-      this.chickenBet = Math.min(this.balance, parseFloat((this.chickenBet * 2).toFixed(4)));
+      const maxPlayable = this.getMaxPlayableBet();
+      this.chickenBet = Math.max(0.0001, Math.min(maxPlayable, parseFloat((this.chickenBet * 2).toFixed(4))));
       if (betInput) betInput.value = this.chickenBet;
       updateUsd();
       gpAudio.playClick();
     });
 
     if (maxBtn) maxBtn.addEventListener('click', () => {
-      this.chickenBet = Math.max(0.0001, parseFloat(this.balance.toFixed(4)));
+      const maxPlayable = this.getMaxPlayableBet();
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      this.chickenBet = Math.max(0.0001, parseFloat(maxPlayable.toFixed(4)));
       if (betInput) betInput.value = this.chickenBet;
       updateUsd();
       gpAudio.playClick();
+      this.showToast(`MAX set to ${this.chickenBet} SOL (${this.solFeeReserve} SOL reserved for fees)`);
     });
 
     // Difficulty selection
@@ -4563,8 +4627,7 @@ class GreenpumpApp {
   startChickenGame() {
     if (!this.requireAuth()) return;
     if (this.chickenPlaying) return;
-    if (this.balance < this.chickenBet) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(this.chickenBet)) {
       return;
     }
 
@@ -4847,14 +4910,23 @@ class GreenpumpApp {
     }
 
     const applyMinesBet = (value) => {
-      const next = Math.max(0.001, Math.min(this.balance, parseFloat(value.toFixed(4)) || 0.001));
+      const maxPlayable = this.getMaxPlayableBet();
+      const next = Math.max(0.001, Math.min(maxPlayable, parseFloat(value.toFixed(4)) || 0.001));
       this.minesBet = next;
       if (betInput) betInput.value = next;
       updateMinesUsd();
     };
     document.getElementById('minesHalfBtn')?.addEventListener('click', () => applyMinesBet(this.minesBet / 2));
     document.getElementById('minesDoubleBtn')?.addEventListener('click', () => applyMinesBet(this.minesBet * 2));
-    document.getElementById('minesMaxBtn')?.addEventListener('click', () => applyMinesBet(this.balance));
+    document.getElementById('minesMaxBtn')?.addEventListener('click', () => {
+      const maxPlayable = this.getMaxPlayableBet();
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      applyMinesBet(maxPlayable);
+      this.showToast(`MAX set to ${this.minesBet} SOL (${this.solFeeReserve} SOL reserved for fees)`);
+    });
 
     this.renderMinesGrid();
   }
@@ -4862,8 +4934,7 @@ class GreenpumpApp {
   startMines() {
     if (!this.requireAuth()) return;
     if (this.minesPlaying) return;
-    if (this.balance < this.minesBet) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(this.minesBet)) {
       return;
     }
 
@@ -5122,19 +5193,25 @@ class GreenpumpApp {
   }
 
   applyBlackjackMultiplier(factor) {
+    const maxPlayable = this.getMaxPlayableBet();
     if (factor === 'max') {
-      const maxVal = Math.max(0.001, parseFloat(Math.min(this.balance, 5.0).toFixed(4)));
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      const maxVal = Math.max(0.001, parseFloat(Math.min(maxPlayable, 5.0).toFixed(4)));
       if (this.bjActiveTarget === 'main') this.bjMainBet = maxVal;
       else if (this.bjActiveTarget === '213') this.bjSide213 = maxVal;
       else if (this.bjActiveTarget === 'pair') this.bjSidePair = maxVal;
+      this.showToast(`MAX set to ${maxVal} SOL (${this.solFeeReserve} SOL reserved for fees)`);
     } else {
       const mult = parseFloat(factor);
       if (this.bjActiveTarget === 'main') {
-        this.bjMainBet = Math.max(0.001, parseFloat((this.bjMainBet * mult).toFixed(4)));
+        this.bjMainBet = Math.max(0.001, Math.min(maxPlayable, parseFloat((this.bjMainBet * mult).toFixed(4))));
       } else if (this.bjActiveTarget === '213') {
-        this.bjSide213 = Math.max(0, parseFloat((this.bjSide213 * mult).toFixed(4)));
+        this.bjSide213 = Math.max(0, Math.min(maxPlayable, parseFloat((this.bjSide213 * mult).toFixed(4))));
       } else if (this.bjActiveTarget === 'pair') {
-        this.bjSidePair = Math.max(0, parseFloat((this.bjSidePair * mult).toFixed(4)));
+        this.bjSidePair = Math.max(0, Math.min(maxPlayable, parseFloat((this.bjSidePair * mult).toFixed(4))));
       }
     }
     this.updateBlackjackBetDisplays();
@@ -5287,8 +5364,7 @@ class GreenpumpApp {
       this.showToast('Main Bet must be at least 0.001 SOL');
       return;
     }
-    if (this.balance < totalBet) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(totalBet)) {
       return;
     }
 
@@ -5875,8 +5951,7 @@ class GreenpumpApp {
       this.showToast('Main bet must be at least 0.0001 SOL.');
       return;
     }
-    if (this.balance < total) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(total)) {
       return;
     }
 
@@ -6005,8 +6080,7 @@ class GreenpumpApp {
     const hand = this.currentBlackjackHand();
     if (!this.bjPlaying || !hand || hand.done) return;
     if (hand.cards.length !== 2 || hand.doubled) return;
-    if (this.balance < hand.bet) {
-      this.showToast('Insufficient SOL balance to double down.');
+    if (!this.canAffordBet(hand.bet)) {
       return;
     }
 
@@ -6027,8 +6101,7 @@ class GreenpumpApp {
     if (!this.bjPlaying || !hand || hand.done) return;
     if (this.bjHands.length > 1 || hand.cards.length !== 2) return;
     if (hand.cards[0].val !== hand.cards[1].val) return;
-    if (this.balance < hand.bet) {
-      this.showToast('Insufficient SOL balance to split.');
+    if (!this.canAffordBet(hand.bet)) {
       return;
     }
 
@@ -6295,18 +6368,25 @@ class GreenpumpApp {
       gpAudio.playClick();
     });
     if (double) double.addEventListener('click', () => {
-      this.hiloBet = Math.max(0.001, parseFloat((this.hiloBet * 2).toFixed(4)));
+      const maxPlayable = this.getMaxPlayableBet();
+      this.hiloBet = Math.max(0.001, Math.min(maxPlayable, parseFloat((this.hiloBet * 2).toFixed(4))));
       if (betInput) betInput.value = this.hiloBet;
       updateUsd();
       this.updateHiLoUI();
       gpAudio.playClick();
     });
     if (max) max.addEventListener('click', () => {
-      this.hiloBet = Math.max(0.001, parseFloat(this.balance.toFixed(4)));
+      const maxPlayable = this.getMaxPlayableBet();
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      this.hiloBet = Math.max(0.001, parseFloat(maxPlayable.toFixed(4)));
       if (betInput) betInput.value = this.hiloBet;
       updateUsd();
       this.updateHiLoUI();
       gpAudio.playClick();
+      this.showToast(`MAX set to ${this.hiloBet} SOL (${this.solFeeReserve} SOL reserved for fees)`);
     });
 
     const higher = document.getElementById('hiloHigherBtn');
@@ -6450,8 +6530,7 @@ class GreenpumpApp {
     if (probability <= 0) return;
 
     if (!this.hiloPlaying) {
-      if (this.balance < this.hiloBet) {
-        this.showInsufficientBalancePrompt();
+      if (!this.canAffordBet(this.hiloBet)) {
         return;
       }
       this.balance = parseFloat((this.balance - this.hiloBet).toFixed(4));
@@ -6578,8 +6657,19 @@ class GreenpumpApp {
       gpAudio.playClick();
     };
     if (half) half.addEventListener('click', () => setBet(this.flappyBet / 2));
-    if (double) double.addEventListener('click', () => setBet(this.flappyBet * 2));
-    if (max) max.addEventListener('click', () => setBet(this.balance));
+    if (double) double.addEventListener('click', () => {
+      const maxPlayable = this.getMaxPlayableBet();
+      setBet(Math.min(maxPlayable, this.flappyBet * 2));
+    });
+    if (max) max.addEventListener('click', () => {
+      const maxPlayable = this.getMaxPlayableBet();
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      setBet(maxPlayable);
+      this.showToast(`MAX set to ${this.flappyBet} SOL (${this.solFeeReserve} SOL reserved for fees)`);
+    });
 
     const startBtn = document.getElementById('flappyStartBtn');
     const restartBtn = document.getElementById('flappyRestartBtn');
@@ -6617,8 +6707,7 @@ class GreenpumpApp {
   startFlappyGame() {
     if (!this.requireAuth()) return;
     if (this.flappyPlaying) return;
-    if (this.balance < this.flappyBet) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(this.flappyBet)) {
       return;
     }
 
@@ -6966,8 +7055,19 @@ class GreenpumpApp {
     const double = document.getElementById('coinflipDoubleBtn');
     const max = document.getElementById('coinflipMaxBtn');
     if (half) half.addEventListener('click', () => setBet(this.coinflipBet / 2));
-    if (double) double.addEventListener('click', () => setBet(this.coinflipBet * 2));
-    if (max) max.addEventListener('click', () => setBet(Math.max(0.001, this.balance)));
+    if (double) double.addEventListener('click', () => {
+      const maxPlayable = this.getMaxPlayableBet();
+      setBet(Math.min(maxPlayable, this.coinflipBet * 2));
+    });
+    if (max) max.addEventListener('click', () => {
+      const maxPlayable = this.getMaxPlayableBet();
+      if (maxPlayable <= 0) {
+        this.showFeeReservePrompt();
+        return;
+      }
+      setBet(maxPlayable);
+      this.showToast(`MAX set to ${this.coinflipBet} SOL (${this.solFeeReserve} SOL reserved for fees)`);
+    });
 
     const heads = document.getElementById('coinflipHeadsBtn');
     const tails = document.getElementById('coinflipTailsBtn');
@@ -7015,8 +7115,7 @@ class GreenpumpApp {
   flipCoinflip() {
     if (!this.requireAuth()) return;
     if (this.coinflipFlipping) return;
-    if (this.balance < this.coinflipBet) {
-      this.showInsufficientBalancePrompt();
+    if (!this.canAffordBet(this.coinflipBet)) {
       return;
     }
 
@@ -8350,9 +8449,8 @@ class GreenpumpApp {
     const amount = Number(this.pendingAirdropAmount) || 0.5;
     if (amount <= 0) return;
 
-    if (this.balance < amount) {
+    if (!this.canAffordBet(amount)) {
       this.closeModal('airdropConfirmModal');
-      this.showInsufficientBalancePrompt();
       return;
     }
 
