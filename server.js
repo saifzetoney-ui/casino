@@ -109,9 +109,15 @@ function serveStatic(req, res, url) {
 
   let filePath = path.resolve(ROOT, '.' + pathname);
   if (!fs.existsSync(filePath)) {
-    const pubPath = path.resolve(ROOT, 'public', '.' + pathname);
-    if (fs.existsSync(pubPath)) {
-      filePath = pubPath;
+    if (fs.existsSync(filePath + '.html')) {
+      filePath = filePath + '.html';
+    } else {
+      const pubPath = path.resolve(ROOT, 'public', '.' + pathname);
+      if (fs.existsSync(pubPath)) {
+        filePath = pubPath;
+      } else if (fs.existsSync(pubPath + '.html')) {
+        filePath = pubPath + '.html';
+      }
     }
   }
   if (!filePath.startsWith(ROOT + path.sep) && filePath !== ROOT) {
