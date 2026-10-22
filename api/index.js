@@ -130,8 +130,22 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const pathname = parsedUrl.pathname;
+  const host = req.headers.host || 'localhost';
+  const parsedUrl = new URL(req.url, `http://${host}`);
+  let pathname = parsedUrl.pathname.replace(/\/+$/, '') || '/';
+
+  // Handle Vercel rewrite headers if destination is /api/index.js
+  const matchedPath = req.headers['x-matched-path'];
+  if (pathname === '/api/index.js' || pathname === '/api' || pathname === '/api/index') {
+    if (typeof matchedPath === 'string' && matchedPath.startsWith('/api') && !matchedPath.includes('index.js')) {
+      pathname = matchedPath.split('?')[0].replace(/\/+$/, '');
+    }
+  }
+
+  // Ensure leading /api prefix is normalized
+  if (!pathname.startsWith('/api') && pathname !== '/') {
+    pathname = '/api' + pathname;
+  }
 
   function extractToken(req, parsedUrl) {
     const authHeader = req.headers['authorization'] || '';

@@ -355,6 +355,30 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+const VIP_TIER_NAMES = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Whale'];
+const VIP_TIER_MAP = { bronze: 1, silver: 2, gold: 3, platinum: 4, diamond: 5, whale: 6 };
+
+function parseVipRank(val) {
+  if (typeof val === 'number') {
+    const clamped = Math.max(1, Math.min(6, Math.floor(val)));
+    return { num: clamped, name: VIP_TIER_NAMES[clamped - 1] || 'Bronze' };
+  }
+  if (typeof val === 'string') {
+    const lower = val.trim().toLowerCase();
+    if (VIP_TIER_MAP[lower]) {
+      const num = VIP_TIER_MAP[lower];
+      return { num, name: VIP_TIER_NAMES[num - 1] };
+    }
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 1) {
+      const clamped = Math.max(1, Math.min(6, parsed));
+      return { num: clamped, name: VIP_TIER_NAMES[clamped - 1] || 'Bronze' };
+    }
+    return { num: 1, name: val.trim() || 'Bronze' };
+  }
+  return { num: 1, name: 'Bronze' };
+}
+
 function formatUserRow(row) {
   if (!row) return null;
   let stats = row.stats;
@@ -364,13 +388,16 @@ function formatUserRow(row) {
     stats = {};
   }
 
+  const vip = parseVipRank(row.vip_rank !== undefined ? row.vip_rank : (row.vipRank !== undefined ? row.vipRank : 1));
+
   return {
     id: row.id,
     email: row.email,
     username: row.username,
     authProvider: row.auth_provider || row.authProvider || 'email',
     balance: parseFloat(Number(row.balance || 0).toFixed(4)),
-    vipRank: Number(row.vip_rank || row.vipRank || 1),
+    vipRank: vip.name,
+    vipRankNum: vip.num,
     userLevel: Number(row.user_level || row.userLevel || 1),
     picture: row.picture || '',
     avatar: row.avatar || row.picture || '',
@@ -829,8 +856,8 @@ async function updateUser(userId, updates = {}) {
       }
 
       let vipRank = current.vip_rank;
-      if (typeof updates.vipRank === 'number') {
-        vipRank = Math.max(1, Math.min(10, Math.floor(updates.vipRank)));
+      if (updates.vipRank !== undefined && updates.vipRank !== null) {
+        vipRank = parseVipRank(updates.vipRank).num;
       }
 
       let userLevel = current.user_level;
@@ -872,8 +899,10 @@ async function updateUser(userId, updates = {}) {
   if (typeof updates.balance === 'number' && !isNaN(updates.balance)) {
     user.balance = parseFloat(Math.max(0, updates.balance).toFixed(4));
   }
-  if (typeof updates.vipRank === 'number') {
-    user.vipRank = Math.max(1, Math.min(10, Math.floor(updates.vipRank)));
+  if (updates.vipRank !== undefined && updates.vipRank !== null) {
+    const vip = parseVipRank(updates.vipRank);
+    user.vipRank = vip.name;
+    user.vip_rank = vip.num;
   }
   if (typeof updates.userLevel === 'number') {
     user.userLevel = Math.max(1, Math.floor(updates.userLevel));
@@ -1192,10 +1221,19 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
       let query;
       let params;
       if (term) {
+        const vipNum = VIP_TIER_MAP[term] || 0;
         query = `
           SELECT id, email, username, balance, vip_rank, user_level, auth_provider, stats, created_at, updated_at
           FROM users
-          WHERE (LOWER(email) LIKE $1 OR LOWER(username) LIKE $1 OR LOWER(id) LIKE $1)
+          WHERE (
+            LOWER(email) LIKE $1 
+            OR LOWER(username) LIKE $1 
+            OR LOWER(id) LIKE $1
+            OR CAST(balance AS TEXT) LIKE $1
+            OR CAST(vip_rank AS TEXT) LIKE $1
+            OR CAST(user_level AS TEXT) LIKE $1
+            ${vipNum > 0 ? `OR vip_rank = ${vipNum}` : ''}
+          )
           ORDER BY created_at DESC
           LIMIT $2 OFFSET $3
         `;
@@ -1210,7 +1248,7 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
         params = [safeLimit, safeOffset];
       }
       const res = await client.query(query, params);
-      return res.rows.map(r => sanitizeUser(r));
+      return res.rows.map(r => formatUserRow(r));
     } finally {
       client.release();
     }
@@ -1220,14 +1258,28 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
   initLocalDatabase();
   let list = Object.values(users);
   if (term) {
-    list = list.filter(u =>
-      (u.email && u.email.toLowerCase().includes(term)) ||
-      (u.username && u.username.toLowerCase().includes(term)) ||
-      (u.id && u.id.toLowerCase().includes(term))
-    );
+    list = list.filter(u => {
+      if (!u) return false;
+      const uEmail = String(u.email || '').toLowerCase();
+      const uName = String(u.username || '').toLowerCase();
+      const uId = String(u.id || '').toLowerCase();
+      const uBal = String(u.balance ?? '').toLowerCase();
+      const uVip = parseVipRank(u.vipRank || u.vip_rank || '').name.toLowerCase();
+      const uVipRaw = String(u.vipRank || u.vip_rank || '').toLowerCase();
+      const uLevel = String(u.userLevel || u.user_level || '').toLowerCase();
+      return (
+        uEmail.includes(term) ||
+        uName.includes(term) ||
+        uId.includes(term) ||
+        uBal.includes(term) ||
+        uVip.includes(term) ||
+        uVipRaw.includes(term) ||
+        uLevel.includes(term)
+      );
+    });
   }
   list.sort((a, b) => Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0));
-  return list.slice(safeOffset, safeOffset + safeLimit).map(u => sanitizeUser(u));
+  return list.slice(safeOffset, safeOffset + safeLimit).map(u => formatUserRow(u));
 }
 
 async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bronze', userLevel = 1 }) {
@@ -1236,6 +1288,7 @@ async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bro
   const cleanBalance = parseFloat(Math.max(0, Number(balance) || 0).toFixed(4));
   const now = Date.now();
   const userId = 'usr_' + crypto.randomBytes(8).toString('hex');
+  const vip = parseVipRank(vipRank);
 
   const hasPg = await ensureDatabaseSchema();
   if (hasPg && pgPool) {
@@ -1247,7 +1300,7 @@ async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bro
         const updateRes = await client.query(`
           UPDATE users SET balance = $1, vip_rank = $2, user_level = $3, updated_at = $4
           WHERE id = $5 RETURNING *
-        `, [cleanBalance, typeof vipRank === 'number' ? vipRank : 1, userLevel, now, row.id]);
+        `, [cleanBalance, vip.num, userLevel, now, row.id]);
         return formatUserRow(updateRes.rows[0]);
       }
 
@@ -1256,7 +1309,7 @@ async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bro
         INSERT INTO users (id, email, username, password_hash, salt, auth_provider, balance, vip_rank, user_level, stats, created_at, last_login_at)
         VALUES ($1, $2, $3, '', '', 'admin_created', $4, $5, $6, $7, $8, $8)
         RETURNING *
-      `, [userId, cleanEmail, cleanUsername, cleanBalance, typeof vipRank === 'number' ? vipRank : 1, userLevel, JSON.stringify(defaultStats), now]);
+      `, [userId, cleanEmail, cleanUsername, cleanBalance, vip.num, userLevel, JSON.stringify(defaultStats), now]);
       return formatUserRow(insertRes.rows[0]);
     } finally {
       client.release();
@@ -1272,11 +1325,12 @@ async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bro
 
   if (existingId) {
     users[existingId].balance = cleanBalance;
-    users[existingId].vipRank = vipRank;
+    users[existingId].vipRank = vip.name;
+    users[existingId].vip_rank = vip.num;
     users[existingId].userLevel = userLevel;
     users[existingId].updatedAt = now;
     saveUsers();
-    return sanitizeUser(users[existingId]);
+    return formatUserRow(users[existingId]);
   }
 
   const newUser = {
@@ -1287,7 +1341,8 @@ async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bro
     salt: '',
     authProvider: 'admin_created',
     balance: cleanBalance,
-    vipRank,
+    vipRank: vip.name,
+    vip_rank: vip.num,
     userLevel,
     stats: { totalWagered: 0, totalProfit: 0, totalBets: 0, wins: 0, bestMult: 1 },
     createdAt: now,
@@ -1295,7 +1350,7 @@ async function adminCreateUser({ username, email, balance = 0.50, vipRank = 'Bro
   };
   users[userId] = newUser;
   saveUsers();
-  return sanitizeUser(newUser);
+  return formatUserRow(newUser);
 }
 
 async function syncUserProfile({ id, username, email, balance, vipRank, userLevel }) {

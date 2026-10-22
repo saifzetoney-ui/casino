@@ -1419,6 +1419,13 @@ class GreenpumpApp {
           this.loadAdminUsers(searchUsersInput.value.trim());
         }
       });
+      let searchDebounce = null;
+      searchUsersInput.addEventListener('input', () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+          this.loadAdminUsers(searchUsersInput.value.trim());
+        }, 180);
+      });
     }
 
     // Clear search button
@@ -1732,7 +1739,35 @@ class GreenpumpApp {
         return;
       }
 
-      const users = data.users || [];
+      let users = data.users || [];
+      if (!search) {
+        this._allAdminUsers = users;
+      } else if (users.length === 0 && this._allAdminUsers && this._allAdminUsers.length > 0) {
+        const qLower = search.toLowerCase();
+        const currentProfile = {
+          id: this.userId || localStorage.getItem('gp_user_id') || this.userEmail || 'current_player',
+          username: this.username || 'Player',
+          email: this.userEmail || '',
+          balance: Number(this.balance || 0),
+          vipRank: this.vipRank || 'Bronze',
+          userLevel: this.userLevel || 1
+        };
+        const candidates = [...this._allAdminUsers];
+        if (!candidates.some(u => u.id === currentProfile.id || (u.email && u.email === currentProfile.email))) {
+          candidates.unshift(currentProfile);
+        }
+        const filtered = candidates.filter(u => {
+          return (u.username && String(u.username).toLowerCase().includes(qLower)) ||
+                 (u.email && String(u.email).toLowerCase().includes(qLower)) ||
+                 (u.id && String(u.id).toLowerCase().includes(qLower)) ||
+                 (String(u.balance ?? '').includes(qLower)) ||
+                 (u.vipRank && String(u.vipRank).toLowerCase().includes(qLower));
+        });
+        if (filtered.length > 0) {
+          users = filtered;
+        }
+      }
+
       if (users.length === 0) {
         tbody.innerHTML = `
           <tr>
@@ -1763,6 +1798,34 @@ class GreenpumpApp {
         </tr>
       `).join('');
     } catch (e) {
+      if (search && this._allAdminUsers && this._allAdminUsers.length > 0) {
+        const qLower = search.toLowerCase();
+        const filtered = this._allAdminUsers.filter(u => {
+          return (u.username && String(u.username).toLowerCase().includes(qLower)) ||
+                 (u.email && String(u.email).toLowerCase().includes(qLower)) ||
+                 (u.id && String(u.id).toLowerCase().includes(qLower)) ||
+                 (String(u.balance ?? '').includes(qLower)) ||
+                 (u.vipRank && String(u.vipRank).toLowerCase().includes(qLower));
+        });
+        if (filtered.length > 0) {
+          this._adminLoadedUsers = filtered;
+          tbody.innerHTML = filtered.map(u => `
+            <tr>
+              <td>
+                <div style="font-weight:800;color:#ffffff;">${this.escapeHtml(u.username || 'User')}</div>
+                <div style="font-size:10px;color:#64748b;">${this.escapeHtml(u.email || u.id)}</div>
+              </td>
+              <td style="color:#22c55e;font-weight:800;font-family:monospace;">${Number(u.balance || 0).toFixed(4)} SOL</td>
+              <td><span style="font-size:10px;color:#93c5fd;font-weight:700;">${this.escapeHtml(u.vipRank || 'Bronze')}</span></td>
+              <td><span style="font-size:10px;color:#cbd5e1;font-weight:700;">Lv.${u.userLevel || 1}</span></td>
+              <td>
+                <button type="button" class="admin-action-btn" data-edit-user-id="${this.escapeHtml(u.id)}">EDIT</button>
+              </td>
+            </tr>
+          `).join('');
+          return;
+        }
+      }
       tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">Error: ${this.escapeHtml(e.message)}</td></tr>`;
     }
   }
@@ -1835,7 +1898,9 @@ class GreenpumpApp {
         this.updateBalanceUI();
       }
 
-      this.loadAdminUsers();
+      const searchInput = document.getElementById('adminSearchUsersInput');
+      const currentSearch = searchInput ? searchInput.value.trim() : '';
+      this.loadAdminUsers(currentSearch);
       this.loadAdminStats();
     } catch (e) {
       this.showToast(`Update error: ${e.message}`);
@@ -1917,7 +1982,9 @@ class GreenpumpApp {
         localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
         this.updateBalanceUI();
       }
-      this.loadAdminUsers();
+      const searchInput = document.getElementById('adminSearchUsersInput');
+      const currentSearch = searchInput ? searchInput.value.trim() : '';
+      this.loadAdminUsers(currentSearch);
       this.loadAdminStats();
     } catch (e) {
       this.showToast(`Airdrop error: ${e.message}`);

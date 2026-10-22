@@ -298,5 +298,26 @@
     },
     "createdAt": 1792687494415,
     "lastLoginAt": 1792687494424
+  },
+  "usr_3cb7d58c200f0348": {
+    "id": "usr_3cb7d58c200f0348",
+    "email": "khalid@test.com",
+    "username": "khalid",
+    "passwordHash": "",
+    "salt": "",
+    "authProvider": "admin_created",
+    "balance": 0.88,
+    "vipRank": "Gold",
+    "vip_rank": 3,
+    "userLevel": 1,
+    "stats": {
+      "totalWagered": 0,
+      "totalProfit": 0,
+      "totalBets": 0,
+      "wins": 0,
+      "bestMult": 1
+    },
+    "createdAt": 1792688779076,
+    "lastLoginAt": 1792688779076
   }
 }

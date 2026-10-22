@@ -21,6 +21,10 @@
       "destination": "https://greenpump.xyz/api/avatar/:path*"
     },
     {
+      "source": "/api/:match*",
+      "destination": "/api/index.js"
+    },
+    {
       "source": "/privacy",
       "destination": "/privacy.html"
     },
