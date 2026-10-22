@@ -1340,6 +1340,22 @@ class GreenpumpApp {
       });
     }
 
+    // Global interaction guard: when not logged in, block all gameplay, betting, deposit, or chat actions
+    document.addEventListener('click', (e) => {
+      if (this.isLoggedIn) return;
+      // Allow interacting with the auth modal and legal/info links
+      if (e.target.closest('#authModal, [data-info], #infoModal, a[href*="privacy"], a[href*="terms"], a[href*="responsible"], a[href*="howto"]')) {
+        return;
+      }
+      // If clicking games, bet buttons, wallet, chat, profile, or any actions, block and enforce auth!
+      const blockedTarget = e.target.closest('.game-container, .gp-game-card, .gp-chat, #gpWalletBtn, #footerWalletBtn, #gpProfileBtn, [data-open-case], button, input, select, textarea');
+      if (blockedTarget) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.requireAuth();
+      }
+    }, true);
+
     // Verify existing database session or enforce mandatory registration gate
     this.checkExistingSession();
     this.updateAuthUI();
@@ -1380,10 +1396,7 @@ class GreenpumpApp {
     const closeBtn = document.getElementById('authCloseBtn');
     if (closeBtn) closeBtn.style.display = 'none';
     this.updateAuthUI();
-
-    setTimeout(() => {
-      this.openAuthModal('signup');
-    }, 450);
+    this.openAuthModal('signup');
   }
 
   closeAuthModal() {
@@ -1409,7 +1422,7 @@ class GreenpumpApp {
     if (!this.isLoggedIn) {
       this.enforceMandatoryAuth();
       this.shakeAuthCard();
-      this.showToast('⚠️ Please create an account or log in to play.');
+      this.showToast('⚠️ Please sign up or log in to play, deposit, or chat.');
       return false;
     }
     return true;
@@ -1797,14 +1810,22 @@ class GreenpumpApp {
 
     if (this.isLoggedIn) {
       if (closeBtn) closeBtn.style.display = 'block';
-      if (navAuth) navAuth.style.display = 'none';
+      if (navAuth) {
+        navAuth.style.setProperty('display', 'none', 'important');
+        navAuth.hidden = true;
+        navAuth.classList.add('is-hidden');
+      }
       if (menuItemAuthText) menuItemAuthText.textContent = 'Sign Out';
       if (profileWallet && this.userEmail) {
         profileWallet.textContent = this.userEmail;
       }
     } else {
       if (closeBtn) closeBtn.style.display = 'none';
-      if (navAuth) navAuth.style.display = 'inline-flex';
+      if (navAuth) {
+        navAuth.style.setProperty('display', 'inline-flex', 'important');
+        navAuth.hidden = false;
+        navAuth.classList.remove('is-hidden');
+      }
       if (menuItemAuthText) menuItemAuthText.textContent = 'Sign In / Register';
       if (profileWallet) {
         profileWallet.textContent = 'Registration Required';
@@ -7104,6 +7125,9 @@ class GreenpumpApp {
   /* MODALS, CASE, NOTIFICATIONS, FAIRNESS, LEADERBOARD */
   /* ============================================================= */
   openModal(id, updateUrl = true) {
+    if (id === 'dailyCaseModal' || id === 'airdropConfirmModal') {
+      if (!this.requireAuth()) return;
+    }
     const modal = document.getElementById(id);
     if (!modal) return;
     modal.classList.add('open');
@@ -7144,6 +7168,7 @@ class GreenpumpApp {
   }
 
   openWalletDialog(updateUrl = true) {
+    if (!this.requireAuth()) return;
     this.updateBalanceUI();
     const dialog = document.getElementById('walletSecurityDialog');
     if (!dialog) return;
@@ -8062,21 +8087,38 @@ class GreenpumpApp {
     } catch {}
 
     const sendMsg = () => {
+      if (!this.requireAuth()) return;
       if (!input) return;
       const val = input.value.trim().slice(0, 180);
       if (!val) return;
-      this.addChatMessage(feed, 'You', 'LVL 1', val, true);
+      const currentLevel = this.userLevel || 1;
+      const currentName = this.username || 'You';
+      this.addChatMessage(feed, currentName, `LVL ${currentLevel}`, val, true);
       input.value = '';
       if (emojiPicker) emojiPicker.hidden = true;
       gpAudio.playClick();
     };
     if (sendBtn) sendBtn.addEventListener('click', sendMsg);
-    if (input) input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        sendMsg();
-      }
-    });
+    if (input) {
+      input.addEventListener('focus', () => {
+        if (!this.isLoggedIn) {
+          input.blur();
+          this.requireAuth();
+        }
+      });
+      input.addEventListener('click', () => {
+        if (!this.isLoggedIn) {
+          input.blur();
+          this.requireAuth();
+        }
+      });
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          sendMsg();
+        }
+      });
+    }
 
     if (emojiBtn && emojiPicker) {
       const emojis = ['🚀', '🔥', '💎', '🐔', '💣', '🃏', '🎁', '😂', '😭', '🤝', '🍀', '🤑', '👑', '🥶'];

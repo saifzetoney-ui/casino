@@ -7125,6 +7125,9 @@ class GreenpumpApp {
   /* MODALS, CASE, NOTIFICATIONS, FAIRNESS, LEADERBOARD */
   /* ============================================================= */
   openModal(id, updateUrl = true) {
+    if (id === 'dailyCaseModal' || id === 'airdropConfirmModal') {
+      if (!this.requireAuth()) return;
+    }
     const modal = document.getElementById(id);
     if (!modal) return;
     modal.classList.add('open');
@@ -7165,6 +7168,7 @@ class GreenpumpApp {
   }
 
   openWalletDialog(updateUrl = true) {
+    if (!this.requireAuth()) return;
     this.updateBalanceUI();
     const dialog = document.getElementById('walletSecurityDialog');
     if (!dialog) return;
@@ -8083,21 +8087,38 @@ class GreenpumpApp {
     } catch {}
 
     const sendMsg = () => {
+      if (!this.requireAuth()) return;
       if (!input) return;
       const val = input.value.trim().slice(0, 180);
       if (!val) return;
-      this.addChatMessage(feed, 'You', 'LVL 1', val, true);
+      const currentLevel = this.userLevel || 1;
+      const currentName = this.username || 'You';
+      this.addChatMessage(feed, currentName, `LVL ${currentLevel}`, val, true);
       input.value = '';
       if (emojiPicker) emojiPicker.hidden = true;
       gpAudio.playClick();
     };
     if (sendBtn) sendBtn.addEventListener('click', sendMsg);
-    if (input) input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        sendMsg();
-      }
-    });
+    if (input) {
+      input.addEventListener('focus', () => {
+        if (!this.isLoggedIn) {
+          input.blur();
+          this.requireAuth();
+        }
+      });
+      input.addEventListener('click', () => {
+        if (!this.isLoggedIn) {
+          input.blur();
+          this.requireAuth();
+        }
+      });
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          sendMsg();
+        }
+      });
+    }
 
     if (emojiBtn && emojiPicker) {
       const emojis = ['🚀', '🔥', '💎', '🐔', '💣', '🃏', '🎁', '😂', '😭', '🤝', '🍀', '🤑', '👑', '🥶'];
