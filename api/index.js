@@ -141,6 +141,16 @@ module.exports = async (req, res) => {
     return parsedUrl.searchParams.get('token') || '';
   }
 
+  function extractAdminToken(req, parsedUrl) {
+    const authHeader = req.headers['authorization'] || '';
+    if (authHeader.startsWith('Bearer ')) {
+      return authHeader.slice(7).trim();
+    }
+    const customHeader = req.headers['x-admin-token'];
+    if (customHeader) return String(customHeader).trim();
+    return parsedUrl.searchParams.get('adminToken') || '';
+  }
+
   // --- AUTH & DATABASE PERSISTENCE ENDPOINTS ---
   if (pathname === '/api/db-status') {
     try {
@@ -348,6 +358,108 @@ module.exports = async (req, res) => {
       const limit = parseInt(parsedUrl.searchParams.get('limit') || '50', 10);
       const userBets = await db.getUserBets(user.id, limit);
       send(res, 200, JSON.stringify({ bets: userBets }));
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // --- ADMIN PANEL SECURE API ENDPOINTS ---
+  if (pathname === '/api/admin/auth') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
+        return;
+      }
+      try {
+        const result = await db.verifyAdminAuth(body);
+        send(res, 200, JSON.stringify(result));
+      } catch (e) {
+        send(res, 401, JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/admin/stats') {
+    const adminToken = extractAdminToken(req, parsedUrl);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }));
+      return;
+    }
+    try {
+      const stats = await db.adminGetPlatformStats();
+      casinoVault.getVaultStats((err, vaultStats) => {
+        stats.vaultStats = vaultStats || {};
+        send(res, 200, JSON.stringify({ ok: true, stats, admin }));
+      });
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/admin/users') {
+    const adminToken = extractAdminToken(req, parsedUrl);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }));
+      return;
+    }
+    try {
+      const search = parsedUrl.searchParams.get('search') || '';
+      const limit = parseInt(parsedUrl.searchParams.get('limit') || '50', 10);
+      const offset = parseInt(parsedUrl.searchParams.get('offset') || '0', 10);
+      const usersList = await db.adminGetUsers({ search, limit, offset });
+      send(res, 200, JSON.stringify({ ok: true, users: usersList }));
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/admin/user/update') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+    const adminToken = extractAdminToken(req, parsedUrl);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }));
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body || !body.userId) {
+        send(res, 400, JSON.stringify({ error: 'User ID and updates required' }));
+        return;
+      }
+      try {
+        const updated = await db.adminUpdateUser(body.userId, body);
+        send(res, 200, JSON.stringify({ ok: true, user: updated }));
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/admin/bets') {
+    const adminToken = extractAdminToken(req, parsedUrl);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }));
+      return;
+    }
+    try {
+      const limit = parseInt(parsedUrl.searchParams.get('limit') || '50', 10);
+      const recentBets = await db.adminGetRecentBets(limit);
+      send(res, 200, JSON.stringify({ ok: true, bets: recentBets }));
     } catch (e) {
       send(res, 500, JSON.stringify({ error: e.message }));
     }

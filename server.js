@@ -349,6 +349,16 @@ async function requestHandler(req, res) {
     return parsedUrl.searchParams.get('token') || '';
   }
 
+  function extractAdminToken(req, parsedUrl) {
+    const authHeader = req.headers['authorization'] || '';
+    if (authHeader.startsWith('Bearer ')) {
+      return authHeader.slice(7).trim();
+    }
+    const customHeader = req.headers['x-admin-token'];
+    if (customHeader) return String(customHeader).trim();
+    return parsedUrl.searchParams.get('adminToken') || '';
+  }
+
   // --- AUTH & DATABASE PERSISTENCE ENDPOINTS ---
   if (url.pathname === '/api/db-status') {
     try {
@@ -556,6 +566,108 @@ async function requestHandler(req, res) {
       const limit = parseInt(url.searchParams.get('limit') || '50', 10);
       const userBets = await db.getUserBets(user.id, limit);
       send(res, 200, JSON.stringify({ bets: userBets }), 'application/json; charset=utf-8');
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+    }
+    return;
+  }
+
+  // --- ADMIN PANEL SECURE API ENDPOINTS ---
+  if (url.pathname === '/api/admin/auth') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body) {
+        send(res, 400, JSON.stringify({ error: 'Invalid request body' }), 'application/json; charset=utf-8');
+        return;
+      }
+      try {
+        const result = await db.verifyAdminAuth(body);
+        send(res, 200, JSON.stringify(result), 'application/json; charset=utf-8');
+      } catch (e) {
+        send(res, 401, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/admin/stats') {
+    const adminToken = extractAdminToken(req, url);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }), 'application/json; charset=utf-8');
+      return;
+    }
+    try {
+      const stats = await db.adminGetPlatformStats();
+      casinoVault.getVaultStats((err, vaultStats) => {
+        stats.vaultStats = vaultStats || {};
+        send(res, 200, JSON.stringify({ ok: true, stats, admin }), 'application/json; charset=utf-8');
+      });
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/admin/users') {
+    const adminToken = extractAdminToken(req, url);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }), 'application/json; charset=utf-8');
+      return;
+    }
+    try {
+      const search = url.searchParams.get('search') || '';
+      const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+      const usersList = await db.adminGetUsers({ search, limit, offset });
+      send(res, 200, JSON.stringify({ ok: true, users: usersList }), 'application/json; charset=utf-8');
+    } catch (e) {
+      send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/admin/user/update') {
+    if (req.method !== 'POST') {
+      send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
+      return;
+    }
+    const adminToken = extractAdminToken(req, url);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }), 'application/json; charset=utf-8');
+      return;
+    }
+    parseJsonBody(req, async (err, body) => {
+      if (err || !body || !body.userId) {
+        send(res, 400, JSON.stringify({ error: 'User ID and updates required' }), 'application/json; charset=utf-8');
+        return;
+      }
+      try {
+        const updated = await db.adminUpdateUser(body.userId, body);
+        send(res, 200, JSON.stringify({ ok: true, user: updated }), 'application/json; charset=utf-8');
+      } catch (e) {
+        send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/admin/bets') {
+    const adminToken = extractAdminToken(req, url);
+    const admin = db.verifyAdminToken(adminToken);
+    if (!admin) {
+      send(res, 401, JSON.stringify({ error: 'Unauthorized: Valid admin credentials required' }), 'application/json; charset=utf-8');
+      return;
+    }
+    try {
+      const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const recentBets = await db.adminGetRecentBets(limit);
+      send(res, 200, JSON.stringify({ ok: true, bets: recentBets }), 'application/json; charset=utf-8');
     } catch (e) {
       send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
     }

@@ -97,7 +97,7 @@
             <button id="airdropDropBtn" type="button" title="Airdrop SOL to all online players" aria-label="Airdrop SOL" style="font-size:9.5px;font-weight:900;color:#ffffff;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:1px solid rgba(147, 197, 253, 0.35);padding:3px 8px;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 2px 8px rgba(37,99,235,0.4);white-space:nowrap;transition:all 0.15s ease;">DROP</button>
           </div>
           <div style="background:#0e172a;border:1px solid rgba(255, 255, 255, 0.06);border-radius:9px;padding:3px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;flex-shrink:0">
-            <span id="airdropTimerDisplay" style="font-family:'Courier New', monospace;font-size:12px;font-weight:900;color:#38bdf8;letter-spacing:0.02em;line-height:1.2">02:22</span>
+            <span id="airdropTimerDisplay" style="font-family:'Courier New', monospace;font-size:12px;font-weight:900;color:#94a3b8;letter-spacing:0.02em;line-height:1.2">--:--</span>
             <div style="display:flex;align-items:center;gap:3px;font-size:8.5px;color:#64748b;font-weight:800;margin-top:1px">
               <span id="airdropOnlineCount">84</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
@@ -110,7 +110,7 @@
           </div>
         </div>
         <div style="width:100%;height:3px;background:rgba(255, 255, 255, 0.06);border-radius:2px;margin-top:6px;overflow:hidden">
-          <div id="airdropProgressBar" style="height:100%;width:64%;background:linear-gradient(90deg, #1d4ed8 0%, #38bdf8 100%);border-radius:2px;"></div>
+          <div id="airdropProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg, #1d4ed8 0%, #38bdf8 100%);border-radius:2px;transition:width 0.3s ease;"></div>
         </div>
       </div>
 
@@ -2316,6 +2316,213 @@
           <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Platform rules, age restriction &amp; balance rights</div>
         </div>
         <button id="settingsOpenTermsBtn" type="button" style="background:#132244;border:1px solid rgba(59,130,246,0.25);color:#93c5fd;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;">READ</button>
+      </div>
+
+      <!-- Admin Console Section (Email & Secret Key Protected) -->
+      <div id="settingsAdminSection" class="settings-admin-box">
+        <div class="settings-admin-header">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:18px;">🛡️</span>
+            <div>
+              <div style="font-size:13px;font-weight:900;color:#f8fafc;letter-spacing:0.3px;">ADMIN CONSOLE</div>
+              <div style="font-size:11px;color:#94a3b8;">Restricted controls (Requires admin email &amp; secret key)</div>
+            </div>
+          </div>
+          <span id="adminStatusBadge" class="admin-badge locked">LOCKED</span>
+        </div>
+
+        <!-- 1. LOCKED / AUTH GATE STATE -->
+        <div id="adminAuthGateWrap" class="admin-auth-gate">
+          <p style="font-size:11.5px;color:#cbd5e1;line-height:1.45;margin:0 0 12px 0;">
+            Enter your administrator email and master secret key to access platform analytics, live bets audit, and player management.
+          </p>
+          
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <label for="adminAuthEmail" style="font-size:11px;font-weight:800;color:#94a3b8;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Admin Email</label>
+              <input id="adminAuthEmail" type="email" placeholder="admin@example.com" autocomplete="email" style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:9px 12px;color:#ffffff;font-size:12.5px;font-weight:700;outline:none;" />
+            </div>
+
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <label for="adminAuthKey" style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Secret Master Key</label>
+                <button id="adminToggleKeyVisibility" type="button" style="background:none;border:none;color:#60a5fa;font-size:10.5px;font-weight:700;cursor:pointer;padding:0;">Show Key</button>
+              </div>
+              <input id="adminAuthKey" type="password" placeholder="••••••••••••" autocomplete="current-password" style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:9px 12px;color:#ffffff;font-size:12.5px;font-weight:700;outline:none;" />
+            </div>
+
+            <div id="adminAuthError" style="display:none;padding:8px 12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:11.5px;font-weight:700;"></div>
+
+            <button id="adminUnlockActionBtn" type="button" class="admin-unlock-btn">
+              <span>🔓</span> <span>UNLOCK ADMIN PANEL</span>
+            </button>
+            <div style="font-size:10.5px;color:#64748b;text-align:center;">
+              Default key is <code style="color:#93c5fd;background:rgba(59,130,246,0.15);padding:1px 5px;border-radius:4px;">admin777</code> &bull; Configurable via <code style="color:#93c5fd;background:rgba(59,130,246,0.15);padding:1px 5px;border-radius:4px;">ADMIN_SECRET_KEY</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. UNLOCKED / DASHBOARD STATE -->
+        <div id="adminDashboardWrap" class="admin-dashboard-wrap" style="display:none;">
+          <!-- Active Admin Session Banner -->
+          <div class="admin-session-bar">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="admin-pulse-dot"></span>
+              <div>
+                <div style="font-size:10.5px;font-weight:800;color:#86efac;text-transform:uppercase;letter-spacing:0.4px;">Authenticated Administrator</div>
+                <div id="adminSessionEmailDisplay" style="font-size:11.5px;color:#ffffff;font-weight:700;">admin@greenpump.fun</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button id="adminRefreshBtn" type="button" title="Refresh Admin Data" class="admin-icon-btn">🔄</button>
+              <button id="adminLockSessionBtn" type="button" class="admin-lock-btn">LOCK</button>
+            </div>
+          </div>
+
+          <!-- Admin Navigation Tabs -->
+          <div class="admin-tab-nav">
+            <button type="button" class="admin-tab-btn active" data-admin-tab="stats">📊 Platform Stats</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="users">👥 Players</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="bets">🎲 Bets Feed</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="config">⚙️ Config &amp; Edge</button>
+          </div>
+
+          <!-- Tab 1: Stats -->
+          <div id="adminTabStats" class="admin-tab-pane active">
+            <div class="admin-kpi-grid">
+              <div class="admin-kpi-card">
+                <span class="kpi-label">TOTAL PLAYERS</span>
+                <span class="kpi-val" id="admKpiUsers">--</span>
+                <span class="kpi-sub" id="admKpiDb">Engine: Checking...</span>
+              </div>
+              <div class="admin-kpi-card">
+                <span class="kpi-label">TOTAL WAGERS</span>
+                <span class="kpi-val" id="admKpiBets">--</span>
+                <span class="kpi-sub" id="admKpiWinRate">Win Rate: --</span>
+              </div>
+              <div class="admin-kpi-card">
+                <span class="kpi-label">TURNOVER VOLUME</span>
+                <span class="kpi-val highlight-sol" id="admKpiVolume">-- SOL</span>
+                <span class="kpi-sub" id="admKpiPayout">Payouts: -- SOL</span>
+              </div>
+              <div class="admin-kpi-card">
+                <span class="kpi-label">HOUSE GROSS PROFIT</span>
+                <span class="kpi-val highlight-profit" id="admKpiProfit">-- SOL</span>
+                <span class="kpi-sub" id="admKpiVault">Vault: Active</span>
+              </div>
+            </div>
+
+            <div style="margin-top:12px;background:#060a14;border:1px solid rgba(59,130,246,0.18);border-radius:10px;padding:12px;">
+              <div style="font-size:11px;font-weight:800;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Top Balances Platform-Wide</div>
+              <div id="admTopHoldersList" style="display:flex;flex-direction:column;gap:6px;font-size:11.5px;">
+                <div style="color:#64748b;">Loading top players...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Players Manager -->
+          <div id="adminTabUsers" class="admin-tab-pane" style="display:none;">
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <input id="adminSearchUsersInput" type="text" placeholder="Search by email, username or user ID..." style="flex:1;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:7px 10px;color:#ffffff;font-size:11.5px;outline:none;" />
+              <button id="adminSearchUsersBtn" type="button" style="background:#2563eb;color:#ffffff;border:none;border-radius:8px;padding:0 12px;font-size:11.5px;font-weight:800;cursor:pointer;">SEARCH</button>
+            </div>
+
+            <div class="admin-table-container">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>User / Email</th>
+                    <th>Balance</th>
+                    <th>VIP</th>
+                    <th>Level</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTableBody">
+                  <tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">Loading players...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Quick Edit User Subpanel -->
+            <div id="adminUserEditPanel" style="display:none;margin-top:10px;padding:12px;background:#081021;border:1px solid rgba(59,130,246,0.3);border-radius:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-size:11.5px;font-weight:800;color:#60a5fa;" id="adminEditUserTitle">EDIT PLAYER</span>
+                <button type="button" id="adminCloseEditPanelBtn" style="background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;">✕</button>
+              </div>
+              <input type="hidden" id="adminEditUserId" />
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <div>
+                  <label for="adminEditBalanceInput" style="font-size:10px;color:#94a3b8;display:block;margin-bottom:3px;font-weight:700;">BALANCE (SOL)</label>
+                  <input id="adminEditBalanceInput" type="number" step="0.01" min="0" style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:6px 8px;color:#22c55e;font-size:12px;font-weight:800;outline:none;" />
+                </div>
+                <div>
+                  <label for="adminEditVipSelect" style="font-size:10px;color:#94a3b8;display:block;margin-bottom:3px;font-weight:700;">VIP RANK</label>
+                  <select id="adminEditVipSelect" style="width:100%;box-sizing:border-box;background:#0d1527;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:6px 8px;color:#ffffff;font-size:12px;font-weight:700;outline:none;">
+                    <option value="Bronze">Bronze</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Platinum">Platinum</option>
+                    <option value="Diamond">Diamond</option>
+                    <option value="Whale">Whale</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button id="adminSaveUserBtn" type="button" style="flex:1;background:#22c55e;border:none;border-radius:6px;padding:7px;color:#000000;font-size:11px;font-weight:900;cursor:pointer;">SAVE CHANGES</button>
+                <button id="adminAirdropQuickBtn" type="button" style="background:#1e293b;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:7px 10px;color:#93c5fd;font-size:11px;font-weight:800;cursor:pointer;">+0.50 SOL AIRDROP</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Bets Feed -->
+          <div id="adminTabBets" class="admin-tab-pane" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:11px;color:#94a3b8;font-weight:700;">Latest 50 bets platform-wide</span>
+              <button id="adminRefreshBetsBtn" type="button" class="admin-small-btn">REFRESH FEED</button>
+            </div>
+            <div class="admin-table-container">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Game</th>
+                    <th>Wager</th>
+                    <th>Result</th>
+                  </tr>
+                </thead>
+                <tbody id="adminBetsTableBody">
+                  <tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">Loading bets audit...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 4: Config & Edge -->
+          <div id="adminTabConfig" class="admin-tab-pane" style="display:none;">
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:11.5px;color:#cbd5e1;">
+              <div style="background:#060a14;border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:10px;">
+                <div style="font-weight:800;color:#60a5fa;margin-bottom:4px;">🔑 CONFIGURING MASTER KEY &amp; ADMIN EMAILS</div>
+                <p style="margin:0 0 6px 0;line-height:1.4;color:#94a3b8;">
+                  In your deployment environment (Vercel Project Settings &gt; Environment Variables or local <code style="color:#f8fafc;">.env</code>), you can set:
+                </p>
+                <pre style="background:#0d1527;padding:8px;border-radius:6px;font-size:11px;color:#38bdf8;margin:0;overflow-x:auto;">ADMIN_SECRET_KEY=YourSuperStrongSecretKeyHere
+ADMIN_EMAIL=yourname@gmail.com,owner@domain.com</pre>
+              </div>
+
+              <div style="background:#060a14;border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:10px;">
+                <div style="font-weight:800;color:#22c55e;margin-bottom:4px;">⚡ EDGE &amp; ENGINE STATUS</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:#94a3b8;">
+                  <div>Database: <span id="adminEnvDbStatus" style="color:#ffffff;font-weight:700;">Detecting...</span></div>
+                  <div>Vault Payouts: <span id="adminEnvVaultStatus" style="color:#ffffff;font-weight:700;">Active</span></div>
+                  <div>Auth Protocol: <span style="color:#ffffff;font-weight:700;">HMAC SHA-256 Stateless</span></div>
+                  <div>Token Expiry: <span style="color:#ffffff;font-weight:700;">24 Hours</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </dialog>

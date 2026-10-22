@@ -272,6 +272,12 @@ class GreenpumpApp {
     this.authMode = 'signup';
     this.user = null;
 
+    // Admin Console State (Protected by email + master secret key)
+    this.adminToken = localStorage.getItem('gp_admin_token') || '';
+    this.adminEmail = localStorage.getItem('gp_admin_email') || '';
+    this.isAdminAuthenticated = Boolean(this.adminToken);
+    this._adminLoadedUsers = [];
+
     // User Profile & Real Money State (Matching Image 2)
     this.username = localStorage.getItem('gp_username') || 'beh';
     this.userLevel = parseInt(localStorage.getItem('gp_level') || '1', 10);
@@ -291,6 +297,7 @@ class GreenpumpApp {
     this.initLoader();
     this.initWallet();
     this.initProfileMenu();
+    this.initAdminConsole();
     this.initAuth();
     this.initPublicChat();
     this.initAirdrop();
@@ -1197,6 +1204,7 @@ class GreenpumpApp {
       itemSettings.addEventListener('click', () => {
         if (profileDropdown) profileDropdown.hidden = true;
         if (settingsInput) settingsInput.value = this.username;
+        this.syncAdminPanelState();
         if (typeof settingsModal.showModal === 'function') settingsModal.showModal();
         gpAudio.playClick();
       });
@@ -1294,6 +1302,565 @@ class GreenpumpApp {
         gpAudio.playClick();
       });
     }
+  }
+
+  /* ============================================================= */
+  /* ADMIN CONSOLE ENGINE (PROTECTED BY EMAIL & MASTER SECRET KEY) */
+  /* ============================================================= */
+  initAdminConsole() {
+    const adminEmailInput = document.getElementById('adminAuthEmail');
+    const adminKeyInput = document.getElementById('adminAuthKey');
+    const toggleKeyBtn = document.getElementById('adminToggleKeyVisibility');
+    const unlockBtn = document.getElementById('adminUnlockActionBtn');
+    const lockBtn = document.getElementById('adminLockSessionBtn');
+    const refreshBtn = document.getElementById('adminRefreshBtn');
+    const searchUsersBtn = document.getElementById('adminSearchUsersBtn');
+    const searchUsersInput = document.getElementById('adminSearchUsersInput');
+    const refreshBetsBtn = document.getElementById('adminRefreshBetsBtn');
+    const saveUserBtn = document.getElementById('adminSaveUserBtn');
+    const airdropQuickBtn = document.getElementById('adminAirdropQuickBtn');
+    const closeEditPanelBtn = document.getElementById('adminCloseEditPanelBtn');
+    const usersTableBody = document.getElementById('adminUsersTableBody');
+    const tabBtns = document.querySelectorAll('.admin-tab-btn');
+
+    // Toggle password masking
+    if (toggleKeyBtn && adminKeyInput) {
+      toggleKeyBtn.addEventListener('click', () => {
+        const isPass = adminKeyInput.type === 'password';
+        adminKeyInput.type = isPass ? 'text' : 'password';
+        toggleKeyBtn.textContent = isPass ? 'Hide Key' : 'Show Key';
+      });
+    }
+
+    // Unlock button
+    if (unlockBtn) {
+      unlockBtn.addEventListener('click', () => this.handleAdminUnlock());
+    }
+
+    // Enter key submits auth
+    if (adminKeyInput) {
+      adminKeyInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') this.handleAdminUnlock();
+      });
+    }
+    if (adminEmailInput) {
+      adminEmailInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') this.handleAdminUnlock();
+      });
+    }
+
+    // Lock button
+    if (lockBtn) {
+      lockBtn.addEventListener('click', () => this.handleAdminLock());
+    }
+
+    // Refresh button
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        this.loadAdminStats();
+        this.loadAdminUsers();
+        this.loadAdminBets();
+        this.showToast('Admin data refreshed');
+      });
+    }
+
+    // Tab switching
+    if (tabBtns && tabBtns.length > 0) {
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-admin-tab');
+          tabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          const allPanes = document.querySelectorAll('.admin-tab-pane');
+          allPanes.forEach(p => p.style.display = 'none');
+
+          const targetPane = document.getElementById(
+            tab === 'stats' ? 'adminTabStats' :
+            tab === 'users' ? 'adminTabUsers' :
+            tab === 'bets' ? 'adminTabBets' :
+            tab === 'config' ? 'adminTabConfig' : 'adminTabStats'
+          );
+          if (targetPane) targetPane.style.display = 'block';
+
+          if (tab === 'bets') this.loadAdminBets();
+          if (tab === 'users') this.loadAdminUsers();
+          if (tab === 'stats') this.loadAdminStats();
+        });
+      });
+    }
+
+    // Search users
+    if (searchUsersBtn && searchUsersInput) {
+      searchUsersBtn.addEventListener('click', () => {
+        this.loadAdminUsers(searchUsersInput.value.trim());
+      });
+      searchUsersInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          this.loadAdminUsers(searchUsersInput.value.trim());
+        }
+      });
+    }
+
+    // Table click delegation for edit buttons
+    if (usersTableBody) {
+      usersTableBody.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-edit-user-id]');
+        if (btn) {
+          const userId = btn.getAttribute('data-edit-user-id');
+          this.openAdminEditUser(userId);
+        }
+      });
+    }
+
+    // Refresh bets
+    if (refreshBetsBtn) {
+      refreshBetsBtn.addEventListener('click', () => this.loadAdminBets());
+    }
+
+    // Close edit panel
+    if (closeEditPanelBtn) {
+      closeEditPanelBtn.addEventListener('click', () => {
+        const editPanel = document.getElementById('adminUserEditPanel');
+        if (editPanel) editPanel.style.display = 'none';
+      });
+    }
+
+    // Save user updates
+    if (saveUserBtn) {
+      saveUserBtn.addEventListener('click', () => this.handleAdminSaveUser());
+    }
+
+    // Quick Airdrop
+    if (airdropQuickBtn) {
+      airdropQuickBtn.addEventListener('click', () => this.handleAdminQuickAirdrop());
+    }
+
+    this.syncAdminPanelState();
+  }
+
+  syncAdminPanelState() {
+    const authGate = document.getElementById('adminAuthGateWrap');
+    const dashboard = document.getElementById('adminDashboardWrap');
+    const statusBadge = document.getElementById('adminStatusBadge');
+    const sessionEmailDisp = document.getElementById('adminSessionEmailDisplay');
+    const emailInput = document.getElementById('adminAuthEmail');
+    const settingsModal = document.getElementById('settingsModal');
+
+    this.adminToken = localStorage.getItem('gp_admin_token') || '';
+    this.adminEmail = localStorage.getItem('gp_admin_email') || '';
+    this.isAdminAuthenticated = Boolean(this.adminToken);
+
+    if (this.isAdminAuthenticated) {
+      if (authGate) authGate.style.display = 'none';
+      if (dashboard) dashboard.style.display = 'block';
+      if (statusBadge) {
+        statusBadge.textContent = 'UNLOCKED';
+        statusBadge.className = 'admin-badge unlocked';
+      }
+      if (sessionEmailDisp) {
+        sessionEmailDisp.textContent = this.adminEmail || 'admin@greenpump.fun';
+      }
+      if (settingsModal) {
+        settingsModal.classList.add('admin-unlocked');
+      }
+      this.loadAdminStats();
+    } else {
+      if (authGate) authGate.style.display = 'block';
+      if (dashboard) dashboard.style.display = 'none';
+      if (statusBadge) {
+        statusBadge.textContent = 'LOCKED';
+        statusBadge.className = 'admin-badge locked';
+      }
+      if (settingsModal) {
+        settingsModal.classList.remove('admin-unlocked');
+      }
+      // Prefill with current logged-in user email if available
+      if (emailInput && !emailInput.value && this.userEmail) {
+        emailInput.value = this.userEmail;
+      }
+    }
+  }
+
+  async handleAdminUnlock() {
+    const emailInput = document.getElementById('adminAuthEmail');
+    const keyInput = document.getElementById('adminAuthKey');
+    const errBox = document.getElementById('adminAuthError');
+    const unlockBtn = document.getElementById('adminUnlockActionBtn');
+
+    if (errBox) errBox.style.display = 'none';
+
+    const email = (emailInput ? emailInput.value : '').trim();
+    const secretKey = (keyInput ? keyInput.value : '').trim();
+
+    if (!email || !email.includes('@')) {
+      if (errBox) {
+        errBox.textContent = 'Please enter a valid administrator email address.';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!secretKey) {
+      if (errBox) {
+        errBox.textContent = 'Please enter the administrator secret key.';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    if (unlockBtn) {
+      unlockBtn.disabled = true;
+      unlockBtn.innerHTML = '<span>⏳</span> <span>VERIFYING CREDENTIALS...</span>';
+    }
+
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, secretKey })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Authentication failed. Please verify email and secret key.');
+      }
+
+      this.adminToken = data.adminToken;
+      this.adminEmail = data.admin?.email || email;
+      this.isAdminAuthenticated = true;
+      localStorage.setItem('gp_admin_token', this.adminToken);
+      localStorage.setItem('gp_admin_email', this.adminEmail);
+
+      if (keyInput) keyInput.value = '';
+      if (errBox) errBox.style.display = 'none';
+
+      this.syncAdminPanelState();
+      this.loadAdminUsers();
+      this.loadAdminBets();
+      this.showToast('🛡️ Admin Console Unlocked!');
+      gpAudio.playWin();
+    } catch (err) {
+      if (errBox) {
+        errBox.textContent = err.message || 'Failed to authenticate.';
+        errBox.style.display = 'block';
+      }
+      gpAudio.playLose();
+    } finally {
+      if (unlockBtn) {
+        unlockBtn.disabled = false;
+        unlockBtn.innerHTML = '<span>🔓</span> <span>UNLOCK ADMIN PANEL</span>';
+      }
+    }
+  }
+
+  handleAdminLock() {
+    this.adminToken = '';
+    this.adminEmail = '';
+    this.isAdminAuthenticated = false;
+    localStorage.removeItem('gp_admin_token');
+    localStorage.removeItem('gp_admin_email');
+    this.syncAdminPanelState();
+    this.showToast('Admin Console locked.');
+    gpAudio.playClick();
+  }
+
+  async loadAdminStats() {
+    if (!this.adminToken) return;
+    try {
+      const res = await fetch('/api/admin/stats', {
+        headers: {
+          'Authorization': `Bearer ${this.adminToken}`,
+          'x-admin-token': this.adminToken
+        }
+      });
+      if (res.status === 401) {
+        this.handleAdminLock();
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok || !data.ok) return;
+
+      const s = data.stats || {};
+      const elUsers = document.getElementById('admKpiUsers');
+      const elBets = document.getElementById('admKpiBets');
+      const elVolume = document.getElementById('admKpiVolume');
+      const elProfit = document.getElementById('admKpiProfit');
+      const elWinRate = document.getElementById('admKpiWinRate');
+      const elDb = document.getElementById('admKpiDb');
+      const elPayout = document.getElementById('admKpiPayout');
+      const elVault = document.getElementById('admKpiVault');
+      const envDbStatus = document.getElementById('adminEnvDbStatus');
+      const envVaultStatus = document.getElementById('adminEnvVaultStatus');
+
+      if (elUsers) elUsers.textContent = (s.totalUsers ?? '--').toLocaleString();
+      if (elBets) elBets.textContent = (s.totalBets ?? '--').toLocaleString();
+      if (elVolume) elVolume.textContent = `${Number(s.totalWagered || 0).toFixed(4)} SOL`;
+      if (elProfit) {
+        const profit = Number(s.grossHouseProfit || 0);
+        elProfit.textContent = `${profit >= 0 ? '+' : ''}${profit.toFixed(4)} SOL`;
+        elProfit.style.color = profit >= 0 ? '#4ade80' : '#f87171';
+      }
+      if (elWinRate) elWinRate.textContent = `Win Rate: ${s.winRate || 0}%`;
+      if (elDb) elDb.textContent = `Engine: ${s.dbEngine === 'postgresql' ? 'PostgreSQL' : 'File Fallback'}`;
+      if (elPayout) elPayout.textContent = `Payouts: ${Number(s.totalPayout || 0).toFixed(4)} SOL`;
+      if (elVault) {
+        const bal = s.vaultStats?.balanceSol;
+        elVault.textContent = bal !== undefined ? `Vault: ${bal} SOL` : 'Vault: Active';
+      }
+      if (envDbStatus) envDbStatus.textContent = s.dbEngine === 'postgresql' ? 'PostgreSQL (Cloud)' : 'Local JSON Fallback';
+      if (envVaultStatus) envVaultStatus.textContent = s.vaultStats?.configured ? 'Active' : 'Fallback';
+
+      // Top holders list
+      const topList = document.getElementById('admTopHoldersList');
+      if (topList && Array.isArray(s.topPlayers)) {
+        if (s.topPlayers.length === 0) {
+          topList.innerHTML = '<div style="color:#64748b;">No player records found.</div>';
+        } else {
+          topList.innerHTML = s.topPlayers.map((p, idx) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,0.02);border-radius:6px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="color:#94a3b8;font-weight:800;font-size:10px;">#${idx + 1}</span>
+                <span style="color:#ffffff;font-weight:700;">${this.escapeHtml(p.username || 'Player')}</span>
+                <span style="font-size:9.5px;color:#64748b;">(${this.escapeHtml(p.email || 'anon')})</span>
+              </div>
+              <span style="color:#22c55e;font-weight:900;font-family:monospace;">${Number(p.balance || 0).toFixed(4)} SOL</span>
+            </div>
+          `).join('');
+        }
+      }
+    } catch (e) {
+      console.warn('[Admin Stats Error]', e);
+    }
+  }
+
+  async loadAdminUsers(search = '') {
+    if (!this.adminToken) return;
+    const tbody = document.getElementById('adminUsersTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">Loading players...</td></tr>';
+
+    try {
+      const q = encodeURIComponent(search);
+      const res = await fetch(`/api/admin/users?search=${q}&limit=50`, {
+        headers: {
+          'Authorization': `Bearer ${this.adminToken}`,
+          'x-admin-token': this.adminToken
+        }
+      });
+      if (res.status === 401) {
+        this.handleAdminLock();
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">${this.escapeHtml(data.error || 'Failed to load players')}</td></tr>`;
+        return;
+      }
+
+      const users = data.users || [];
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">No players match this query.</td></tr>';
+        return;
+      }
+
+      this._adminLoadedUsers = users;
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>
+            <div style="font-weight:800;color:#ffffff;">${this.escapeHtml(u.username || 'User')}</div>
+            <div style="font-size:10px;color:#64748b;">${this.escapeHtml(u.email || u.id)}</div>
+          </td>
+          <td style="color:#22c55e;font-weight:800;font-family:monospace;">${Number(u.balance || 0).toFixed(4)} SOL</td>
+          <td><span style="font-size:10px;color:#93c5fd;font-weight:700;">${this.escapeHtml(u.vipRank || 'Bronze')}</span></td>
+          <td><span style="font-size:10px;color:#cbd5e1;font-weight:700;">Lv.${u.userLevel || 1}</span></td>
+          <td>
+            <button type="button" class="admin-action-btn" data-edit-user-id="${this.escapeHtml(u.id)}">EDIT</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">Error: ${this.escapeHtml(e.message)}</td></tr>`;
+    }
+  }
+
+  openAdminEditUser(userId) {
+    if (!this._adminLoadedUsers) return;
+    const user = this._adminLoadedUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    const panel = document.getElementById('adminUserEditPanel');
+    const title = document.getElementById('adminEditUserTitle');
+    const idInput = document.getElementById('adminEditUserId');
+    const balInput = document.getElementById('adminEditBalanceInput');
+    const vipSelect = document.getElementById('adminEditVipSelect');
+
+    if (!panel) return;
+
+    if (title) title.textContent = `EDIT PLAYER: ${user.username || user.email}`;
+    if (idInput) idInput.value = user.id;
+    if (balInput) balInput.value = Number(user.balance || 0).toFixed(4);
+    if (vipSelect) vipSelect.value = user.vipRank || 'Bronze';
+
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async handleAdminSaveUser() {
+    const idInput = document.getElementById('adminEditUserId');
+    const balInput = document.getElementById('adminEditBalanceInput');
+    const vipSelect = document.getElementById('adminEditVipSelect');
+    const panel = document.getElementById('adminUserEditPanel');
+
+    if (!idInput || !idInput.value || !this.adminToken) return;
+
+    const userId = idInput.value;
+    const newBal = parseFloat(balInput ? balInput.value : '0');
+    const newVip = vipSelect ? vipSelect.value : 'Bronze';
+
+    if (isNaN(newBal) || newBal < 0) {
+      this.showToast('Please enter a valid balance.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/user/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.adminToken}`,
+          'x-admin-token': this.adminToken
+        },
+        body: JSON.stringify({
+          userId,
+          balance: newBal,
+          vipRank: newVip
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Failed to update user');
+      }
+
+      this.showToast(`Updated user balance to ${newBal.toFixed(4)} SOL!`);
+      if (panel) panel.style.display = 'none';
+
+      // If current user was updated, sync balance in client
+      if (this.user && this.user.id === userId) {
+        this.balance = newBal;
+        localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
+        this.updateBalanceUI();
+      }
+
+      this.loadAdminUsers();
+      this.loadAdminStats();
+    } catch (e) {
+      this.showToast(`Update error: ${e.message}`);
+    }
+  }
+
+  async handleAdminQuickAirdrop() {
+    const idInput = document.getElementById('adminEditUserId');
+    const balInput = document.getElementById('adminEditBalanceInput');
+    if (!idInput || !idInput.value || !this.adminToken) return;
+
+    const currentBal = parseFloat(balInput ? balInput.value : '0') || 0;
+    const newBal = parseFloat((currentBal + 0.50).toFixed(4));
+    if (balInput) balInput.value = newBal.toFixed(4);
+
+    try {
+      const res = await fetch('/api/admin/user/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.adminToken}`,
+          'x-admin-token': this.adminToken
+        },
+        body: JSON.stringify({
+          userId: idInput.value,
+          balance: newBal
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Airdrop failed');
+
+      this.showToast(`🪂 Airdropped +0.50 SOL! New balance: ${newBal.toFixed(4)} SOL`);
+      if (this.user && this.user.id === idInput.value) {
+        this.balance = newBal;
+        localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
+        this.updateBalanceUI();
+      }
+      this.loadAdminUsers();
+      this.loadAdminStats();
+    } catch (e) {
+      this.showToast(`Airdrop error: ${e.message}`);
+    }
+  }
+
+  async loadAdminBets() {
+    if (!this.adminToken) return;
+    const tbody = document.getElementById('adminBetsTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">Loading bets audit...</td></tr>';
+
+    try {
+      const res = await fetch('/api/admin/bets?limit=50', {
+        headers: {
+          'Authorization': `Bearer ${this.adminToken}`,
+          'x-admin-token': this.adminToken
+        }
+      });
+      if (res.status === 401) {
+        this.handleAdminLock();
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">${this.escapeHtml(data.error || 'Failed to load bets')}</td></tr>`;
+        return;
+      }
+
+      const bets = data.bets || [];
+      if (bets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">No bets recorded on the platform yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = bets.map(b => {
+        const timeStr = b.timestamp ? new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--';
+        const won = Boolean(b.won);
+        const payout = Number(b.payout || 0);
+        const mult = Number(b.multiplier || 1).toFixed(2);
+        return `
+          <tr>
+            <td style="color:#64748b;font-family:monospace;font-size:10px;">${timeStr}</td>
+            <td>
+              <div style="font-weight:700;color:#ffffff;">${this.escapeHtml(b.username || 'Player')}</div>
+              <div style="font-size:9.5px;color:#64748b;">${this.escapeHtml(b.email || 'anon')}</div>
+            </td>
+            <td><span style="font-size:10px;color:#93c5fd;font-weight:700;text-transform:uppercase;">${this.escapeHtml(b.game || 'Game')}</span></td>
+            <td style="font-family:monospace;color:#cbd5e1;">${Number(b.betAmount || 0).toFixed(4)} SOL</td>
+            <td>
+              <span class="admin-pill-tag ${won ? 'admin-pill-won' : 'admin-pill-lost'}">${won ? `WON ${mult}x (${payout.toFixed(4)} SOL)` : 'LOST'}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:14px;">Error: ${this.escapeHtml(e.message)}</td></tr>`;
+    }
+  }
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   /* ============================================================= */

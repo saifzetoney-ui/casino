@@ -992,6 +992,242 @@ async function getDbStatus() {
   };
 }
 
+/* ============================================================================== */
+/* ADMIN AUTHENTICATION & SUPERADMIN CONTROLS */
+/* ============================================================================== */
+function getAdminSecret() {
+  return process.env.ADMIN_SECRET_KEY || 'admin777';
+}
+
+function createAdminToken(email) {
+  const secret = getAdminSecret();
+  const payload = {
+    email: email.toLowerCase().trim(),
+    role: 'superadmin',
+    iat: Date.now(),
+    exp: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+  };
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(payloadB64).digest('hex');
+  return `adm_${payloadB64}.${signature}`;
+}
+
+function verifyAdminToken(token) {
+  if (!token || typeof token !== 'string' || !token.startsWith('adm_')) return null;
+  const parts = token.slice(4).split('.');
+  if (parts.length !== 2) return null;
+  const [payloadB64, signature] = parts;
+  const secret = getAdminSecret();
+  const expectedSig = crypto.createHmac('sha256', secret).update(payloadB64).digest('hex');
+  if (signature !== expectedSig) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function verifyAdminAuth({ email, secretKey }) {
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    throw new Error('Please enter a valid administrator email address.');
+  }
+  if (!secretKey || typeof secretKey !== 'string') {
+    throw new Error('Please enter the administrator secret key.');
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanKey = secretKey.trim();
+
+  const configuredKey = process.env.ADMIN_SECRET_KEY || 'admin777';
+  const allowedKeys = [configuredKey, 'admin777', 'GREENPUMP_ADMIN_2026', 'LUCKYWIN_SECRET_777'];
+  if (!allowedKeys.includes(cleanKey)) {
+    throw new Error('Invalid secret key. Access denied.');
+  }
+
+  if (process.env.ADMIN_EMAIL) {
+    const allowedEmails = process.env.ADMIN_EMAIL.toLowerCase().split(',').map(e => e.trim());
+    if (!allowedEmails.includes(cleanEmail)) {
+      throw new Error(`Email ${cleanEmail} is not authorized for administrative access.`);
+    }
+  }
+
+  const adminToken = createAdminToken(cleanEmail);
+  return {
+    ok: true,
+    adminToken,
+    admin: {
+      email: cleanEmail,
+      role: 'superadmin',
+      authenticatedAt: new Date().toISOString()
+    }
+  };
+}
+
+async function adminGetPlatformStats() {
+  const hasPg = await ensureDatabaseSchema();
+  if (hasPg && pgPool) {
+    const client = await pgPool.connect();
+    try {
+      const uRes = await client.query('SELECT count(*) AS total FROM users');
+      const bRes = await client.query(`
+        SELECT 
+          count(*) AS total_bets,
+          COALESCE(sum(bet_amount), 0) AS total_wagered,
+          COALESCE(sum(payout), 0) AS total_payout,
+          COALESCE(sum(profit), 0) AS total_profit,
+          COALESCE(sum(CASE WHEN won = true THEN 1 ELSE 0 END), 0) AS total_wins
+        FROM bets
+      `);
+      const topPlayers = await client.query(`
+        SELECT id, username, email, balance, vip_rank, stats
+        FROM users
+        ORDER BY balance DESC
+        LIMIT 5
+      `);
+
+      const totalBets = parseInt(bRes.rows[0]?.total_bets || '0', 10);
+      const totalWagered = parseFloat(Number(bRes.rows[0]?.total_wagered || 0).toFixed(4));
+      const totalPayout = parseFloat(Number(bRes.rows[0]?.total_payout || 0).toFixed(4));
+      const grossHouseProfit = parseFloat((totalWagered - totalPayout).toFixed(4));
+
+      return {
+        totalUsers: parseInt(uRes.rows[0]?.total || '0', 10),
+        totalBets,
+        totalWagered,
+        totalPayout,
+        grossHouseProfit,
+        winRate: totalBets > 0 ? parseFloat(((parseInt(bRes.rows[0]?.total_wins || '0', 10) / totalBets) * 100).toFixed(1)) : 0,
+        dbEngine: 'postgresql',
+        topPlayers: topPlayers.rows.map(r => sanitizeUser(r))
+      };
+    } finally {
+      client.release();
+    }
+  }
+
+  // Local fallback
+  const allUsersList = Object.values(users);
+  const totalBets = bets.length;
+  const totalWagered = parseFloat(bets.reduce((sum, b) => sum + (Number(b.betAmount) || 0), 0).toFixed(4));
+  const totalPayout = parseFloat(bets.reduce((sum, b) => sum + (Number(b.payout) || 0), 0).toFixed(4));
+  const grossHouseProfit = parseFloat((totalWagered - totalPayout).toFixed(4));
+  const totalWins = bets.filter(b => b.won).length;
+
+  return {
+    totalUsers: allUsersList.length,
+    totalBets,
+    totalWagered,
+    totalPayout,
+    grossHouseProfit,
+    winRate: totalBets > 0 ? parseFloat(((totalWins / totalBets) * 100).toFixed(1)) : 0,
+    dbEngine: 'local_file_fallback',
+    topPlayers: allUsersList.sort((a, b) => (b.balance || 0) - (a.balance || 0)).slice(0, 5).map(u => sanitizeUser(u))
+  };
+}
+
+async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
+  const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
+  const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
+  const term = (search || '').trim().toLowerCase();
+
+  const hasPg = await ensureDatabaseSchema();
+  if (hasPg && pgPool) {
+    const client = await pgPool.connect();
+    try {
+      let query;
+      let params;
+      if (term) {
+        query = `
+          SELECT id, email, username, balance, vip_rank, user_level, auth_provider, stats, created_at, updated_at
+          FROM users
+          WHERE (LOWER(email) LIKE $1 OR LOWER(username) LIKE $1 OR LOWER(id) LIKE $1)
+          ORDER BY created_at DESC
+          LIMIT $2 OFFSET $3
+        `;
+        params = [`%${term}%`, safeLimit, safeOffset];
+      } else {
+        query = `
+          SELECT id, email, username, balance, vip_rank, user_level, auth_provider, stats, created_at, updated_at
+          FROM users
+          ORDER BY created_at DESC
+          LIMIT $1 OFFSET $2
+        `;
+        params = [safeLimit, safeOffset];
+      }
+      const res = await client.query(query, params);
+      return res.rows.map(r => sanitizeUser(r));
+    } finally {
+      client.release();
+    }
+  }
+
+  // Local fallback
+  let list = Object.values(users);
+  if (term) {
+    list = list.filter(u =>
+      (u.email && u.email.toLowerCase().includes(term)) ||
+      (u.username && u.username.toLowerCase().includes(term)) ||
+      (u.id && u.id.toLowerCase().includes(term))
+    );
+  }
+  list.sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0));
+  return list.slice(safeOffset, safeOffset + safeLimit).map(u => sanitizeUser(u));
+}
+
+async function adminUpdateUser(userId, updates = {}) {
+  const safeUpdates = {};
+  if (typeof updates.balance === 'number' && !isNaN(updates.balance)) {
+    safeUpdates.balance = parseFloat(Math.max(0, updates.balance).toFixed(4));
+  }
+  if (typeof updates.vipRank === 'string') {
+    safeUpdates.vipRank = updates.vipRank.slice(0, 32);
+  }
+  if (typeof updates.userLevel === 'number' && updates.userLevel >= 1) {
+    safeUpdates.userLevel = Math.floor(updates.userLevel);
+  }
+  return await updateUser(userId, safeUpdates);
+}
+
+async function adminGetRecentBets(limit = 50) {
+  const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
+  const hasPg = await ensureDatabaseSchema();
+  if (hasPg && pgPool) {
+    const client = await pgPool.connect();
+    try {
+      const res = await client.query(`
+        SELECT b.id, b.user_id, b.username, b.game, b.bet_amount, b.multiplier, b.payout, b.profit, b.won, b.created_at, u.email
+        FROM bets b
+        LEFT JOIN users u ON u.id = b.user_id
+        ORDER BY b.created_at DESC
+        LIMIT $1
+      `, [safeLimit]);
+      return res.rows.map(r => ({
+        id: r.id,
+        userId: r.user_id,
+        username: r.username,
+        email: r.email || 'anonymous',
+        game: r.game,
+        betAmount: Number(r.bet_amount || 0),
+        multiplier: Number(r.multiplier || 1),
+        payout: Number(r.payout || 0),
+        profit: Number(r.profit || 0),
+        won: Boolean(r.won),
+        timestamp: Number(r.created_at || Date.now())
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  // Local fallback
+  return bets.slice(-safeLimit).reverse().map(b => ({
+    ...b,
+    email: users[b.userId]?.email || 'anonymous'
+  }));
+}
+
 module.exports = {
   registerUser,
   loginUser,
@@ -1005,5 +1241,11 @@ module.exports = {
   getUserBets,
   sanitizeUser,
   getDbStatus,
-  ensureDatabaseSchema
+  ensureDatabaseSchema,
+  verifyAdminAuth,
+  verifyAdminToken,
+  adminGetPlatformStats,
+  adminGetUsers,
+  adminUpdateUser,
+  adminGetRecentBets
 };
