@@ -1320,6 +1320,7 @@ class GreenpumpApp {
     // Verify existing database session or enforce mandatory registration gate
     this.checkExistingSession();
     this.updateAuthUI();
+    this.initGoogleOneTap();
   }
 
   checkExistingSession() {
@@ -1436,33 +1437,135 @@ class GreenpumpApp {
     }
   }
 
-  async handleGoogleAuth() {
-    const emailPrompt = prompt('Enter your Google Account email to continue:', this.userEmail || '');
-    if (!emailPrompt || !emailPrompt.trim()) return;
+  initGoogleOneTap() {
+    const clientId = window.GOOGLE_CLIENT_ID || '1039781327891-r809m645d0sj9fpbt7rh64bdvjn3hb4o.apps.googleusercontent.com';
 
-    const email = emailPrompt.trim().toLowerCase();
-    if (!email.includes('@')) {
-      alert('Please enter a valid Google email address.');
+    const tryInitGIS = () => {
+      if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
+      try {
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (response) => {
+            if (!response || !response.credential) return;
+            try {
+              const res = await fetch('/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential })
+              });
+              const data = await res.json();
+              if (res.ok && data.user && data.token) {
+                this.applyUserSession(data.user, data.token, 'google', true);
+              }
+            } catch (err) {
+              console.warn('[Google One Tap error]', err);
+            }
+          }
+        });
+        if (!this.isLoggedIn) {
+          google.accounts.id.prompt();
+        }
+      } catch (err) {
+        console.warn('[GIS One Tap]', err);
+      }
+    };
+
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      tryInitGIS();
+    } else {
+      window.addEventListener('load', () => setTimeout(tryInitGIS, 800));
+    }
+  }
+
+  handleGoogleAuth() {
+    const statusMsg = document.getElementById('authStatusMsg');
+    const googleBtn = document.getElementById('authGoogleBtn');
+    const googleText = document.getElementById('authGoogleText');
+
+    const clientId = window.GOOGLE_CLIENT_ID || '1039781327891-r809m645d0sj9fpbt7rh64bdvjn3hb4o.apps.googleusercontent.com';
+
+    if (typeof google === 'undefined' || !google.accounts) {
+      if (statusMsg) {
+        statusMsg.textContent = 'Google sign-in services are still initializing. Please wait a moment and try again.';
+        statusMsg.className = 'auth-status-msg info';
+        statusMsg.style.display = 'block';
+      }
       return;
     }
 
-    const name = email.split('@')[0].slice(0, 16);
-    const statusMsg = document.getElementById('authStatusMsg');
-
     try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name })
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Google authentication failed.');
-      }
-      this.applyUserSession(data.user, data.token, 'google', true);
-    } catch (err) {
       if (statusMsg) {
-        statusMsg.textContent = err.message;
+        statusMsg.style.display = 'none';
+      }
+
+      const origText = googleText ? googleText.textContent : 'Continue with Google';
+      if (googleText) googleText.textContent = 'Connecting...';
+      if (googleBtn) googleBtn.style.pointerEvents = 'none';
+
+      // Initialize Google OAuth 2.0 Token Client for custom button popup
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'email profile openid',
+        callback: async (tokenRes) => {
+          if (googleText) googleText.textContent = origText;
+          if (googleBtn) googleBtn.style.pointerEvents = 'auto';
+
+          if (tokenRes.error) {
+            if (tokenRes.error === 'access_denied') return; // User closed popup
+            if (statusMsg) {
+              statusMsg.textContent = 'Google sign in cancelled or failed: ' + (tokenRes.error_description || tokenRes.error);
+              statusMsg.className = 'auth-status-msg error';
+              statusMsg.style.display = 'block';
+            }
+            this.shakeAuthCard();
+            return;
+          }
+
+          if (!tokenRes.access_token) return;
+
+          if (statusMsg) {
+            statusMsg.textContent = 'Authenticating with Google...';
+            statusMsg.className = 'auth-status-msg info';
+            statusMsg.style.display = 'block';
+          }
+
+          try {
+            const res = await fetch('/api/auth/google', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ access_token: tokenRes.access_token })
+            });
+
+            const data = await res.json();
+            if (!res.ok || data.error) {
+              throw new Error(data.error || 'Google authentication failed.');
+            }
+
+            this.applyUserSession(data.user, data.token, 'google', true);
+          } catch (err) {
+            if (statusMsg) {
+              statusMsg.textContent = err.message;
+              statusMsg.className = 'auth-status-msg error';
+              statusMsg.style.display = 'block';
+            }
+            this.shakeAuthCard();
+          }
+        },
+        error_callback: (err) => {
+          if (googleText) googleText.textContent = origText;
+          if (googleBtn) googleBtn.style.pointerEvents = 'auto';
+          if (err && err.type === 'popup_closed') return;
+          console.warn('[Google Auth] Popup error:', err);
+        }
+      });
+
+      // Request access token (opens Google OAuth popup)
+      client.requestAccessToken();
+    } catch (err) {
+      if (googleText) googleText.textContent = 'Continue with Google';
+      if (googleBtn) googleBtn.style.pointerEvents = 'auto';
+      if (statusMsg) {
+        statusMsg.textContent = err.message || 'Could not open Google sign in.';
         statusMsg.className = 'auth-status-msg error';
         statusMsg.style.display = 'block';
       }

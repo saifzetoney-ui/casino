@@ -252,7 +252,7 @@ function loginUser({ email, password }) {
   return { user: sanitizeUser(user), token };
 }
 
-function googleAuthUser({ email, name }) {
+function googleAuthUser({ email, name, picture }) {
   if (!email || !email.includes('@')) {
     throw new Error('Valid Google email is required');
   }
@@ -281,6 +281,8 @@ function googleAuthUser({ email, name }) {
       passwordHash: '',
       salt,
       authProvider: 'google',
+      picture: picture || '',
+      avatar: picture || '',
       balance: 0.05,
       vipRank: 1,
       userLevel: 1,
@@ -298,6 +300,10 @@ function googleAuthUser({ email, name }) {
     saveUsers();
   } else {
     user.lastLoginAt = Date.now();
+    if (picture) {
+      if (!user.picture) user.picture = picture;
+      if (!user.avatar) user.avatar = picture;
+    }
     saveUsers();
   }
 

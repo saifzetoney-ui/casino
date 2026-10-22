@@ -18,6 +18,10 @@
     {
       "source": "/api/avatar/:path*",
       "destination": "https://greenpump.xyz/api/avatar/:path*"
+    },
+    {
+      "source": "/((?!api/|_vercel/|.*\\..*).*)",
+      "destination": "/index.html"
     }
   ]
 }

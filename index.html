@@ -31,6 +31,14 @@
   <link rel="stylesheet" href="css/greenpump-redesign.css?v=20261022-db-v8"/>
   <link rel="stylesheet" href="tokens.css?v=20261022-db-v8"/>
   <link rel="stylesheet" href="css/hallmark-blue.css?v=20261022-db-v8"/>
+  <!-- Google Identity Services (Sign In with Google) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Vercel Web Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
@@ -2342,6 +2350,17 @@
           Confirm &amp; Airdrop
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Information & Support Modal (How to Play, Responsible Play, Terms, Privacy) -->
+  <div class="gp-modal-backdrop" id="infoModal">
+    <div class="gp-modal-dialog">
+      <button class="gp-modal-close" id="closeInfoModalBtn" aria-label="Close information modal">&times;</button>
+      <div class="gp-modal-title">
+        <span id="infoModalTitle">Support Information</span>
+      </div>
+      <div id="infoModalBody"></div>
     </div>
   </div>
 

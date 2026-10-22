@@ -187,13 +187,51 @@ module.exports = (req, res) => {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }));
       return;
     }
-    parseJsonBody(req, (err, body) => {
+    parseJsonBody(req, async (err, body) => {
       if (err || !body) {
         send(res, 400, JSON.stringify({ error: 'Invalid request body' }));
         return;
       }
       try {
-        const result = db.googleAuthUser(body);
+        let email = body.email;
+        let name = body.name;
+        let picture = body.picture;
+
+        // If Google OAuth access_token is provided, verify with Google UserInfo endpoint
+        if (body.access_token) {
+          const gRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${body.access_token}` }
+          });
+          if (!gRes.ok) {
+            const errTxt = await gRes.text().catch(() => '');
+            throw new Error('Google token verification failed: ' + (errTxt || gRes.statusText));
+          }
+          const gData = await gRes.json();
+          if (!gData.email || (gData.email_verified !== true && gData.email_verified !== 'true')) {
+            throw new Error('Google account email is not verified');
+          }
+          email = gData.email;
+          name = gData.name || gData.given_name;
+          picture = gData.picture;
+        } else if (body.credential) {
+          // If Google ID token is provided (GIS One Tap / credential response)
+          const gRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(body.credential)}`);
+          if (!gRes.ok) {
+            const errTxt = await gRes.text().catch(() => '');
+            throw new Error('Google ID token verification failed: ' + (errTxt || gRes.statusText));
+          }
+          const gData = await gRes.json();
+          if (!gData.email || (gData.email_verified !== true && gData.email_verified !== 'true')) {
+            throw new Error('Google account email is not verified');
+          }
+          email = gData.email;
+          name = gData.name || gData.given_name;
+          picture = gData.picture;
+        } else if (!email) {
+          throw new Error('Missing Google authentication token or credential');
+        }
+
+        const result = db.googleAuthUser({ email, name, picture });
         send(res, 200, JSON.stringify(result));
       } catch (e) {
         send(res, 400, JSON.stringify({ error: e.message }));
