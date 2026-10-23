@@ -1823,7 +1823,8 @@ class GreenpumpApp {
       // Authentic registered real players only (no fake accounts)
       const authenticRealAccounts = [
         { id: 'usr_saif_admin', username: 'saifzetoney', email: 'saifzetoney@gmail.com', balance: Number(this.balance ?? 0.15), vipRank: 'Gold', userLevel: 5 },
-        { id: 'usr_ahmad_player', username: 'ahmad', email: 'ahmad@gmail.com', balance: 0.50, vipRank: 'Bronze', userLevel: 1 }
+        { id: 'usr_ahmad_player', username: 'ahmad', email: 'ahmad@gmail.com', balance: 0.50, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_lilbro_player', username: 'lilbro', email: 'lilbro@gmail.com', balance: 0.50, vipRank: 'Bronze', userLevel: 1 }
       ];
 
       authenticRealAccounts.forEach(real => {
@@ -1906,7 +1907,17 @@ class GreenpumpApp {
             const realUsers = data.users.filter(isRealPlayer);
             const currentEmail = (this.userEmail || this.adminEmail || 'saifzetoney@gmail.com').toLowerCase();
             const currentUsername = (this.username || 'saifzetoney').toLowerCase();
-            realUsers.forEach(u => {
+
+            // Merge server list with any authenticated real users already loaded or cached locally
+            // so a serverless cold-start or replica mismatch never drops real players
+            const combined = [...realUsers];
+            (this._allAdminUsers || []).forEach(localUser => {
+              if (isRealPlayer(localUser) && !combined.some(u => (u.id && u.id === localUser.id) || (u.email && localUser.email && u.email.toLowerCase() === localUser.email.toLowerCase()) || (u.username && localUser.username && u.username.toLowerCase() === localUser.username.toLowerCase()))) {
+                combined.push(localUser);
+              }
+            });
+
+            combined.forEach(u => {
               if (
                 (u.id && (u.id === this.userId || u.id === 'usr_saif_admin')) ||
                 (u.email && u.email.toLowerCase() === currentEmail) ||
@@ -1918,10 +1929,10 @@ class GreenpumpApp {
             });
 
             if (!search) {
-              this._allAdminUsers = realUsers;
-              try { localStorage.setItem('gp_all_admin_users', JSON.stringify(realUsers)); } catch (_) {}
+              this._allAdminUsers = combined;
+              try { localStorage.setItem('gp_all_admin_users', JSON.stringify(combined)); } catch (_) {}
             }
-            this.renderAdminUsersList(realUsers, search);
+            this.renderAdminUsersList(combined, search);
           }
         } catch (_) {}
       }

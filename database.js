@@ -307,6 +307,20 @@ const DEFAULT_SEED_USERS = {
     "stats": { "totalWagered": 0.1, "totalProfit": 0.05, "totalBets": 2, "wins": 1, "bestMult": 2.0 },
     "createdAt": 1792686800000,
     "lastLoginAt": 1792686800000
+  },
+  "usr_lilbro_player": {
+    "id": "usr_lilbro_player",
+    "email": "lilbro@gmail.com",
+    "username": "lilbro",
+    "passwordHash": "",
+    "salt": "",
+    "authProvider": "player",
+    "balance": 0.50,
+    "vipRank": 1,
+    "userLevel": 1,
+    "stats": { "totalWagered": 0, "totalProfit": 0, "totalBets": 0, "wins": 0, "bestMult": 1 },
+    "createdAt": 1792686800000,
+    "lastLoginAt": 1792686800000
   }
 };
 
