@@ -35,6 +35,9 @@ let isPgAvailable = false;
 
 function getPgConnectionString() {
   return (
+    process.env.SUPABASE_DB_URL ||
+    process.env.SUPABASE_DATABASE_URL ||
+    process.env.SUPABASE_POSTGRES_URL ||
     process.env.POSTGRES_URL ||
     process.env.DATABASE_URL ||
     process.env.POSTGRES_PRISMA_URL ||
