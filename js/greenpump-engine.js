@@ -1759,46 +1759,76 @@ class GreenpumpApp {
     const tbody = document.getElementById('adminUsersTableBody');
     if (!tbody) return;
 
+    const isRealPlayer = (u) => {
+      if (!u) return false;
+      const email = String(u.email || '').toLowerCase().trim();
+      const username = String(u.username || '').toLowerCase().trim();
+      const id = String(u.id || '').toLowerCase().trim();
+
+      // Test bots and mock email patterns
+      if (
+        email.endsWith('@gamblin.io') ||
+        email.endsWith('@luckywin.io') ||
+        email.endsWith('@example.com') ||
+        email.endsWith('@test.com') ||
+        email.endsWith('@player.gp') ||
+        email.endsWith('@domain.com') ||
+        email.includes('authtest') ||
+        email.includes('persistence_check') ||
+        email.includes('http_test') ||
+        email.includes('test_')
+      ) {
+        return false;
+      }
+
+      // Test usernames or fake seed names
+      if (
+        username === 'tester' ||
+        username === 'ahmad_tester' ||
+        username === 'ahmad_vip' ||
+        username === 'khalid' ||
+        username === 'solhunter' ||
+        username === 'luckyplayer' ||
+        username.startsWith('player_') ||
+        username.startsWith('u_') ||
+        username.startsWith('test_') ||
+        username.startsWith('authtest') ||
+        id.startsWith('test_') ||
+        id.startsWith('usr_test_')
+      ) {
+        return false;
+      }
+
+      return Boolean(username || email);
+    };
+
     const getCandidates = () => {
-      const candidates = [];
+      let candidates = [];
       if (Array.isArray(this._allAdminUsers) && this._allAdminUsers.length > 0) {
-        candidates.push(...this._allAdminUsers);
+        candidates = this._allAdminUsers.filter(isRealPlayer);
       } else {
         const cached = localStorage.getItem('gp_all_admin_users');
         if (cached) {
           try {
             const parsed = JSON.parse(cached);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              candidates.push(...parsed);
-              this._allAdminUsers = parsed;
+              candidates = parsed.filter(isRealPlayer);
+              this._allAdminUsers = candidates;
+              try { localStorage.setItem('gp_all_admin_users', JSON.stringify(candidates)); } catch (_) {}
             }
           } catch (_) {}
         }
       }
 
-      // Default known database accounts so all players are visible even before network response
-      const seedAccounts = [
-        { id: 'usr_saif_admin', username: 'saifzetoney', email: 'saifzetoney@gmail.com', balance: Number(this.balance ?? 1.0), vipRank: 'Gold', userLevel: 5 },
-        { id: 'usr_ahmad_player', username: 'ahmad', email: 'ahmad@gmail.com', balance: 0.50, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_9f59bdd18069ecae', username: 'tester', email: 'test@example.com', balance: 0.55, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_3cb7d58c200f0348', username: 'khalid', email: 'khalid@test.com', balance: 0.88, vipRank: 'Silver', userLevel: 2 },
-        { id: 'usr_41e7612f4811bd75', username: 'ahmad_vip', email: 'ahmad_vip@test.com', balance: 2.50, vipRank: 'Platinum', userLevel: 3 },
-        { id: 'usr_84f0959778ca3aed', username: 'ahmad_tester', email: 'ahmad_tester@player.gp', balance: 0.77, vipRank: 'Silver', userLevel: 1 },
-        { id: 'usr_8dd25032b5178627', username: 'SolHunter', email: 'persistence_check@luckywin.io', balance: 0.05, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_77987bd7c8a3fc9b', username: 'luckyPlayer', email: 'authtest@luckywin.io', balance: 0.125, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_0dde49083634b262', username: 'player_ekijw', email: 'test_1792687494415@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_ba333cf9b5e1dcfe', username: 'player_xkvoi', email: 'test_1792686598768@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_ae5323a0522a6882', username: 'player_ziw3h', email: 'test_1792686031367@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_7df66c7a9c169fb6', username: 'player_q9arx', email: 'test_1792683919691@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_fa0ea35af872a193', username: 'player_95d9e', email: 'test_1792682945997@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_4f865e55c9200b35', username: 'player_lc9fg', email: 'test_1792679055866@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_8fb1d419234c34fd', username: 'player_dgisf', email: 'test_1792673526511@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_b1507bddd0114ebd', username: 'u_42544', email: 'http_test_1792673542544@domain.com', balance: 0.05, vipRank: 'Bronze', userLevel: 1 }
+      // Authentic registered real players only (no fake accounts)
+      const authenticRealAccounts = [
+        { id: 'usr_saif_admin', username: 'saifzetoney', email: 'saifzetoney@gmail.com', balance: Number(this.balance ?? 0.15), vipRank: 'Gold', userLevel: 5 },
+        { id: 'usr_ahmad_player', username: 'ahmad', email: 'ahmad@gmail.com', balance: 0.50, vipRank: 'Bronze', userLevel: 1 }
       ];
 
-      seedAccounts.forEach(seed => {
-        if (!candidates.some(u => u.id === seed.id || (u.email && seed.email && u.email.toLowerCase() === seed.email.toLowerCase()) || (u.username && seed.username && u.username.toLowerCase() === seed.username.toLowerCase()))) {
-          candidates.push(seed);
+      authenticRealAccounts.forEach(real => {
+        if (!candidates.some(u => u.id === real.id || (u.email && real.email && u.email.toLowerCase() === real.email.toLowerCase()) || (u.username && real.username && u.username.toLowerCase() === real.username.toLowerCase()))) {
+          candidates.push(real);
         }
       });
 
@@ -1815,7 +1845,7 @@ class GreenpumpApp {
         userMatch.balance = Number(this.balance || 0);
         if (this.username) userMatch.username = this.username;
         if (this.vipRank) userMatch.vipRank = this.vipRank;
-      } else {
+      } else if (isRealPlayer({ username: this.username, email: currentEmail, id: this.userId })) {
         candidates.unshift({
           id: this.userId || localStorage.getItem('gp_user_id') || 'usr_saif_admin',
           username: this.username || 'saifzetoney',
@@ -1826,13 +1856,14 @@ class GreenpumpApp {
         });
       }
 
-      return candidates;
+      return candidates.filter(isRealPlayer);
     };
 
     const filterCandidates = (candidates) => {
-      if (!search) return candidates;
+      const realOnly = candidates.filter(isRealPlayer);
+      if (!search) return realOnly;
       const qLower = search.toLowerCase();
-      return candidates.filter(u => {
+      return realOnly.filter(u => {
         return (u.username && String(u.username).toLowerCase().includes(qLower)) ||
                (u.email && String(u.email).toLowerCase().includes(qLower)) ||
                (u.id && String(u.id).toLowerCase().includes(qLower)) ||
@@ -1841,7 +1872,7 @@ class GreenpumpApp {
       });
     };
 
-    // Render immediately from local/cached candidates
+    // Render immediately from local/cached candidates (real only)
     const initialCandidates = getCandidates();
     this.renderAdminUsersList(filterCandidates(initialCandidates), search);
 
@@ -1871,9 +1902,11 @@ class GreenpumpApp {
         try {
           const data = JSON.parse(raw);
           if (data && data.ok && Array.isArray(data.users)) {
+            // Strictly real users only
+            const realUsers = data.users.filter(isRealPlayer);
             const currentEmail = (this.userEmail || this.adminEmail || 'saifzetoney@gmail.com').toLowerCase();
             const currentUsername = (this.username || 'saifzetoney').toLowerCase();
-            data.users.forEach(u => {
+            realUsers.forEach(u => {
               if (
                 (u.id && (u.id === this.userId || u.id === 'usr_saif_admin')) ||
                 (u.email && u.email.toLowerCase() === currentEmail) ||
@@ -1885,10 +1918,10 @@ class GreenpumpApp {
             });
 
             if (!search) {
-              this._allAdminUsers = data.users;
-              try { localStorage.setItem('gp_all_admin_users', JSON.stringify(data.users)); } catch (_) {}
+              this._allAdminUsers = realUsers;
+              try { localStorage.setItem('gp_all_admin_users', JSON.stringify(realUsers)); } catch (_) {}
             }
-            this.renderAdminUsersList(data.users, search);
+            this.renderAdminUsersList(realUsers, search);
           }
         } catch (_) {}
       }
@@ -2194,7 +2227,16 @@ class GreenpumpApp {
         return;
       }
 
-      const bets = data.bets || [];
+      const isRealPlayerBet = (b) => {
+        if (!b) return false;
+        const u = String(b.username || '').toLowerCase().trim();
+        const em = String(b.email || '').toLowerCase().trim();
+        if (em.endsWith('@gamblin.io') || em.endsWith('@luckywin.io') || em.endsWith('@example.com') || em.endsWith('@test.com') || em.includes('authtest') || em.includes('persistence_check') || em.includes('test_')) return false;
+        if (u === 'tester' || u === 'khalid' || u === 'solhunter' || u === 'luckyplayer' || u === 'ahmad_vip' || u === 'ahmad_tester' || u.startsWith('player_') || u.startsWith('u_') || u.startsWith('test_')) return false;
+        return true;
+      };
+
+      const bets = (data.bets || []).filter(isRealPlayerBet);
       if (bets.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:14px;">No bets recorded on the platform yet.</td></tr>';
         return;

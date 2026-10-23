@@ -297,13 +297,13 @@ const DEFAULT_SEED_USERS = {
   "usr_saif_admin": {
     "id": "usr_saif_admin",
     "email": "saifzetoney@gmail.com",
-    "username": "saif",
+    "username": "saifzetoney",
     "passwordHash": "",
     "salt": "",
     "authProvider": "email",
-    "balance": 1.00,
+    "balance": 0.15,
     "vipRank": 2,
-    "userLevel": 5,
+    "userLevel": 1,
     "stats": { "totalWagered": 0.1, "totalProfit": 0.05, "totalBets": 2, "wins": 1, "bestMult": 2.0 },
     "createdAt": 1792686800000,
     "lastLoginAt": 1792686800000
@@ -1165,12 +1165,72 @@ async function verifyAdminAuth({ email, secretKey }) {
   };
 }
 
+function isTestOrBotAccount(user) {
+  if (!user) return true;
+  const email = String(user.email || '').toLowerCase().trim();
+  const username = String(user.username || '').toLowerCase().trim();
+  const id = String(user.id || user.userId || '').toLowerCase().trim();
+
+  // Known automated test or fake email domains and patterns
+  if (
+    email.endsWith('@gamblin.io') ||
+    email.endsWith('@luckywin.io') ||
+    email.endsWith('@example.com') ||
+    email.endsWith('@test.com') ||
+    email.endsWith('@player.gp') ||
+    email.endsWith('@domain.com') ||
+    email.includes('authtest') ||
+    email.includes('persistence_check') ||
+    email.includes('http_test') ||
+    email.includes('test_')
+  ) {
+    return true;
+  }
+
+  // Known fake/test usernames or IDs
+  if (
+    username === 'tester' ||
+    username === 'ahmad_tester' ||
+    username === 'ahmad_vip' ||
+    username === 'khalid' ||
+    username === 'solhunter' ||
+    username === 'luckyplayer' ||
+    username.startsWith('player_') ||
+    username.startsWith('u_') ||
+    username.startsWith('test_') ||
+    username.startsWith('authtest') ||
+    id.startsWith('test_') ||
+    id.startsWith('usr_test_')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+const PG_REAL_PLAYERS_SQL_FILTER = `(
+  email NOT LIKE '%@gamblin.io'
+  AND email NOT LIKE '%@luckywin.io'
+  AND email NOT LIKE '%@example.com'
+  AND email NOT LIKE '%@test.com'
+  AND email NOT LIKE '%@player.gp'
+  AND email NOT LIKE '%@domain.com'
+  AND email NOT LIKE '%authtest%'
+  AND email NOT LIKE '%persistence_check%'
+  AND email NOT LIKE '%http_test%'
+  AND email NOT LIKE 'test_%'
+  AND username NOT LIKE 'test_%'
+  AND username NOT LIKE 'player_%'
+  AND username NOT LIKE 'u_%'
+  AND LOWER(username) NOT IN ('tester', 'khalid', 'ahmad_vip', 'ahmad_tester', 'solhunter', 'luckyplayer')
+)`;
+
 async function adminGetPlatformStats() {
   const hasPg = await ensureDatabaseSchema();
   if (hasPg && pgPool) {
     const client = await pgPool.connect();
     try {
-      const uRes = await client.query('SELECT count(*) AS total FROM users');
+      const uRes = await client.query(`SELECT count(*) AS total FROM users WHERE ${PG_REAL_PLAYERS_SQL_FILTER}`);
       const bRes = await client.query(`
         SELECT 
           count(*) AS total_bets,
@@ -1183,6 +1243,7 @@ async function adminGetPlatformStats() {
       const topPlayers = await client.query(`
         SELECT id, username, email, balance, vip_rank, stats
         FROM users
+        WHERE ${PG_REAL_PLAYERS_SQL_FILTER}
         ORDER BY balance DESC
         LIMIT 5
       `);
@@ -1208,7 +1269,7 @@ async function adminGetPlatformStats() {
   }
 
   // Local fallback
-  const allUsersList = Object.values(users);
+  const allUsersList = Object.values(users).filter(u => !isTestOrBotAccount(u));
   const totalBets = bets.length;
   const totalWagered = parseFloat(bets.reduce((sum, b) => sum + (Number(b.betAmount) || 0), 0).toFixed(4));
   const totalPayout = parseFloat(bets.reduce((sum, b) => sum + (Number(b.payout) || 0), 0).toFixed(4));
@@ -1243,7 +1304,7 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
         query = `
           SELECT id, email, username, balance, vip_rank, user_level, auth_provider, stats, created_at, updated_at
           FROM users
-          WHERE (
+          WHERE ${PG_REAL_PLAYERS_SQL_FILTER} AND (
             LOWER(email) LIKE $1 
             OR LOWER(username) LIKE $1 
             OR LOWER(id) LIKE $1
@@ -1260,6 +1321,7 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
         query = `
           SELECT id, email, username, balance, vip_rank, user_level, auth_provider, stats, created_at, updated_at
           FROM users
+          WHERE ${PG_REAL_PLAYERS_SQL_FILTER}
           ORDER BY created_at DESC
           LIMIT $1 OFFSET $2
         `;
@@ -1274,7 +1336,7 @@ async function adminGetUsers({ search = '', limit = 50, offset = 0 } = {}) {
 
   // Local fallback
   initLocalDatabase();
-  let list = Object.values(users);
+  let list = Object.values(users).filter(u => !isTestOrBotAccount(u));
   if (term) {
     list = list.filter(u => {
       if (!u) return false;
@@ -1482,6 +1544,24 @@ async function adminGetRecentBets(limit = 50) {
         SELECT b.id, b.user_id, b.username, b.game, b.bet_amount, b.multiplier, b.payout, b.profit, b.won, b.created_at, u.email
         FROM bets b
         LEFT JOIN users u ON u.id = b.user_id
+        WHERE (
+          (u.email IS NULL OR (
+            u.email NOT LIKE '%@gamblin.io'
+            AND u.email NOT LIKE '%@luckywin.io'
+            AND u.email NOT LIKE '%@example.com'
+            AND u.email NOT LIKE '%@test.com'
+            AND u.email NOT LIKE '%@player.gp'
+            AND u.email NOT LIKE '%@domain.com'
+            AND u.email NOT LIKE '%authtest%'
+            AND u.email NOT LIKE '%persistence_check%'
+            AND u.email NOT LIKE '%http_test%'
+            AND u.email NOT LIKE 'test_%'
+          ))
+          AND b.username NOT LIKE 'player_%'
+          AND b.username NOT LIKE 'test_%'
+          AND b.username NOT LIKE 'u_%'
+          AND LOWER(b.username) NOT IN ('tester', 'khalid', 'ahmad_vip', 'ahmad_tester', 'solhunter', 'luckyplayer')
+        )
         ORDER BY b.created_at DESC
         LIMIT $1
       `, [safeLimit]);
@@ -1505,9 +1585,10 @@ async function adminGetRecentBets(limit = 50) {
 
   // Local fallback
   initLocalDatabase();
-  return bets.slice(-safeLimit).reverse().map(b => ({
+  const realBets = bets.filter(b => !isTestOrBotAccount({ username: b.username, id: b.userId, email: users[b.userId]?.email }));
+  return realBets.slice(-safeLimit).reverse().map(b => ({
     ...b,
-    email: users[b.userId]?.email || 'anonymous'
+    email: users[b.userId]?.email || 'player'
   }));
 }
 
