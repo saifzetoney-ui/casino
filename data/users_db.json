@@ -26,8 +26,8 @@
     "passwordHash": "",
     "salt": "",
     "authProvider": "email",
-    "balance": 1,
-    "vipRank": 2,
+    "balance": 0.15,
+    "vipRank": "Gold",
     "userLevel": 5,
     "stats": {
       "totalWagered": 0.1,
@@ -37,7 +37,8 @@
       "bestMult": 2
     },
     "createdAt": 1792686800000,
-    "lastLoginAt": 1792686800000
+    "lastLoginAt": 1792686800000,
+    "vip_rank": 3
   },
   "usr_9f59bdd18069ecae": {
     "id": "usr_9f59bdd18069ecae",
@@ -46,8 +47,8 @@
     "passwordHash": "03c531d24c1778dcd9949d9e96067fe977f5dcd4e89d357f727f71209cd78f21241063be377cf719340741eb96bb0446854f77b0dec14ebc40d7f033f74196da",
     "salt": "4468a3bc5cce5832bce16ed462c877a3",
     "authProvider": "email",
-    "balance": 0.55,
-    "vipRank": 1,
+    "balance": 1,
+    "vipRank": "Bronze",
     "userLevel": 1,
     "stats": {
       "totalWagered": 0.01,
@@ -57,7 +58,8 @@
       "bestMult": 2.5
     },
     "createdAt": 1792626591800,
-    "lastLoginAt": 1792626591800
+    "lastLoginAt": 1792626591800,
+    "vip_rank": 1
   },
   "usr_77987bd7c8a3fc9b": {
     "id": "usr_77987bd7c8a3fc9b",

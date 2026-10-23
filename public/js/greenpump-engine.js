@@ -1527,6 +1527,8 @@ class GreenpumpApp {
         settingsModal.classList.add('admin-unlocked');
       }
       this.loadAdminStats();
+      this.loadAdminUsers();
+      this.loadAdminBets();
     } else {
       if (authGate) authGate.style.display = 'block';
       if (dashboard) dashboard.style.display = 'none';
@@ -1718,6 +1720,40 @@ class GreenpumpApp {
     }
   }
 
+  renderAdminUsersList(userList, search = '') {
+    const tbody = document.getElementById('adminUsersTableBody');
+    if (!tbody) return;
+
+    if (!userList || userList.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;padding:18px;">
+            <div style="color:#94a3b8;font-size:12px;margin-bottom:8px;">No players match "${this.escapeHtml(search)}".</div>
+            <div style="display:flex;justify-content:center;gap:8px;">
+              <button type="button" class="admin-small-btn" onclick="document.getElementById('adminSearchUsersInput').value=''; window.greenpumpApp.loadAdminUsers('');">Show All Players</button>
+              <button type="button" class="admin-small-btn" style="background:#22c55e;color:#000;font-weight:900;" onclick="document.getElementById('adminCreateUserPanel').style.display='block'; document.getElementById('adminNewUsername').value='${this.escapeHtml(search)}'; document.getElementById('adminNewUsername').focus();">+ Create "${this.escapeHtml(search)}"</button>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+    this._adminLoadedUsers = userList;
+    tbody.innerHTML = userList.map(u => `
+      <tr>
+        <td>
+          <div style="font-weight:800;color:#ffffff;">${this.escapeHtml(u.username || 'User')}</div>
+          <div style="font-size:10px;color:#64748b;">${this.escapeHtml(u.email || u.id)}</div>
+        </td>
+        <td style="color:#22c55e;font-weight:800;font-family:monospace;">${Number(u.balance || 0).toFixed(4)} SOL</td>
+        <td><span style="font-size:10px;color:#93c5fd;font-weight:700;">${this.escapeHtml(typeof u.vipRank === 'string' ? u.vipRank : (u.vipRank === 2 ? 'Gold' : u.vipRank === 3 ? 'Platinum' : 'Bronze'))}</span></td>
+        <td><span style="font-size:10px;color:#cbd5e1;font-weight:700;">Lv.${u.userLevel || 1}</span></td>
+        <td>
+          <button type="button" class="admin-action-btn" data-edit-user-id="${this.escapeHtml(u.id)}">EDIT</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
   async loadAdminUsers(search = '') {
     if (!this.adminToken) return;
     const tbody = document.getElementById('adminUsersTableBody');
@@ -1727,60 +1763,70 @@ class GreenpumpApp {
       const candidates = [];
       if (Array.isArray(this._allAdminUsers) && this._allAdminUsers.length > 0) {
         candidates.push(...this._allAdminUsers);
+      } else {
+        const cached = localStorage.getItem('gp_all_admin_users');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              candidates.push(...parsed);
+              this._allAdminUsers = parsed;
+            }
+          } catch (_) {}
+        }
       }
-      const currentProfile = {
-        id: this.userId || localStorage.getItem('gp_user_id') || 'usr_current',
-        username: this.username || 'Current Player',
-        email: this.userEmail || (this.adminEmail || 'saifzetoney@gmail.com'),
-        balance: Number(this.balance || 0),
-        vipRank: this.vipRank || 'Bronze',
-        userLevel: this.userLevel || 1
-      };
-      if (!candidates.some(u => u.id === currentProfile.id || (u.email && currentProfile.email && u.email === currentProfile.email))) {
-        candidates.unshift(currentProfile);
-      }
-      const defaultAccounts = [
-        { id: 'usr_saif_admin', username: 'saif', email: 'saifzetoney@gmail.com', balance: 1.0, vipRank: 'Gold', userLevel: 5 },
-        { id: 'usr_ahmad_player', username: 'ahmad', email: 'ahmad@gmail.com', balance: 0.5, vipRank: 'Bronze', userLevel: 1 },
-        { id: 'usr_9f59bdd18069ecae', username: 'tester', email: 'test@example.com', balance: 0.55, vipRank: 'Bronze', userLevel: 1 }
+
+      // Default known database accounts so all players are visible even before network response
+      const seedAccounts = [
+        { id: 'usr_saif_admin', username: 'saifzetoney', email: 'saifzetoney@gmail.com', balance: Number(this.balance ?? 1.0), vipRank: 'Gold', userLevel: 5 },
+        { id: 'usr_ahmad_player', username: 'ahmad', email: 'ahmad@gmail.com', balance: 0.50, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_9f59bdd18069ecae', username: 'tester', email: 'test@example.com', balance: 0.55, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_3cb7d58c200f0348', username: 'khalid', email: 'khalid@test.com', balance: 0.88, vipRank: 'Silver', userLevel: 2 },
+        { id: 'usr_41e7612f4811bd75', username: 'ahmad_vip', email: 'ahmad_vip@test.com', balance: 2.50, vipRank: 'Platinum', userLevel: 3 },
+        { id: 'usr_84f0959778ca3aed', username: 'ahmad_tester', email: 'ahmad_tester@player.gp', balance: 0.77, vipRank: 'Silver', userLevel: 1 },
+        { id: 'usr_8dd25032b5178627', username: 'SolHunter', email: 'persistence_check@luckywin.io', balance: 0.05, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_77987bd7c8a3fc9b', username: 'luckyPlayer', email: 'authtest@luckywin.io', balance: 0.125, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_0dde49083634b262', username: 'player_ekijw', email: 'test_1792687494415@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_ba333cf9b5e1dcfe', username: 'player_xkvoi', email: 'test_1792686598768@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_ae5323a0522a6882', username: 'player_ziw3h', email: 'test_1792686031367@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_7df66c7a9c169fb6', username: 'player_q9arx', email: 'test_1792683919691@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_fa0ea35af872a193', username: 'player_95d9e', email: 'test_1792682945997@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_4f865e55c9200b35', username: 'player_lc9fg', email: 'test_1792679055866@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_8fb1d419234c34fd', username: 'player_dgisf', email: 'test_1792673526511@gamblin.io', balance: 0.10, vipRank: 'Bronze', userLevel: 1 },
+        { id: 'usr_b1507bddd0114ebd', username: 'u_42544', email: 'http_test_1792673542544@domain.com', balance: 0.05, vipRank: 'Bronze', userLevel: 1 }
       ];
-      defaultAccounts.forEach(d => {
-        if (!candidates.some(u => u.id === d.id || (u.email && u.email === d.email))) {
-          candidates.push(d);
+
+      seedAccounts.forEach(seed => {
+        if (!candidates.some(u => u.id === seed.id || (u.email && seed.email && u.email.toLowerCase() === seed.email.toLowerCase()) || (u.username && seed.username && u.username.toLowerCase() === seed.username.toLowerCase()))) {
+          candidates.push(seed);
         }
       });
-      return candidates;
-    };
 
-    const renderList = (userList) => {
-      if (!userList || userList.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" style="text-align:center;padding:18px;">
-              <div style="color:#94a3b8;font-size:12px;margin-bottom:8px;">No players match "${this.escapeHtml(search)}".</div>
-              <div style="display:flex;justify-content:center;gap:8px;">
-                <button type="button" class="admin-small-btn" onclick="document.getElementById('adminSearchUsersInput').value=''; window.greenpumpApp.loadAdminUsers('');">Show All Players</button>
-                <button type="button" class="admin-small-btn" style="background:#22c55e;color:#000;font-weight:900;" onclick="document.getElementById('adminCreateUserPanel').style.display='block'; document.getElementById('adminNewUsername').value='${this.escapeHtml(search)}'; document.getElementById('adminNewUsername').focus();">+ Create "${this.escapeHtml(search)}"</button>
-              </div>
-            </td>
-          </tr>`;
-        return;
+      // Synchronize current player's live session balance
+      const currentEmail = (this.userEmail || this.adminEmail || 'saifzetoney@gmail.com').toLowerCase();
+      const currentUsername = (this.username || 'saifzetoney').toLowerCase();
+      const userMatch = candidates.find(u => 
+        (u.id && (u.id === this.userId || u.id === 'usr_current' || u.id === 'usr_saif_admin')) ||
+        (u.email && u.email.toLowerCase() === currentEmail) ||
+        (u.username && u.username.toLowerCase() === currentUsername)
+      );
+
+      if (userMatch) {
+        userMatch.balance = Number(this.balance || 0);
+        if (this.username) userMatch.username = this.username;
+        if (this.vipRank) userMatch.vipRank = this.vipRank;
+      } else {
+        candidates.unshift({
+          id: this.userId || localStorage.getItem('gp_user_id') || 'usr_saif_admin',
+          username: this.username || 'saifzetoney',
+          email: this.userEmail || (this.adminEmail || 'saifzetoney@gmail.com'),
+          balance: Number(this.balance || 0),
+          vipRank: this.vipRank || 'Bronze',
+          userLevel: this.userLevel || 1
+        });
       }
-      this._adminLoadedUsers = userList;
-      tbody.innerHTML = userList.map(u => `
-        <tr>
-          <td>
-            <div style="font-weight:800;color:#ffffff;">${this.escapeHtml(u.username || 'User')}</div>
-            <div style="font-size:10px;color:#64748b;">${this.escapeHtml(u.email || u.id)}</div>
-          </td>
-          <td style="color:#22c55e;font-weight:800;font-family:monospace;">${Number(u.balance || 0).toFixed(4)} SOL</td>
-          <td><span style="font-size:10px;color:#93c5fd;font-weight:700;">${this.escapeHtml(u.vipRank || 'Bronze')}</span></td>
-          <td><span style="font-size:10px;color:#cbd5e1;font-weight:700;">Lv.${u.userLevel || 1}</span></td>
-          <td>
-            <button type="button" class="admin-action-btn" data-edit-user-id="${this.escapeHtml(u.id)}">EDIT</button>
-          </td>
-        </tr>
-      `).join('');
+
+      return candidates;
     };
 
     const filterCandidates = (candidates) => {
@@ -1797,12 +1843,12 @@ class GreenpumpApp {
 
     // Render immediately from local/cached candidates
     const initialCandidates = getCandidates();
-    renderList(filterCandidates(initialCandidates));
+    this.renderAdminUsersList(filterCandidates(initialCandidates), search);
 
     // Then update with live server data
     try {
       const q = encodeURIComponent(search);
-      let res = await fetch(`/api/admin/users?search=${q}&limit=50`, {
+      let res = await fetch(`/api/admin/users?search=${q}&limit=100`, {
         headers: {
           'Authorization': `Bearer ${this.adminToken}`,
           'x-admin-token': this.adminToken
@@ -1813,7 +1859,7 @@ class GreenpumpApp {
         return;
       }
       if (res.status === 404) {
-        res = await fetch(`/api/admin/players?search=${q}&limit=50`, {
+        res = await fetch(`/api/admin/players?search=${q}&limit=100`, {
           headers: {
             'Authorization': `Bearer ${this.adminToken}`,
             'x-admin-token': this.adminToken
@@ -1825,8 +1871,24 @@ class GreenpumpApp {
         try {
           const data = JSON.parse(raw);
           if (data && data.ok && Array.isArray(data.users)) {
-            if (!search) this._allAdminUsers = data.users;
-            renderList(data.users);
+            const currentEmail = (this.userEmail || this.adminEmail || 'saifzetoney@gmail.com').toLowerCase();
+            const currentUsername = (this.username || 'saifzetoney').toLowerCase();
+            data.users.forEach(u => {
+              if (
+                (u.id && (u.id === this.userId || u.id === 'usr_saif_admin')) ||
+                (u.email && u.email.toLowerCase() === currentEmail) ||
+                (u.username && u.username.toLowerCase() === currentUsername)
+              ) {
+                u.balance = Number(this.balance || 0);
+                if (this.username) u.username = this.username;
+              }
+            });
+
+            if (!search) {
+              this._allAdminUsers = data.users;
+              try { localStorage.setItem('gp_all_admin_users', JSON.stringify(data.users)); } catch (_) {}
+            }
+            this.renderAdminUsersList(data.users, search);
           }
         } catch (_) {}
       }
@@ -1851,7 +1913,11 @@ class GreenpumpApp {
     if (title) title.textContent = `EDIT PLAYER: ${user.username || user.email}`;
     if (idInput) idInput.value = user.id;
     if (balInput) balInput.value = Number(user.balance || 0).toFixed(4);
-    if (vipSelect) vipSelect.value = user.vipRank || 'Bronze';
+    if (vipSelect) {
+      const rawVip = user.vipRank;
+      const vipVal = typeof rawVip === 'string' ? rawVip : (rawVip === 2 ? 'Gold' : rawVip === 3 ? 'Platinum' : 'Bronze');
+      vipSelect.value = vipVal;
+    }
 
     panel.style.display = 'block';
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1874,41 +1940,65 @@ class GreenpumpApp {
       return;
     }
 
-    // Optimistically update in-memory / local users cache immediately
+    // Find target in loaded users
+    const target = (this._adminLoadedUsers || []).find(u => u.id === userId) ||
+                   (this._allAdminUsers || []).find(u => u.id === userId);
+
+    // Optimistically update caches immediately
     if (Array.isArray(this._allAdminUsers)) {
-      const target = this._allAdminUsers.find(u => u.id === userId);
-      if (target) {
-        target.balance = newBal;
-        target.vipRank = newVip;
+      const t = this._allAdminUsers.find(u => u.id === userId);
+      if (t) {
+        t.balance = newBal;
+        t.vipRank = newVip;
       }
     }
     if (Array.isArray(this._adminLoadedUsers)) {
-      const target = this._adminLoadedUsers.find(u => u.id === userId);
-      if (target) {
-        target.balance = newBal;
-        target.vipRank = newVip;
+      const t = this._adminLoadedUsers.find(u => u.id === userId);
+      if (t) {
+        t.balance = newBal;
+        t.vipRank = newVip;
       }
     }
 
-    this.showToast(`Updated user balance to ${newBal.toFixed(4)} SOL!`);
-    if (panel) panel.style.display = 'none';
+    // Check if target represents the current active player session
+    const currentEmail = (this.userEmail || this.adminEmail || 'saifzetoney@gmail.com').toLowerCase();
+    const currentUsername = (this.username || 'saifzetoney').toLowerCase();
+    const isCurrentPlayer = (
+      userId === this.userId ||
+      userId === 'usr_current' ||
+      userId === 'usr_saif_admin' ||
+      (this.userId && (target?.id === this.userId)) ||
+      (target?.email && target.email.toLowerCase() === currentEmail) ||
+      (target?.username && target.username.toLowerCase() === currentUsername)
+    );
 
-    // If current player was updated, sync balance in client
-    if (this.userId === userId || (this.user && this.user.id === userId) || (this.userEmail && this.userEmail === userId)) {
+    if (isCurrentPlayer) {
       this.balance = newBal;
       this.vipRank = newVip;
       localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
       this.updateBalanceUI();
     }
 
+    // Persist cache to localStorage so edits survive reloads
+    if (Array.isArray(this._allAdminUsers)) {
+      try {
+        localStorage.setItem('gp_all_admin_users', JSON.stringify(this._allAdminUsers));
+      } catch (_) {}
+    }
+
+    this.showToast(`Updated user balance to ${newBal.toFixed(4)} SOL!`);
+    if (panel) panel.style.display = 'none';
+
+    // Update table UI right away
     const searchInput = document.getElementById('adminSearchUsersInput');
     const currentSearch = searchInput ? searchInput.value.trim() : '';
-    this.loadAdminUsers(currentSearch);
-    this.loadAdminStats();
+    if (Array.isArray(this._adminLoadedUsers)) {
+      this.renderAdminUsersList(this._adminLoadedUsers, currentSearch);
+    }
 
-    // Send update to server in background
+    // Sync to server database in background
     try {
-      await fetch('/api/admin/user/update', {
+      const res = await fetch('/api/admin/user/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1916,14 +2006,30 @@ class GreenpumpApp {
           'x-admin-token': this.adminToken
         },
         body: JSON.stringify({
-          userId,
+          userId: target?.id || userId,
+          email: target?.email,
+          username: target?.username,
           balance: newBal,
           vipRank: newVip
         })
       });
+      const data = await res.json().catch(() => null);
+      if (data && data.ok && data.user) {
+        if (Array.isArray(this._allAdminUsers)) {
+          const idx = this._allAdminUsers.findIndex(u => u.id === data.user.id || (u.email && u.email === data.user.email));
+          if (idx !== -1) {
+            this._allAdminUsers[idx] = { ...this._allAdminUsers[idx], ...data.user, balance: newBal, vipRank: newVip };
+            try { localStorage.setItem('gp_all_admin_users', JSON.stringify(this._allAdminUsers)); } catch (_) {}
+          }
+        }
+      }
     } catch (e) {
       console.warn('[Admin User Update server sync]', e.message);
     }
+
+    // Refresh list from server
+    await this.loadAdminUsers(currentSearch);
+    this.loadAdminStats();
   }
 
   async handleAdminCreateUser() {
@@ -1956,6 +2062,20 @@ class GreenpumpApp {
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to create player');
 
+      const createdUser = data.user || {
+        id: 'usr_' + Date.now().toString(36),
+        username,
+        email: email || `${username.toLowerCase()}@player.gp`,
+        balance,
+        vipRank,
+        userLevel: 1
+      };
+
+      if (Array.isArray(this._allAdminUsers)) {
+        this._allAdminUsers.unshift(createdUser);
+        try { localStorage.setItem('gp_all_admin_users', JSON.stringify(this._allAdminUsers)); } catch (_) {}
+      }
+
       this.showToast(`Player "${username}" created with ${balance.toFixed(4)} SOL!`);
       if (createPanel) createPanel.style.display = 'none';
       if (userInput) userInput.value = '';
@@ -1963,7 +2083,7 @@ class GreenpumpApp {
 
       const searchInput = document.getElementById('adminSearchUsersInput');
       if (searchInput) searchInput.value = username;
-      this.loadAdminUsers(username);
+      await this.loadAdminUsers(username);
       this.loadAdminStats();
     } catch (e) {
       this.showToast(`Create error: ${e.message}`);
@@ -1980,27 +2100,47 @@ class GreenpumpApp {
     if (balInput) balInput.value = newBal.toFixed(4);
     const userId = idInput.value;
 
+    const target = (this._adminLoadedUsers || []).find(u => u.id === userId) ||
+                   (this._allAdminUsers || []).find(u => u.id === userId);
+
     // Optimistically update caches
     if (Array.isArray(this._allAdminUsers)) {
-      const target = this._allAdminUsers.find(u => u.id === userId);
-      if (target) target.balance = newBal;
+      const t = this._allAdminUsers.find(u => u.id === userId);
+      if (t) t.balance = newBal;
     }
     if (Array.isArray(this._adminLoadedUsers)) {
-      const target = this._adminLoadedUsers.find(u => u.id === userId);
-      if (target) target.balance = newBal;
+      const t = this._adminLoadedUsers.find(u => u.id === userId);
+      if (t) t.balance = newBal;
     }
 
-    this.showToast(`🪂 Airdropped +0.50 SOL! New balance: ${newBal.toFixed(4)} SOL`);
-    if (this.userId === userId || (this.user && this.user.id === userId) || (this.userEmail && this.userEmail === userId)) {
+    const currentEmail = (this.userEmail || this.adminEmail || 'saifzetoney@gmail.com').toLowerCase();
+    const currentUsername = (this.username || 'saifzetoney').toLowerCase();
+    const isCurrentPlayer = (
+      userId === this.userId ||
+      userId === 'usr_current' ||
+      userId === 'usr_saif_admin' ||
+      (this.userId && (target?.id === this.userId)) ||
+      (target?.email && target.email.toLowerCase() === currentEmail) ||
+      (target?.username && target.username.toLowerCase() === currentUsername)
+    );
+
+    if (isCurrentPlayer) {
       this.balance = newBal;
       localStorage.setItem('gp_sol_balance', this.balance.toFixed(4));
       this.updateBalanceUI();
     }
 
+    if (Array.isArray(this._allAdminUsers)) {
+      try { localStorage.setItem('gp_all_admin_users', JSON.stringify(this._allAdminUsers)); } catch (_) {}
+    }
+
+    this.showToast(`🪂 Airdropped +0.50 SOL! New balance: ${newBal.toFixed(4)} SOL`);
+
     const searchInput = document.getElementById('adminSearchUsersInput');
     const currentSearch = searchInput ? searchInput.value.trim() : '';
-    this.loadAdminUsers(currentSearch);
-    this.loadAdminStats();
+    if (Array.isArray(this._adminLoadedUsers)) {
+      this.renderAdminUsersList(this._adminLoadedUsers, currentSearch);
+    }
 
     try {
       await fetch('/api/admin/user/update', {
@@ -2011,13 +2151,18 @@ class GreenpumpApp {
           'x-admin-token': this.adminToken
         },
         body: JSON.stringify({
-          userId,
+          userId: target?.id || userId,
+          email: target?.email,
+          username: target?.username,
           balance: newBal
         })
       });
     } catch (e) {
       console.warn('[Admin Quick Airdrop server sync]', e.message);
     }
+
+    await this.loadAdminUsers(currentSearch);
+    this.loadAdminStats();
   }
 
   async loadAdminBets() {

@@ -85,22 +85,24 @@ function proxyLive(req, res, url) {
   });
 }
 
-function serveStatic(req, res, url) {
-  let pathname;
-  try {
-    pathname = decodeURIComponent(url.pathname);
-  } catch {
-    send(res, 400, 'Bad request');
-    return;
+function serveStatic(req, res, url, pathname) {
+  let resolvedPath = pathname;
+  if (!resolvedPath) {
+    try {
+      resolvedPath = decodeURIComponent(url.pathname);
+    } catch {
+      send(res, 400, 'Bad request');
+      return;
+    }
   }
 
   // Intercept any unhandled /api calls to prevent leaking plain text or HTML
-  if (pathname === '/api' || pathname.startsWith('/api/')) {
+  if (resolvedPath === '/api' || resolvedPath.startsWith('/api/')) {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       send(res, 405, JSON.stringify({ ok: false, error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
     }
-    send(res, 404, JSON.stringify({ ok: false, error: 'Endpoint not found: ' + pathname }), 'application/json; charset=utf-8');
+    send(res, 404, JSON.stringify({ ok: false, error: 'Endpoint not found: ' + resolvedPath }), 'application/json; charset=utf-8');
     return;
   }
 
@@ -363,7 +365,23 @@ async function requestHandler(req, res) {
   }
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const pathname = url.pathname.replace(/\/+$/, '') || '/';
+  let pathname = url.pathname.replace(/\/+$/, '') || '/';
+
+  // Handle Vercel rewrite headers, [...path].js, and multi-segment query parameters
+  const matchedPath = req.headers['x-matched-path'] || req.headers['x-now-route-matches'];
+  const isVercelCatchAll = pathname === '/api/index.js' || pathname === '/api' || pathname === '/api/index' || pathname.includes('[...path]');
+
+  if (typeof matchedPath === 'string' && matchedPath.startsWith('/api') && !matchedPath.includes('index.js') && !matchedPath.includes('[...path]')) {
+    pathname = matchedPath.split('?')[0].replace(/\/+$/, '');
+  } else if (isVercelCatchAll) {
+    const matchAll = url.searchParams.getAll('match');
+    const pathAll = url.searchParams.getAll('path');
+    if (matchAll.length > 0) {
+      pathname = '/api/' + matchAll.join('/').replace(/^\/+/, '').split('?')[0];
+    } else if (pathAll.length > 0) {
+      pathname = '/api/' + pathAll.join('/').replace(/^\/+/, '').split('?')[0];
+    }
+  }
 
   function extractToken(req, parsedUrl) {
     const authHeader = req.headers['authorization'] || '';
@@ -384,7 +402,7 @@ async function requestHandler(req, res) {
   }
 
   // --- AUTH & DATABASE PERSISTENCE ENDPOINTS ---
-  if (url.pathname === '/api/db-status') {
+  if (pathname === '/api/db-status') {
     try {
       const status = await db.getDbStatus();
       send(res, 200, JSON.stringify(status), 'application/json; charset=utf-8');
@@ -394,7 +412,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/auth/register') {
+  if (pathname === '/api/auth/register') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -414,7 +432,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/auth/login') {
+  if (pathname === '/api/auth/login') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -434,7 +452,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/auth/google') {
+  if (pathname === '/api/auth/google') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -492,7 +510,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/auth/me') {
+  if (pathname === '/api/auth/me') {
     const token = extractToken(req, url);
     try {
       const user = await db.getUserByToken(token);
@@ -507,7 +525,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/auth/logout') {
+  if (pathname === '/api/auth/logout') {
     parseJsonBody(req, async (err, body) => {
       const token = (body && body.token) || extractToken(req, url);
       try {
@@ -520,7 +538,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/user/sync') {
+  if (pathname === '/api/user/sync') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -546,7 +564,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/user/bet') {
+  if (pathname === '/api/user/bet') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -579,7 +597,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/user/bets') {
+  if (pathname === '/api/user/bets') {
     const token = extractToken(req, url);
     try {
       const user = await db.getUserByToken(token);
@@ -597,7 +615,7 @@ async function requestHandler(req, res) {
   }
 
   // --- ADMIN PANEL SECURE API ENDPOINTS ---
-  if (pathname === '/api/admin/auth' || pathname === '/api/admin/login' || url.pathname === '/api/admin/auth' || url.pathname === '/api/admin/login') {
+  if (pathname === '/api/admin/auth' || pathname === '/api/admin/login') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -617,7 +635,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/admin/stats') {
+  if (pathname === '/api/admin/stats') {
     const adminToken = extractAdminToken(req, url);
     const admin = db.verifyAdminToken(adminToken);
     if (!admin) {
@@ -636,7 +654,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (pathname === '/api/admin/users' || pathname === '/api/admin/players' || url.pathname === '/api/admin/users' || url.pathname === '/api/admin/players') {
+  if (pathname === '/api/admin/users' || pathname === '/api/admin/players') {
     const adminToken = extractAdminToken(req, url);
     const admin = db.verifyAdminToken(adminToken);
     if (!admin) {
@@ -655,7 +673,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (pathname === '/api/admin/user/update' || url.pathname === '/api/admin/user/update') {
+  if (pathname === '/api/admin/user/update') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -667,12 +685,13 @@ async function requestHandler(req, res) {
       return;
     }
     parseJsonBody(req, async (err, body) => {
-      if (err || !body || !body.userId) {
-        send(res, 400, JSON.stringify({ error: 'User ID and updates required' }), 'application/json; charset=utf-8');
+      if (err || !body || (!body.userId && !body.email && !body.username)) {
+        send(res, 400, JSON.stringify({ error: 'User identifier and updates required' }), 'application/json; charset=utf-8');
         return;
       }
       try {
-        const updated = await db.adminUpdateUser(body.userId, body);
+        const targetIdentifier = body.userId || body.email || body.username;
+        const updated = await db.adminUpdateUser(targetIdentifier, body);
         send(res, 200, JSON.stringify({ ok: true, user: updated }), 'application/json; charset=utf-8');
       } catch (e) {
         send(res, 500, JSON.stringify({ error: e.message }), 'application/json; charset=utf-8');
@@ -681,7 +700,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (pathname === '/api/admin/user/create' || url.pathname === '/api/admin/user/create') {
+  if (pathname === '/api/admin/user/create') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -707,7 +726,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (pathname === '/api/user/sync-profile' || url.pathname === '/api/user/sync-profile') {
+  if (pathname === '/api/user/sync-profile') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -727,7 +746,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (pathname === '/api/admin/bets' || url.pathname === '/api/admin/bets') {
+  if (pathname === '/api/admin/bets') {
     const adminToken = extractAdminToken(req, url);
     const admin = db.verifyAdminToken(adminToken);
     if (!admin) {
@@ -744,7 +763,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/casino-vault') {
+  if (pathname === '/api/casino-vault') {
     casinoVault.getVaultStats((err, stats) => {
       if (err) {
         send(res, 500, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
@@ -755,13 +774,13 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/vault-ledger') {
+  if (pathname === '/api/vault-ledger') {
     const ledger = casinoVault.getLedger();
     send(res, 200, JSON.stringify({ transactions: ledger.slice(0, 50) }), 'application/json; charset=utf-8');
     return;
   }
 
-  if (url.pathname === '/api/user-balance') {
+  if (pathname === '/api/user-balance') {
     if (req.method === 'GET') {
       const address = url.searchParams.get('address');
       const balance = casinoVault.getUserBalance(address);
@@ -782,7 +801,7 @@ async function requestHandler(req, res) {
     }
   }
 
-  if (url.pathname === '/api/check-deposits') {
+  if (pathname === '/api/check-deposits') {
     const address = url.searchParams.get('address') || 'any';
     casinoVault.scanVaultForNewDeposits(address, (err, result) => {
       if (err) {
@@ -794,7 +813,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/verify-deposit') {
+  if (pathname === '/api/verify-deposit') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -815,7 +834,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/request-withdrawal') {
+  if (pathname === '/api/request-withdrawal') {
     if (req.method !== 'POST') {
       send(res, 405, JSON.stringify({ error: 'Method not allowed' }), 'application/json; charset=utf-8');
       return;
@@ -836,7 +855,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/sol-price') {
+  if (pathname === '/api/sol-price') {
     fetchSolPrice((err, data) => {
       if (err) {
         send(res, 502, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
@@ -847,7 +866,7 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (url.pathname === '/api/sol-klines') {
+  if (pathname === '/api/sol-klines') {
     fetchSolKlines((err, data) => {
       if (err) {
         send(res, 502, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
@@ -858,12 +877,12 @@ async function requestHandler(req, res) {
     return;
   }
 
-  if (LIVE_PATHS.some(prefix => url.pathname === prefix || url.pathname.startsWith(prefix + '/'))) {
+  if (LIVE_PATHS.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'))) {
     proxyLive(req, res, url);
     return;
   }
 
-  serveStatic(req, res, url);
+  serveStatic(req, res, url, pathname);
 }
 
 const server = http.createServer(requestHandler);

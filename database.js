@@ -846,10 +846,14 @@ async function updateUser(userId, updates = {}) {
   if (hasPg && pgPool) {
     const client = await pgPool.connect();
     try {
-      const existing = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+      let existing = await client.query('SELECT * FROM users WHERE id = $1 OR LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1)', [userId]);
+      if (existing.rows.length === 0 && (userId === 'usr_current' || userId === 'current')) {
+        existing = await client.query("SELECT * FROM users WHERE LOWER(email) = 'saifzetoney@gmail.com' OR LOWER(username) = 'saifzetoney' LIMIT 1");
+      }
       if (existing.rows.length === 0) return null;
 
       const current = existing.rows[0];
+      const targetUserId = current.id;
       let balance = current.balance;
       if (typeof updates.balance === 'number' && !isNaN(updates.balance)) {
         balance = parseFloat(Math.max(0, updates.balance).toFixed(4));
@@ -884,7 +888,7 @@ async function updateUser(userId, updates = {}) {
         SET balance = $1, vip_rank = $2, user_level = $3, stats = $4
         WHERE id = $5
         RETURNING *
-      `, [balance, vipRank, userLevel, JSON.stringify(statsObj), userId]);
+      `, [balance, vipRank, userLevel, JSON.stringify(statsObj), targetUserId]);
 
       return formatUserRow(updateRes.rows[0]);
     } finally {
@@ -893,7 +897,21 @@ async function updateUser(userId, updates = {}) {
   }
 
   // Local fallback
-  const user = users[userId];
+  initLocalDatabase();
+  let user = users[userId];
+  if (!user) {
+    const term = String(userId).trim().toLowerCase();
+    user = Object.values(users).find(u =>
+      (u.id && u.id.toLowerCase() === term) ||
+      (u.email && u.email.toLowerCase() === term) ||
+      (u.username && u.username.toLowerCase() === term)
+    );
+  }
+  if (!user && (userId === 'usr_current' || userId === 'current')) {
+    user = Object.values(users).find(u => u.email && u.email.toLowerCase() === 'saifzetoney@gmail.com') ||
+           Object.values(users).find(u => u.username && u.username.toLowerCase() === 'saifzetoney') ||
+           users['usr_saif_admin'];
+  }
   if (!user) return null;
 
   if (typeof updates.balance === 'number' && !isNaN(updates.balance)) {
@@ -918,7 +936,7 @@ async function updateUser(userId, updates = {}) {
   }
 
   saveUsers();
-  return sanitizeUser(user);
+  return formatUserRow(user);
 }
 
 // ============================================================================
@@ -1450,7 +1468,8 @@ async function adminUpdateUser(userId, updates = {}) {
   if (typeof updates.userLevel === 'number' && updates.userLevel >= 1) {
     safeUpdates.userLevel = Math.floor(updates.userLevel);
   }
-  return await updateUser(userId, safeUpdates);
+  const targetId = userId || updates.email || updates.username;
+  return await updateUser(targetId, safeUpdates);
 }
 
 async function adminGetRecentBets(limit = 50) {

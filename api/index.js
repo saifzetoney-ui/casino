@@ -457,12 +457,13 @@ module.exports = async (req, res) => {
       return;
     }
     parseJsonBody(req, async (err, body) => {
-      if (err || !body || !body.userId) {
-        send(res, 400, JSON.stringify({ error: 'User ID and updates required' }));
+      if (err || !body || (!body.userId && !body.email && !body.username)) {
+        send(res, 400, JSON.stringify({ error: 'User identifier and updates required' }));
         return;
       }
       try {
-        const updated = await db.adminUpdateUser(body.userId, body);
+        const targetId = body.userId || body.email || body.username;
+        const updated = await db.adminUpdateUser(targetId, body);
         send(res, 200, JSON.stringify({ ok: true, user: updated }));
       } catch (e) {
         send(res, 500, JSON.stringify({ error: e.message }));
